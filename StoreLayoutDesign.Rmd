@@ -1,0 +1,120 @@
+---
+title: "Warenkorbanalyse: Datenanalyse zum Store Layout Design"
+date: 2016-08-25
+output: html_document
+---
+
+Zuerst benötigte Libraries laden (ggf. installieren)
+
+```{r setup}
+library(tidyverse)
+```
+
+Datanbankverbindung aufbauen
+
+```{r}
+DB_HOST='server2053.cs.technik.fhnw.ch'
+DB_PORT = 5432
+DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
+DB_USERNAME = 'db_user' 
+DB_PASSWORD = 'db_user_pw'
+
+con <- DBI::dbConnect(odbc::odbc(),
+                      Driver   = "PostgreSQL Unicode(x64)",
+                      Server   = DB_HOST,
+                      Database = DB_DBNAME,
+                      UID      = DB_USERNAME,
+                      PWD      = DB_PASSWORD,
+                      Port     = DB_PORT)
+```
+
+Tabellen laden
+
+```{r}
+t_products <- tbl(con, "product")
+t_aisles <- tbl(con, "aisle")
+t_departments <- tbl(con, "department")
+t_orders <- tbl(con, "orders")
+```
+
+Namen der Gänge und Departments sind in eigenen Tabellen gespeichert und nur über die Produkte verknüpft. Zur Auswertung kann man diese Tabellen zusammenführen und die entsprechenden Ids entfernen.
+
+```{r}
+products <- left_join(t_products, t_aisles, "aisle_id") %>%
+  left_join(t_departments, "department_id") %>%
+  select(-c(aisle_id, department_id))
+```
+
+Das neue Product Tibble sieht nun so aus:
+
+```{r}
+products
+```
+
+*Sind alle Produkte einem validen Gang zugeordnet?*
+
+```{r}
+products %>%
+  filter(is.na(aisle))
+```
+
+_Alle Produkte sind einem Gang zugeordnet._
+
+*Sind alle Produkte einer validen Abteilung zugeordnet?*
+
+```{r}
+products %>%
+  filter(is.na(department))
+```
+
+_Alle Produkte sind einer Abteilung zugeordnet._
+
+
+#### Frage an Stakeholder
+  1. Es gibt sowohl Gänge mit dem Namen "Missing", als auch Abteilungen mit dem Namen "Missing". Was können Ursachen dafür sein?
+  2. Sind die Gänge nach "Standardweg durch den Laden" sortiert?
+
+
+Aisles per Department
+
+```{r}
+products %>%
+  select(aisle, department) %>%
+  distinct() %>%
+  arrange(department) %>%
+  ggplot() +
+    geom_bar(aes(x = department)) +
+    coord_flip()
+```
+
+Products per Department
+
+```{r}
+products %>%
+  arrange(department) %>%
+  ggplot() +
+    geom_bar(aes(x = department)) +
+    coord_flip()
+```
+
+Products per Aisle
+
+```{r fig.height=25}
+aisle_in_departments <- products %>%
+  select(department, aisle) %>%
+  distinct()
+```
+
+*Können Gänge mehreren Abteilungen zugewiesen sein?*
+
+```{r}
+aisle_in_departments %>%
+  count(aisle, department) %>%
+  filter(n > 1)
+```
+
+_Gänge sind immer nur einer Abteilung zugewiesen?_
+
+## Hypothese
+
+Es kann ausgewertet werden, welche Produktgruppen 
