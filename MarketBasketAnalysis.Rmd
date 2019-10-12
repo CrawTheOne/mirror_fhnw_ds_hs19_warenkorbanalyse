@@ -1,0 +1,86 @@
+---
+title: "Market Basket Analysis"
+output: html_notebook
+---
+
+# Vorbereitungen
+
+## Load libraries and connect to database
+
+```{r, echo=FALSE}
+library(arules)
+library(arulesViz)
+
+source('DbConnection.R')
+```
+
+## Damit manche Queries nicht immer und immer wieder laufen müssen, cachen wir diese in einer temporären SQLite Instanz
+
+```{r}
+sqlite_con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+```
+
+
+# Warenkorbanalyse
+
+Wir können mit Market Basket Analysis herausfinden, welche Elemente häufig zusammen gekauft werden. Dazu benutzen wir den Apriori Alghorithmus.
+
+## Schritt 1 - DataSet dem UseCase ausrichten
+
+```{r}
+orders_products <- t_orders_product %>%
+  left_join(t_products, "product_id") %>%
+  select(c(orders_id, product_name))
+```
+
+## Schritt 2 - Support berechnen
+
+Der Support ist der Anteil eines bestimmtes Produkt an den Gesamtverkäufen.
+
+Wir brauchen zuerst die Anzahl der gekauften Produkte insgesamt.
+
+```{r}
+total_products_bought <- orders_products %>%
+  count() %>%
+  pull(n) %>%
+  as.numeric()
+```
+
+Daraus können wir den Support pro Produkt berechnen und danach sortieren. Damit haben wir die Reihenfolge der meistverkauften Produkte incl. des Anteils.
+
+```{r}
+support <- orders_products %>%
+  group_by(product_name) %>%
+  summarise(n = n()) %>%
+  mutate(support = as.numeric(n)/total_products_bought) %>%
+  arrange(desc(support))
+
+t_support <- copy_to(sqlite_con, support, "support")
+```
+
+Als Threshold für den Apriori-Algorithmus können wir nun den Median des Supports bestimmen.
+
+```{r}
+t_support
+```
+
+
+```{r}
+support_threshold <- t_support %>%
+  summarise(median = median(support)) %>%
+  dbplyr::sql_render()
+
+support_threshold
+```
+
+
+Für die Warenkorbanalyse benötigen wir die Transaktionen als Key und kommasepariert alle Produkte, welche zu dieser Transaktion gehören.
+
+```{r}
+baskets <- t_orders_product %>%
+  left_join(t_products, "product_id") %>%
+  group_by(orders_id) %>%
+  summarise(products = string_agg(product_name, ',')) %>%
+  
+```
+
