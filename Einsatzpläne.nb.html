@@ -1767,21 +1767,62 @@ $(document).ready(function () {
 
 
 <!-- rnb-text-begin -->
-<p>This is an <a href="http://rmarkdown.rstudio.com">R Markdown</a> Notebook. When you execute code within the notebook, the results appear beneath the code.</p>
-<p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Ctrl+Shift+Enter</em>.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdChjYXJzKVxuYGBgIn0= -->
-<pre class="r"><code>plot(cars)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhY3RpdmF0ZSBpbnN0YWxsIGlmIG5lZWRlZFxuaW5zdGFsbC5wYWNrYWdlcyhcIlJQb3N0Z3JlU1FMXCIpXG5pbnN0YWxsLnBhY2thZ2VzKFwidGlkeXZlcnNlXCIpXG5gYGAifQ== -->
+<pre class="r"><code># activate install if needed
+install.packages(&quot;RPostgreSQL&quot;)
+install.packages(&quot;tidyverse&quot;)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Ctrl+Alt+I</em>.</p>
-<p>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the <em>Preview</em> button or press <em>Ctrl+Shift+K</em> to preview the HTML file).</p>
-<p>The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike <em>Knit</em>, <em>Preview</em> does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.</p>
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVxdWlyZShcIlJQb3N0Z3JlU1FMXCIpXG5saWJyYXJ5KERCSSlcbmxpYnJhcnkodGlkeXZlcnNlKVxubGlicmFyeShkcGx5cilcblxuIyBkZWZpbmUgdGhlIGRhdGFiYXNlIGNvbm5lY3Rpb24gc3RyaW5nXG5EQl9IT1NUPSdzZXJ2ZXIyMDUzLmNzLnRlY2huaWsuZmhudy5jaCdcbkRCX1BPUlQgPSA1NDMyXG5EQl9EQk5BTUUgPSAgJ3dhcmVua29yYl9kYicgIyBvcidiYW5rX2RiJyBcbkRCX1VTRVJOQU1FID0gJ2RiX3VzZXInXG5EQl9QQVNTV09SRCA9ICdkYl91c2VyX3B3J1xuXG5jb24gPC0gREJJOjpkYkNvbm5lY3QoXG4gIG9kYmM6Om9kYmMoKSxcbiAgRHJpdmVyICAgPSBcIlBvc3RncmVTUUwgVW5pY29kZSh4NjQpXCIsXG4gIFNlcnZlciAgID0gREJfSE9TVCxcbiAgRGF0YWJhc2UgPSBEQl9EQk5BTUUsXG4gIFVJRCAgICAgID0gREJfVVNFUk5BTUUsXG4gIFBXRCAgICAgID0gREJfUEFTU1dPUkQsXG4gIFBvcnQgICAgID0gREJfUE9SVClcblxuXG4jIGxvYWQgdGhlIFBvc3RncmVTUUwgZHJpdmVyXG5kcnYgPC0gZGJEcml2ZXIoXCJQb3N0Z3JlU1FMXCIpXG4jIGNvbm5lY3QgdG8gdGhlIGRhdGFiYXNlXG5jb24gPC0gZGJDb25uZWN0KGRydiwgZGJuYW1lID0gREJfREJOQU1FLFxuICAgICAgICAgICAgICAgICBob3N0ID0gREJfSE9TVCwgcG9ydCA9IERCX1BPUlQsXG4gICAgICAgICAgICAgICAgIHVzZXIgPSBEQl9VU0VSTkFNRSwgcGFzc3dvcmQgPSBEQl9QQVNTV09SRClcbmBgYCJ9 -->
+<pre class="r"><code>require(&quot;RPostgreSQL&quot;)
+library(DBI)
+library(tidyverse)
+library(dplyr)
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2sgTGFkZW7DtmZmbnVuZ3N6ZWl0ZW4gLyBFaW5zYXR6cGzDpG5lIg0Kb3V0cHV0OiBodG1sX25vdGVib29rDQotLS0NCg0KVGhpcyBpcyBhbiBbUiBNYXJrZG93bl0oaHR0cDovL3JtYXJrZG93bi5yc3R1ZGlvLmNvbSkgTm90ZWJvb2suIFdoZW4geW91IGV4ZWN1dGUgY29kZSB3aXRoaW4gdGhlIG5vdGVib29rLCB0aGUgcmVzdWx0cyBhcHBlYXIgYmVuZWF0aCB0aGUgY29kZS4gDQoNClRyeSBleGVjdXRpbmcgdGhpcyBjaHVuayBieSBjbGlja2luZyB0aGUgKlJ1biogYnV0dG9uIHdpdGhpbiB0aGUgY2h1bmsgb3IgYnkgcGxhY2luZyB5b3VyIGN1cnNvciBpbnNpZGUgaXQgYW5kIHByZXNzaW5nICpDdHJsK1NoaWZ0K0VudGVyKi4gDQoNCmBgYHtyfQ0KcGxvdChjYXJzKQ0KYGBgDQoNCkFkZCBhIG5ldyBjaHVuayBieSBjbGlja2luZyB0aGUgKkluc2VydCBDaHVuayogYnV0dG9uIG9uIHRoZSB0b29sYmFyIG9yIGJ5IHByZXNzaW5nICpDdHJsK0FsdCtJKi4NCg0KV2hlbiB5b3Ugc2F2ZSB0aGUgbm90ZWJvb2ssIGFuIEhUTUwgZmlsZSBjb250YWluaW5nIHRoZSBjb2RlIGFuZCBvdXRwdXQgd2lsbCBiZSBzYXZlZCBhbG9uZ3NpZGUgaXQgKGNsaWNrIHRoZSAqUHJldmlldyogYnV0dG9uIG9yIHByZXNzICpDdHJsK1NoaWZ0K0sqIHRvIHByZXZpZXcgdGhlIEhUTUwgZmlsZSkuDQoNClRoZSBwcmV2aWV3IHNob3dzIHlvdSBhIHJlbmRlcmVkIEhUTUwgY29weSBvZiB0aGUgY29udGVudHMgb2YgdGhlIGVkaXRvci4gQ29uc2VxdWVudGx5LCB1bmxpa2UgKktuaXQqLCAqUHJldmlldyogZG9lcyBub3QgcnVuIGFueSBSIGNvZGUgY2h1bmtzLiBJbnN0ZWFkLCB0aGUgb3V0cHV0IG9mIHRoZSBjaHVuayB3aGVuIGl0IHdhcyBsYXN0IHJ1biBpbiB0aGUgZWRpdG9yIGlzIGRpc3BsYXllZC4NCg==</div>
+# define the database connection string
+DB_HOST='server2053.cs.technik.fhnw.ch'
+DB_PORT = 5432
+DB_DBNAME =  'warenkorb_db' # or'bank_db' 
+DB_USERNAME = 'db_user'
+DB_PASSWORD = 'db_user_pw'
+
+con &lt;- DBI::dbConnect(
+  odbc::odbc(),
+  Driver   = &quot;PostgreSQL Unicode(x64)&quot;,
+  Server   = DB_HOST,
+  Database = DB_DBNAME,
+  UID      = DB_USERNAME,
+  PWD      = DB_PASSWORD,
+  Port     = DB_PORT)
+
+
+# load the PostgreSQL driver
+drv &lt;- dbDriver(&quot;PostgreSQL&quot;)
+# connect to the database
+con &lt;- dbConnect(drv, dbname = DB_DBNAME,
+                 host = DB_HOST, port = DB_PORT,
+                 user = DB_USERNAME, password = DB_PASSWORD)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-chunk-end -->
+
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2sgTGFkZW7DtmZmbnVuZ3N6ZWl0ZW4gLyBFaW5zYXR6cGzDpG5lIg0Kb3V0cHV0OiBodG1sX25vdGVib29rDQotLS0NCg0KYGBge3J9DQojIGFjdGl2YXRlIGluc3RhbGwgaWYgbmVlZGVkDQppbnN0YWxsLnBhY2thZ2VzKCJSUG9zdGdyZVNRTCIpDQppbnN0YWxsLnBhY2thZ2VzKCJ0aWR5dmVyc2UiKQ0KYGBgDQoNCg0KYGBge3J9DQpyZXF1aXJlKCJSUG9zdGdyZVNRTCIpDQpsaWJyYXJ5KERCSSkNCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShkcGx5cikNCg0KIyBkZWZpbmUgdGhlIGRhdGFiYXNlIGNvbm5lY3Rpb24gc3RyaW5nDQpEQl9IT1NUPSdzZXJ2ZXIyMDUzLmNzLnRlY2huaWsuZmhudy5jaCcNCkRCX1BPUlQgPSA1NDMyDQpEQl9EQk5BTUUgPSAgJ3dhcmVua29yYl9kYicgIyBvcidiYW5rX2RiJyANCkRCX1VTRVJOQU1FID0gJ2RiX3VzZXInDQpEQl9QQVNTV09SRCA9ICdkYl91c2VyX3B3Jw0KDQpjb24gPC0gREJJOjpkYkNvbm5lY3QoDQogIG9kYmM6Om9kYmMoKSwNCiAgRHJpdmVyICAgPSAiUG9zdGdyZVNRTCBVbmljb2RlKHg2NCkiLA0KICBTZXJ2ZXIgICA9IERCX0hPU1QsDQogIERhdGFiYXNlID0gREJfREJOQU1FLA0KICBVSUQgICAgICA9IERCX1VTRVJOQU1FLA0KICBQV0QgICAgICA9IERCX1BBU1NXT1JELA0KICBQb3J0ICAgICA9IERCX1BPUlQpDQoNCg0KIyBsb2FkIHRoZSBQb3N0Z3JlU1FMIGRyaXZlcg0KZHJ2IDwtIGRiRHJpdmVyKCJQb3N0Z3JlU1FMIikNCiMgY29ubmVjdCB0byB0aGUgZGF0YWJhc2UNCmNvbiA8LSBkYkNvbm5lY3QoZHJ2LCBkYm5hbWUgPSBEQl9EQk5BTUUsDQogICAgICAgICAgICAgICAgIGhvc3QgPSBEQl9IT1NULCBwb3J0ID0gREJfUE9SVCwNCiAgICAgICAgICAgICAgICAgdXNlciA9IERCX1VTRVJOQU1FLCBwYXNzd29yZCA9IERCX1BBU1NXT1JEKQ0KYGBgDQoNCg0KYGBge3J9DQoNCmBgYA0KDQpgYGB7cn0NCg0KYGBgDQoNCmBgYHtyfQ0KDQpgYGA=</div>
 
 
 
