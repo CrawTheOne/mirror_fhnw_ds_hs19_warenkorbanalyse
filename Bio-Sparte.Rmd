@@ -3,20 +3,9 @@ title: "Bio-Sparte"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
-
-
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
 ```{r setup}
 library(tidyverse)
+
 ```
 
 Datanbankverbindung aufbauen
@@ -64,4 +53,39 @@ ggplot(organic_count, notorganic_count ,mapping = aes(aes(y = tally(t_products))
   geom_bar()
 ```
 ```
+
+```{r}
+t_organic_products <- t_products %>% 
+  select(product_name) %>%
+  filter(str_detect(tolower(product_name), pattern = "organic"))
+```
+
+```{r}
+t_notorganic_products <- t_products %>% 
+  select(product_name) %>%
+  filter(!str_detect(tolower(product_name), pattern = "organic"))
+```
+
+```{r}
+head(t_organic_products)
+organic_count <- tally(t_organic_products)
+head(t_notorganic_products,7)
+notorganic_count <- tally(t_notorganic_products)
+```
+
+
+```{r}
+#ggplot(organic_count, notorganic_count ,mapping = aes(aes(y = tally(t_products)))) +
+#  geom_bar()
+```
+
+
+
+
+
+
+
+
+
+
 

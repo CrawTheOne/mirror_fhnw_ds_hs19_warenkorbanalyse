@@ -4,38 +4,12 @@ date: 2016-08-25
 output: html_document
 ---
 
-Zuerst benötigte Libraries laden (ggf. installieren)
-
-```{r setup}
-library(tidyverse)
-```
-
-Datanbankverbindung aufbauen
+### Setup script
 
 ```{r}
-DB_HOST='server2053.cs.technik.fhnw.ch'
-DB_PORT = 5432
-DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
-DB_USERNAME = 'db_user' 
-DB_PASSWORD = 'db_user_pw'
-
-con <- DBI::dbConnect(odbc::odbc(),
-                      Driver   = "PostgreSQL Unicode(x64)",
-                      Server   = DB_HOST,
-                      Database = DB_DBNAME,
-                      UID      = DB_USERNAME,
-                      PWD      = DB_PASSWORD,
-                      Port     = DB_PORT)
+source('DbConnection.R')
 ```
 
-Tabellen laden
-
-```{r}
-t_products <- tbl(con, "product")
-t_aisles <- tbl(con, "aisle")
-t_departments <- tbl(con, "department")
-t_orders <- tbl(con, "orders")
-```
 
 Namen der Gänge und Departments sind in eigenen Tabellen gespeichert und nur über die Produkte verknüpft. Zur Auswertung kann man diese Tabellen zusammenführen und die entsprechenden Ids entfernen.
 
