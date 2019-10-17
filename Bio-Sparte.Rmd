@@ -11,7 +11,7 @@ library(tidyverse)
 Datanbankverbindung aufbauen
 
 ```{r}
-DB_HOST='server2053.cs.technik.fhnw.ch'
+DB_HOST='server2053.cs.technik.fhnw.ch' #or 86.119.36.94
 DB_PORT = 5432
 DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
 DB_USERNAME = 'db_user' 
@@ -34,7 +34,7 @@ t_departments <- tbl(con, "department")
 t_orders <- tbl(con, "orders")
 t_orders_prior <- tbl(con, "orders_product_prior")
 t_orders_train <- tbl(con, "orders_product_train")
-
+```
 
 ```{r}
 t_notorganic_products <- t_products %>% 
@@ -49,9 +49,8 @@ notorganic_count <- tally(t_notorganic_products)
 
 
 ```{r}
-ggplot(organic_count, notorganic_count ,mapping = aes(aes(y = tally(t_products)))) +
-  geom_bar()
-```
+#ggplot(organic_count, notorganic_count ,mapping = aes(aes(y = tally(t_products)))) +
+#  geom_bar()
 ```
 
 ```{r}
