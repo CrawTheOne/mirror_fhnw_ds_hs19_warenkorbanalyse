@@ -7,6 +7,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
 
@@ -1483,7 +1484,7 @@ window.initializeCodeFolding = function(show) {
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
-    if (show)
+    if (show || $(this)[0].classList.contains('fold-show'))
       div.addClass('in');
     var id = 'rcode-643E0F36' + currentIndex++;
     div.attr('id', id);
@@ -1613,7 +1614,6 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
@@ -1711,28 +1711,10 @@ summary {
 }
 </style>
 
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-
-$(document).ready(function () {
-  $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
-  });
-});
-</script>
-
 <!-- code folding -->
 <style type="text/css">
 .code-folding-btn { margin-bottom: 4px; }
 </style>
-<script>
-$(document).ready(function () {
-  window.initializeSourceEmbed("Bio-Sparte.Rmd");
-  window.initializeCodeFolding("show" === "show");
-});
-</script>
 
 
 
@@ -1767,18 +1749,29 @@ $(document).ready(function () {
 
 
 <!-- rnb-text-begin -->
+<p>library aufrufen das wir nutzen wollen</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh0aWR5dmVyc2UpXG5gYGAifQ== -->
 <pre class="r"><code>library(tidyverse)</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXHUwMDFiWzMwbS0tIFx1MDAxYlsxbUF0dGFjaGluZyBwYWNrYWdlc1x1MDAxYlsyMm0gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZSAxLjIuMSAtLVx1MDAxYlszOW1cblx1MDAxYlszMG1cdTAwMWJbMzJtdlx1MDAxYlszMG0gXHUwMDFiWzM0bWdncGxvdDJcdTAwMWJbMzBtIDMuMi4xICAgICBcdTAwMWJbMzJtdlx1MDAxYlszMG0gXHUwMDFiWzM0bXB1cnJyICBcdTAwMWJbMzBtIDAuMy4yXG5cdTAwMWJbMzJtdlx1MDAxYlszMG0gXHUwMDFiWzM0bXRpYmJsZSBcdTAwMWJbMzBtIDIuMS4zICAgICBcdTAwMWJbMzJtdlx1MDAxYlszMG0gXHUwMDFiWzM0bWRwbHlyICBcdTAwMWJbMzBtIDAuOC4zXG5cdTAwMWJbMzJtdlx1MDAxYlszMG0gXHUwMDFiWzM0bXRpZHlyICBcdTAwMWJbMzBtIDEuMC4wICAgICBcdTAwMWJbMzJtdlx1MDAxYlszMG0gXHUwMDFiWzM0bXN0cmluZ3JcdTAwMWJbMzBtIDEuNC4wXG5cdTAwMWJbMzJtdlx1MDAxYlszMG0gXHUwMDFiWzM0bXJlYWRyICBcdTAwMWJbMzBtIDEuMy4xICAgICBcdTAwMWJbMzJtdlx1MDAxYlszMG0gXHUwMDFiWzM0bWZvcmNhdHNcdTAwMWJbMzBtIDAuNC4wXHUwMDFiWzM5bVxuXHUwMDFiWzMwbS0tIFx1MDAxYlsxbUNvbmZsaWN0c1x1MDAxYlsyMm0gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZV9jb25mbGljdHMoKSAtLVxuXHUwMDFiWzMxbXhcdTAwMWJbMzBtIFx1MDAxYlszNG1kcGx5clx1MDAxYlszMG06Olx1MDAxYlszMm1maWx0ZXIoKVx1MDAxYlszMG0gbWFza3MgXHUwMDFiWzM0bXN0YXRzXHUwMDFiWzMwbTo6ZmlsdGVyKClcblx1MDAxYlszMW14XHUwMDFiWzMwbSBcdTAwMWJbMzRtZHBseXJcdTAwMWJbMzBtOjpcdTAwMWJbMzJtbGFnKClcdTAwMWJbMzBtICAgIG1hc2tzIFx1MDAxYlszNG1zdGF0c1x1MDAxYlszMG06OmxhZygpXHUwMDFiWzM5bVxuIn0= -->
+<pre><code>[30m-- [1mAttaching packages[22m --------------------------------------- tidyverse 1.2.1 --[39m
+[30m[32mv[30m [34mggplot2[30m 3.2.1     [32mv[30m [34mpurrr  [30m 0.3.2
+[32mv[30m [34mtibble [30m 2.1.3     [32mv[30m [34mdplyr  [30m 0.8.3
+[32mv[30m [34mtidyr  [30m 1.0.0     [32mv[30m [34mstringr[30m 1.4.0
+[32mv[30m [34mreadr  [30m 1.3.1     [32mv[30m [34mforcats[30m 0.4.0[39m
+[30m-- [1mConflicts[22m ------------------------------------------ tidyverse_conflicts() --
+[31mx[30m [34mdplyr[30m::[32mfilter()[30m masks [34mstats[30m::filter()
+[31mx[30m [34mdplyr[30m::[32mlag()[30m    masks [34mstats[30m::lag()[39m</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>Datanbankverbindung aufbauen</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuREJfSE9TVD0nODYuMTE5LjM2Ljk0J1xuREJfUE9SVCA9IDU0MzJcbkRCX0RCTkFNRSA9ICd3YXJlbmtvcmJfZGInICMgb3IgJ3dhcmVua29yYl9kYidcbkRCX1VTRVJOQU1FID0gJ2RiX3VzZXInIFxuREJfUEFTU1dPUkQgPSAnZGJfdXNlcl9wdydcbmNvbiA8LSBEQkk6OmRiQ29ubmVjdChvZGJjOjpvZGJjKCksXG4gICAgICAgICAgICAgICAgICAgICAgRHJpdmVyICAgPSBcIlBvc3RncmVTUUwgVW5pY29kZSh4NjQpXCIsXG4gICAgICAgICAgICAgICAgICAgICAgU2VydmVyICAgPSBEQl9IT1NULFxuICAgICAgICAgICAgICAgICAgICAgIERhdGFiYXNlID0gREJfREJOQU1FLFxuICAgICAgICAgICAgICAgICAgICAgIFVJRCAgICAgID0gREJfVVNFUk5BTUUsXG4gICAgICAgICAgICAgICAgICAgICAgUFdEICAgICAgPSBEQl9QQVNTV09SRCxcbiAgICAgICAgICAgICAgICAgICAgICBQb3J0ICAgICA9IERCX1BPUlQpXG5gYGAifQ== -->
-<pre class="r"><code>DB_HOST='86.119.36.94'
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuREJfSE9TVD0nODYuMTE5LjM2Ljk0JyAjb3IgODYuMTE5LjM2Ljk0IG9yIHNlcnZlcjIwNTMuY3MudGVjaG5pay5maG53LmNoXG5EQl9QT1JUID0gNTQzMlxuREJfREJOQU1FID0gJ3dhcmVua29yYl9kYicgIyBvciAnd2FyZW5rb3JiX2RiJ1xuREJfVVNFUk5BTUUgPSAnZGJfdXNlcicgXG5EQl9QQVNTV09SRCA9ICdkYl91c2VyX3B3J1xuY29uIDwtIERCSTo6ZGJDb25uZWN0KG9kYmM6Om9kYmMoKSxcbiAgICAgICAgICAgICAgICAgICAgICBEcml2ZXIgICA9IFwiUG9zdGdyZVNRTCBVbmljb2RlKHg2NClcIixcbiAgICAgICAgICAgICAgICAgICAgICBTZXJ2ZXIgICA9IERCX0hPU1QsXG4gICAgICAgICAgICAgICAgICAgICAgRGF0YWJhc2UgPSBEQl9EQk5BTUUsXG4gICAgICAgICAgICAgICAgICAgICAgVUlEICAgICAgPSBEQl9VU0VSTkFNRSxcbiAgICAgICAgICAgICAgICAgICAgICBQV0QgICAgICA9IERCX1BBU1NXT1JELFxuICAgICAgICAgICAgICAgICAgICAgIFBvcnQgICAgID0gREJfUE9SVClcbmBgYCJ9 -->
+<pre class="r"><code>DB_HOST='86.119.36.94' #or 86.119.36.94 or server2053.cs.technik.fhnw.ch
 DB_PORT = 5432
 DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
 DB_USERNAME = 'db_user' 
@@ -1793,11 +1786,20 @@ con &lt;- DBI::dbConnect(odbc::odbc(),
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
+<p>Definition von tabellen auf variabeln in R um damit umzugehen</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudF9wcm9kdWN0cyA8LSB0YmwoY29uLCBcInByb2R1Y3RcIilcbnRfYWlzbGVzIDwtIHRibChjb24sIFwiYWlzbGVcIilcbnRfZGVwYXJ0bWVudHMgPC0gdGJsKGNvbiwgXCJkZXBhcnRtZW50XCIpXG50X29yZGVycyA8LSB0YmwoY29uLCBcIm9yZGVyc1wiKVxudF9vcmRlcnNfcHJpb3IgPC0gdGJsKGNvbiwgXCJvcmRlcnNfcHJvZHVjdF9wcmlvclwiKVxudF9vcmRlcnNfdHJhaW4gPC0gdGJsKGNvbiwgXCJvcmRlcnNfcHJvZHVjdF90cmFpblwiKVxuYGBgIn0= -->
-<pre class="r"><code>t_products &lt;- tbl(con, &quot;product&quot;)
-t_aisles &lt;- tbl(con, &quot;aisle&quot;)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudF9wcm9kdWN0cyA8LSB0YmwoY29uLCBcInByb2R1Y3RcIilcbmBgYCJ9 -->
+<pre class="r"><code>t_products &lt;- tbl(con, &quot;product&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiUmVnaXN0ZXJlZCBTMyBtZXRob2RzIG92ZXJ3cml0dGVuIGJ5ICdkYnBseXInOlxuICBtZXRob2QgICAgICAgICBmcm9tXG4gIHByaW50LnRibF9sYXp5ICAgICBcbiAgcHJpbnQudGJsX3NxbCAgICAgIFxuIn0= -->
+<pre><code>Registered S3 methods overwritten by 'dbplyr':
+  method         from
+  print.tbl_lazy     
+  print.tbl_sql      </code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudF9haXNsZXMgPC0gdGJsKGNvbiwgXCJhaXNsZVwiKVxudF9kZXBhcnRtZW50cyA8LSB0YmwoY29uLCBcImRlcGFydG1lbnRcIilcbnRfb3JkZXJzIDwtIHRibChjb24sIFwib3JkZXJzXCIpXG50X29yZGVyc19wcmlvciA8LSB0YmwoY29uLCBcIm9yZGVyc19wcm9kdWN0X3ByaW9yXCIpXG50X29yZGVyc190cmFpbiA8LSB0YmwoY29uLCBcIm9yZGVyc19wcm9kdWN0X3RyYWluXCIpXG5gYGAifQ== -->
+<pre class="r"><code>t_aisles &lt;- tbl(con, &quot;aisle&quot;)
 t_departments &lt;- tbl(con, &quot;department&quot;)
 t_orders &lt;- tbl(con, &quot;orders&quot;)
 t_orders_prior &lt;- tbl(con, &quot;orders_product_prior&quot;)
@@ -1805,32 +1807,19 @@ t_orders_train &lt;- tbl(con, &quot;orders_product_train&quot;)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
+<p>Wir wollen die Anzahl and organische produkte und nicht organische produkte erhalten und aufzeigen</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudF9ub3RvcmdhbmljX3Byb2R1Y3RzIDwtIHRfcHJvZHVjdHMgJT4lIFxuICBzZWxlY3QocHJvZHVjdF9uYW1lKSAlPiVcbiAgZmlsdGVyKCFzdHJfZGV0ZWN0KHRvbG93ZXIocHJvZHVjdF9uYW1lKSwgcGF0dGVybiA9IFwib3JnYW5pY1wiKSlcbmBgYCJ9 -->
-<pre class="r"><code>t_notorganic_products &lt;- t_products %&gt;% 
-  select(product_name) %&gt;%
-  filter(!str_detect(tolower(product_name), pattern = &quot;organic&quot;))</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxub3JnYW5pY19jb3VudFxuXG5gYGAifQ== -->
+<pre class="r"><code>organic_count
+</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDFcbiJ9 -->
+<pre><code>[1] 1</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGVhZCh0X25vdG9yZ2FuaWNfcHJvZHVjdHMsNylcbmBgYCJ9 -->
-<pre class="r"><code>head(t_notorganic_products,7)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbInRibF9Qb3N0Z3JlU1FMIiwidGJsX2RiaSIsInRibF9zcWwiLCJ0YmxfbGF6eSIsInRibCJdLCJuY29sIjoxLCJucm93IjpbXX0sInJkZiI6Ikg0c0lBQUFBQUFBQUJtVlNUVThDTVJBdElHdmNxQ0h4cEFmVGcxZEkvUG9CWkkyZUZBSiszVXpkSGRtR01rUGFydWpOdiswRm5JVnVvdXRoMnVtYjEzbDUwNDZ1bnMvajUxZ0kwUkt0cUNGYWJVNUZsQXhQenk3UGhOaHE4cWtodHNST3VYOHc2MkFOQ05IaDJBNkZveVNubEl6eUlNY0tzNFZPYzVrUVRUVzR3T2owamVtT1FUbEN4eHpqQTM0eW90ZkNlWGxESmdPVUQrZ1dBQjRRTWprZ1F6aVI5NkFDdHorZUtldmxBTUhKeENqbmRDcXYxVHRaN1JtNTFhamxTRStVSjA2ZXRNL2xJMlZUSlJNTGFzYWFSUXFoMGVHTkJSWkxjbTFBOXZIVDZ4bjhJZXhlMlU5NVJ3N2tRSnVBSFE4TEMrd3FKU3k4ZkdLdmRxTXlzQW9uVUJ0Vkc5V016Vy9HVklHN2MwdFprZnFYc2xpL2tKYU9haGZpVEhuVmU3UC82VHVXRnIxS1k0K2orY1hMYXJYNjVtMVpJMi9UM0dzZVBMUEsxNHRxS2cxYlNvVm5GYlZpcDhCU0p1dW1lWUhUN3VsRmpWdHFONzUrNVpzbzladXIwQ3NLdlNMQWljWnF5RzJ3bG14MU1Pb1ZxbEh2czdtMXQ5N2NhcXkrU3N5bzYzbnlxdUxGL09jcVpPMWFMSDhBUUhNUUc4OENBQUE9In0= -->
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["product_name"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"Chocolate Sandwich Cookies"},{"1":"All-Seasons Salt"},{"1":"Robust Golden Unsweetened Oolong Tea"},{"1":"Smart Ones Classic Favorites Mini Rigatoni With Vodka Cream Sauce"},{"1":"Green Chile Anytime Sauce"},{"1":"Dry Nose Oil"},{"1":"Pure Coconut Water With Orange"}],"options":{"columns":{"min":{},"max":[10],"total":[1]},"rows":{"min":[10],"max":[10],"total":["NA"]},"pages":{}}}
-  </script>
-</div>
-<!-- rnb-frame-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubm90b3JnYW5pY19jb3VudCA8LSB0YWxseSh0X25vdG9yZ2FuaWNfcHJvZHVjdHMpXG5gYGAifQ== -->
-<pre class="r"><code>notorganic_count &lt;- tally(t_notorganic_products)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
+<p>Jetzt wollen wir graphisch das verhältnis von Bio zu nicht Bio aufzeichnen</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2dncGxvdChvcmdhbmljX2NvdW50LCBub3RvcmdhbmljX2NvdW50ICxtYXBwaW5nID0gYWVzKGFlcyh5ID0gdGFsbHkodF9wcm9kdWN0cykpKSkgK1xuIyAgZ2VvbV9iYXIoKVxuYGBgIn0= -->
@@ -1840,67 +1829,8 @@ t_orders_train &lt;- tbl(con, &quot;orders_product_train&quot;)</code></pre>
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudF9vcmdhbmljX3Byb2R1Y3RzIDwtIHRfcHJvZHVjdHMgJT4lIFxuICBzZWxlY3QocHJvZHVjdF9uYW1lKSAlPiVcbiAgZmlsdGVyKHN0cl9kZXRlY3QodG9sb3dlcihwcm9kdWN0X25hbWUpLCBwYXR0ZXJuID0gXCJvcmdhbmljXCIpKVxuYGBgIn0= -->
-<pre class="r"><code>t_organic_products &lt;- t_products %&gt;% 
-  select(product_name) %&gt;%
-  filter(str_detect(tolower(product_name), pattern = &quot;organic&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudF9ub3RvcmdhbmljX3Byb2R1Y3RzIDwtIHRfcHJvZHVjdHMgJT4lIFxuICBzZWxlY3QocHJvZHVjdF9uYW1lKSAlPiVcbiAgZmlsdGVyKCFzdHJfZGV0ZWN0KHRvbG93ZXIocHJvZHVjdF9uYW1lKSwgcGF0dGVybiA9IFwib3JnYW5pY1wiKSlcbmBgYCJ9 -->
-<pre class="r"><code>t_notorganic_products &lt;- t_products %&gt;% 
-  select(product_name) %&gt;%
-  filter(!str_detect(tolower(product_name), pattern = &quot;organic&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGVhZCh0X29yZ2FuaWNfcHJvZHVjdHMpXG5gYGAifQ== -->
-<pre class="r"><code>head(t_organic_products)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbInRibF9Qb3N0Z3JlU1FMIiwidGJsX2RiaSIsInRibF9zcWwiLCJ0YmxfbGF6eSIsInRibCJdLCJuY29sIjoxLCJucm93IjpbXX0sInJkZiI6Ikg0c0lBQUFBQUFBQUJtVlNUVXZEUUJEZHBCL1NvRklvZUJQMjVFRnB3SWgvb0ZXdkxVM0IzbVJOdGtsSXVoc21HMnR2L2QwZUdtZlRiTEdSc0ptZG1mZjI4WFoyOGJKNmNsWU9JYVJET24yTGRIcTRKZjNwL05GNzlnanAycGhacEVzR09uNGphbFFYQ0JscVdOTzRtVUhFUkJMUVpRa3AzOUZKQ1JHSG91bmVtcTZmc3lqbVNpWFVWN3VNMHprckZHdEFEeWVRTENHVVpSVFQxMFNrRWdTZEFndFNQSTR1Wk1FM0RIWU5aV1FvMDR4dnVGQ0o0RWJ5ZmlZU0tlaGJ4cjRrVUlOYlNCVGtJZlU1MjNJZEJSN2NNTVlUSnZDamQ5VEhucUp6cVppU0orb1NhM0VpSXZyTzF0clorY1gwQk51Zzl2RlNUUEV5QnhtV2dmclF6VFloeUZqUkpqZ2hVOHhkdzMvNEFPVFdOUnBYdU93OS9xcXErc0Z3YUlFdlpLN1FQRUx0VVQyamN4VUx0RlF6Uk5KcURrdWhaY0p4RUpjaUhYdGVDNnUxcmYyZi9YRnBmYnRxUFlvK0Z4R094RGptQUJKTWtyRlBualhKTlpxcnZiazVKRUtaeThCcTRTcWNnc0U1Z2N4TXBYWk5EcjhmNmFjTnZRSUFBQT09In0= -->
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["product_name"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"Organic Turkey Burgers"},{"1":"Organic Spaghetti Style Pasta"},{"1":"Organic Sourdough Einkorn Crackers Rosemary"},{"1":"Organic Clementines"},{"1":"Onion Flavor Organic Roasted Seaweed Snack"},{"1":"Banana & Sweet Potato Organic Teething Wafers"}],"options":{"columns":{"min":{},"max":[10],"total":[1]},"rows":{"min":[10],"max":[10],"total":["NA"]},"pages":{}}}
-  </script>
-</div>
-<!-- rnb-frame-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxub3JnYW5pY19jb3VudCA8LSB0YWxseSh0X29yZ2FuaWNfcHJvZHVjdHMpXG5oZWFkKHRfbm90b3JnYW5pY19wcm9kdWN0cyw3KVxuYGBgIn0= -->
-<pre class="r"><code>organic_count &lt;- tally(t_organic_products)
-head(t_notorganic_products,7)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbInRibF9Qb3N0Z3JlU1FMIiwidGJsX2RiaSIsInRibF9zcWwiLCJ0YmxfbGF6eSIsInRibCJdLCJuY29sIjoxLCJucm93IjpbXX0sInJkZiI6Ikg0c0lBQUFBQUFBQUJtVlN3VTRDTVJBdElHdmNxQ0h4cEFmVGcxZEl4UGdCWkkyZUZBTXEzRXpkSGRtR01rUGFydWpOMy9ZaXprSTMwZlV3N2ZUTjY3eThhVWRYMDR0NEdnc2hXcUlWTlVTcnphbUlrdnZ6L21WZmlKMG1ueHBpUit5Vit6dXpqamFBRUIyTzNWQTRTWEpLeVNnUGNxd3dXK2swbHduUlhJTUxqTTdBbU80WWxDTjB6REUrNEdjamVpbWNsemRrTWtENWlHNEY0QUVoazBNeWhEUDVBQ3B3QitPRnNsNE9FWnhNakhKT3AvSmF2WkhWbnBGYmpWcU85RXg1NG1TaWZTNmZLSnNybVZoUUM5WXNVZ2lOam04c3NGaVNhd055Z0I5ZUwrQVBZZi9LZnNnN2NpQ0gyZ1RzOUw2d3dLNVN3c0xMQ1h1MVc1V2hWVGlEMnFqYXFCWnNmanVtQ3R4ZldzcUsxRCtYeGZxRnRIUlV1eEJueXF2ZXEvMVAzN08wNmxVYUJ4ek5UMTdXNi9VWGI5ODE4aTR0dmViQk02dDh2YWltMHJDbFZIaFdVU3QyQ2l4bHNtNmFGemp2OXZzMWJxbmQrUHlWYjZQVWI2NURyeWowaWdCbkdxc2h0OEZhc3RYQnFCZW9SbjNJNWpiZWVrdXJzZm9xTWFPdTU4bXJpaGZ6bjZ1UWpXdngvUU1SRmo5WHp3SUFBQT09In0= -->
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["product_name"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"Chocolate Sandwich Cookies"},{"1":"All-Seasons Salt"},{"1":"Robust Golden Unsweetened Oolong Tea"},{"1":"Smart Ones Classic Favorites Mini Rigatoni With Vodka Cream Sauce"},{"1":"Green Chile Anytime Sauce"},{"1":"Dry Nose Oil"},{"1":"Pure Coconut Water With Orange"}],"options":{"columns":{"min":{},"max":[10],"total":[1]},"rows":{"min":[10],"max":[10],"total":["NA"]},"pages":{}}}
-  </script>
-</div>
-<!-- rnb-frame-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubm90b3JnYW5pY19jb3VudCA8LSB0YWxseSh0X25vdG9yZ2FuaWNfcHJvZHVjdHMpXG5gYGAifQ== -->
-<pre class="r"><code>notorganic_count &lt;- tally(t_notorganic_products)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxub3Jnbm90b3JnXG5cbmBgYCJ9 -->
-<pre class="r"><code>orgnotorg
-</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiICAgIG9yZ2FuaWNfY291bnQgbm90b3JnYW5pY19jb3VudFxuc3JjIExpc3QsMiAgICAgICAgTGlzdCwyICAgICAgICAgIFxub3BzIExpc3QsNCAgICAgICAgTGlzdCw0ICAgICAgICAgIFxuIn0= -->
-<pre><code>    organic_count notorganic_count
-src List,2        List,2          
-ops List,4        List,4          </code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkJpby1TcGFydGUiDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQpgYGB7ciBzZXR1cH0NCmxpYnJhcnkodGlkeXZlcnNlKQ0KDQpgYGANCg0KRGF0YW5iYW5rdmVyYmluZHVuZyBhdWZiYXVlbg0KDQpgYGB7cn0NCkRCX0hPU1Q9J3NlcnZlcjIwNTMuY3MudGVjaG5pay5maG53LmNoJyAjb3IgODYuMTE5LjM2Ljk0DQpEQl9QT1JUID0gNTQzMg0KREJfREJOQU1FID0gJ3dhcmVua29yYl9kYicgIyBvciAnd2FyZW5rb3JiX2RiJw0KREJfVVNFUk5BTUUgPSAnZGJfdXNlcicgDQpEQl9QQVNTV09SRCA9ICdkYl91c2VyX3B3Jw0KDQpjb24gPC0gREJJOjpkYkNvbm5lY3Qob2RiYzo6b2RiYygpLA0KICAgICAgICAgICAgICAgICAgICAgIERyaXZlciAgID0gIlBvc3RncmVTUUwgVW5pY29kZSh4NjQpIiwNCiAgICAgICAgICAgICAgICAgICAgICBTZXJ2ZXIgICA9IERCX0hPU1QsDQogICAgICAgICAgICAgICAgICAgICAgRGF0YWJhc2UgPSBEQl9EQk5BTUUsDQogICAgICAgICAgICAgICAgICAgICAgVUlEICAgICAgPSBEQl9VU0VSTkFNRSwNCiAgICAgICAgICAgICAgICAgICAgICBQV0QgICAgICA9IERCX1BBU1NXT1JELA0KICAgICAgICAgICAgICAgICAgICAgIFBvcnQgICAgID0gREJfUE9SVCkNCmBgYA0KDQoNCmBgYHtyfQ0KdF9wcm9kdWN0cyA8LSB0YmwoY29uLCAicHJvZHVjdCIpDQp0X2Fpc2xlcyA8LSB0YmwoY29uLCAiYWlzbGUiKQ0KdF9kZXBhcnRtZW50cyA8LSB0YmwoY29uLCAiZGVwYXJ0bWVudCIpDQp0X29yZGVycyA8LSB0YmwoY29uLCAib3JkZXJzIikNCnRfb3JkZXJzX3ByaW9yIDwtIHRibChjb24sICJvcmRlcnNfcHJvZHVjdF9wcmlvciIpDQp0X29yZGVyc190cmFpbiA8LSB0YmwoY29uLCAib3JkZXJzX3Byb2R1Y3RfdHJhaW4iKQ0KYGBgDQoNCmBgYHtyfQ0KdF9ub3RvcmdhbmljX3Byb2R1Y3RzIDwtIHRfcHJvZHVjdHMgJT4lIA0KICBzZWxlY3QocHJvZHVjdF9uYW1lKSAlPiUNCiAgZmlsdGVyKCFzdHJfZGV0ZWN0KHRvbG93ZXIocHJvZHVjdF9uYW1lKSwgcGF0dGVybiA9ICJvcmdhbmljIikpDQpgYGANCg0KYGBge3J9DQpoZWFkKHRfbm90b3JnYW5pY19wcm9kdWN0cyw3KQ0Kbm90b3JnYW5pY19jb3VudCA8LSB0YWxseSh0X25vdG9yZ2FuaWNfcHJvZHVjdHMpDQpgYGANCg0KDQpgYGB7cn0NCiNnZ3Bsb3Qob3JnYW5pY19jb3VudCwgbm90b3JnYW5pY19jb3VudCAsbWFwcGluZyA9IGFlcyhhZXMoeSA9IHRhbGx5KHRfcHJvZHVjdHMpKSkpICsNCiMgIGdlb21fYmFyKCkNCmBgYA0KDQpgYGB7cn0NCnRfb3JnYW5pY19wcm9kdWN0cyA8LSB0X3Byb2R1Y3RzICU+JSANCiAgc2VsZWN0KHByb2R1Y3RfbmFtZSkgJT4lDQogIGZpbHRlcihzdHJfZGV0ZWN0KHRvbG93ZXIocHJvZHVjdF9uYW1lKSwgcGF0dGVybiA9ICJvcmdhbmljIikpDQpgYGANCg0KYGBge3J9DQp0X25vdG9yZ2FuaWNfcHJvZHVjdHMgPC0gdF9wcm9kdWN0cyAlPiUgDQogIHNlbGVjdChwcm9kdWN0X25hbWUpICU+JQ0KICBmaWx0ZXIoIXN0cl9kZXRlY3QodG9sb3dlcihwcm9kdWN0X25hbWUpLCBwYXR0ZXJuID0gIm9yZ2FuaWMiKSkNCmBgYA0KDQpgYGB7cn0NCmhlYWQodF9vcmdhbmljX3Byb2R1Y3RzKQ0Kb3JnYW5pY19jb3VudCA8LSB0YWxseSh0X29yZ2FuaWNfcHJvZHVjdHMpDQpoZWFkKHRfbm90b3JnYW5pY19wcm9kdWN0cyw3KQ0Kbm90b3JnYW5pY19jb3VudCA8LSB0YWxseSh0X25vdG9yZ2FuaWNfcHJvZHVjdHMpDQpgYGANCg0KDQpgYGB7cn0NCiNnZ3Bsb3Qob3JnYW5pY19jb3VudCwgbm90b3JnYW5pY19jb3VudCAsbWFwcGluZyA9IGFlcyhhZXMoeSA9IHRhbGx5KHRfcHJvZHVjdHMpKSkpICsNCiMgIGdlb21fYmFyKCkNCmBgYA0KDQoNCg0KDQoNCg0KDQoNCg0KDQoNCg==</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkJpby1TcGFydGUiDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQpsaWJyYXJ5IGF1ZnJ1ZmVuIGRhcyB3aXIgbnV0emVuIHdvbGxlbg0KDQpgYGB7ciBzZXR1cH0NCmxpYnJhcnkodGlkeXZlcnNlKQ0KDQpgYGANCg0KRGF0YW5iYW5rdmVyYmluZHVuZyBhdWZiYXVlbg0KDQpgYGB7cn0NCkRCX0hPU1Q9Jzg2LjExOS4zNi45NCcgI29yIDg2LjExOS4zNi45NCBvciBzZXJ2ZXIyMDUzLmNzLnRlY2huaWsuZmhudy5jaA0KREJfUE9SVCA9IDU0MzINCkRCX0RCTkFNRSA9ICd3YXJlbmtvcmJfZGInICMgb3IgJ3dhcmVua29yYl9kYicNCkRCX1VTRVJOQU1FID0gJ2RiX3VzZXInIA0KREJfUEFTU1dPUkQgPSAnZGJfdXNlcl9wdycNCg0KY29uIDwtIERCSTo6ZGJDb25uZWN0KG9kYmM6Om9kYmMoKSwNCiAgICAgICAgICAgICAgICAgICAgICBEcml2ZXIgICA9ICJQb3N0Z3JlU1FMIFVuaWNvZGUoeDY0KSIsDQogICAgICAgICAgICAgICAgICAgICAgU2VydmVyICAgPSBEQl9IT1NULA0KICAgICAgICAgICAgICAgICAgICAgIERhdGFiYXNlID0gREJfREJOQU1FLA0KICAgICAgICAgICAgICAgICAgICAgIFVJRCAgICAgID0gREJfVVNFUk5BTUUsDQogICAgICAgICAgICAgICAgICAgICAgUFdEICAgICAgPSBEQl9QQVNTV09SRCwNCiAgICAgICAgICAgICAgICAgICAgICBQb3J0ICAgICA9IERCX1BPUlQpDQpgYGANCg0KRGVmaW5pdGlvbiB2b24gdGFiZWxsZW4gYXVmIHZhcmlhYmVsbiBpbiBSIHVtIGRhbWl0IHVtenVnZWhlbg0KDQpgYGB7cn0NCnRfcHJvZHVjdHMgPC0gdGJsKGNvbiwgInByb2R1Y3QiKQ0KdF9haXNsZXMgPC0gdGJsKGNvbiwgImFpc2xlIikNCnRfZGVwYXJ0bWVudHMgPC0gdGJsKGNvbiwgImRlcGFydG1lbnQiKQ0KdF9vcmRlcnMgPC0gdGJsKGNvbiwgIm9yZGVycyIpDQp0X29yZGVyc19wcmlvciA8LSB0YmwoY29uLCAib3JkZXJzX3Byb2R1Y3RfcHJpb3IiKQ0KdF9vcmRlcnNfdHJhaW4gPC0gdGJsKGNvbiwgIm9yZGVyc19wcm9kdWN0X3RyYWluIikNCmBgYA0KV2lyIHdvbGxlbiBkaWUgQW56YWhsIGFuZCBvcmdhbmlzY2hlIHByb2R1a3RlIHVuZCBuaWNodCBvcmdhbmlzY2hlIHByb2R1a3RlIGVyaGFsdGVuIHVuZCBhdWZ6ZWlnZW4NCg0KYGBge3J9DQp0X29yZ2FuaWNfcHJvZHVjdHMgPC0gdF9wcm9kdWN0cyAlPiUgDQogIHNlbGVjdChwcm9kdWN0X25hbWUpICU+JQ0KICBmaWx0ZXIoc3RyX2RldGVjdCh0b2xvd2VyKHByb2R1Y3RfbmFtZSksIHBhdHRlcm4gPSAib3JnYW5pYyIpKQ0KDQp0X25vdG9yZ2FuaWNfcHJvZHVjdHMgPC0gdF9wcm9kdWN0cyAlPiUgDQogIHNlbGVjdChwcm9kdWN0X25hbWUpICU+JQ0KICBmaWx0ZXIoIXN0cl9kZXRlY3QodG9sb3dlcihwcm9kdWN0X25hbWUpLCBwYXR0ZXJuID0gIm9yZ2FuaWMiKSkNCg0Kb3JnYW5pY19jb3VudCA8LSB0YWxseSh0X29yZ2FuaWNfcHJvZHVjdHMpDQpub3RvcmdhbmljX2NvdW50IDwtIHRhbGx5KHRfbm90b3JnYW5pY19wcm9kdWN0cykNCmBgYA0KDQpKZXR6dCB3b2xsZW4gd2lyIGdyYXBoaXNjaCBkYXMgdmVyaMOkbHRuaXMgdm9uIEJpbyB6dSBuaWNodCBCaW8gYXVmemVpY2huZW4NCg0KYGBge3J9DQojZ2dwbG90KG9yZ2FuaWNfY291bnQsIG5vdG9yZ2FuaWNfY291bnQgLG1hcHBpbmcgPSBhZXMoYWVzKHkgPSB0YWxseSh0X3Byb2R1Y3RzKSkpKSArDQojICBnZW9tX2JhcigpDQpgYGANCg0KDQoNCg0KDQoNCg0KDQoNCg0KDQoNCg0KDQo=</div>
 
 
 
@@ -1929,6 +1859,29 @@ $(document).ready(function () {
 });
 
 </script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeSourceEmbed("Bio-Sparte.Rmd");
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
