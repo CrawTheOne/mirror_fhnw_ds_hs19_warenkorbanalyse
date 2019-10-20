@@ -1769,10 +1769,11 @@ $(document).ready(function () {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhY3RpdmF0ZSBpbnN0YWxsIGlmIG5lZWRlZFxuaW5zdGFsbC5wYWNrYWdlcyhcIlJQb3N0Z3JlU1FMXCIpXG5pbnN0YWxsLnBhY2thZ2VzKFwidGlkeXZlcnNlXCIpXG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhY3RpdmF0ZSBpbnN0YWxsIGlmIG5lZWRlZFxuI2luc3RhbGwucGFja2FnZXMoXCJSUG9zdGdyZVNRTFwiKVxuI2luc3RhbGwucGFja2FnZXMoXCJ0aWR5dmVyc2VcIilcbiNpbnN0YWxsLnBhY2thZ2VzKFwiZHBseXJcIilcbmBgYCJ9 -->
 <pre class="r"><code># activate install if needed
-install.packages(&quot;RPostgreSQL&quot;)
-install.packages(&quot;tidyverse&quot;)</code></pre>
+#install.packages(&quot;RPostgreSQL&quot;)
+#install.packages(&quot;tidyverse&quot;)
+#install.packages(&quot;dplyr&quot;)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1812,17 +1813,64 @@ con &lt;- dbConnect(drv, dbname = DB_DBNAME,
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYWlzbGUgPC0gZGJHZXRRdWVyeShjb24sICBcIlNFTEVDVCAqIEZyb20gYWlzbGUgTElNSVQgODAwMFwiKVxuZGVwYXJ0bWVudCA8LSBkYkdldFF1ZXJ5KGNvbiwgIFwiU0VMRUNUICogRnJvbSBkZXBhcnRtZW50IExJTUlUIDgwMDBcIilcbm9yZGVycyA8LSBkYkdldFF1ZXJ5KGNvbiwgIFwiU0VMRUNUICogRnJvbSBvcmRlcnMgTElNSVQgODAwMFwiKVxub3JkZXJzX3Byb2R1Y3RfcHJpb3IgPC0gZGJHZXRRdWVyeShjb24sICBcIlNFTEVDVCAqIEZyb20gb3JkZXJzX3Byb2R1Y3RfcHJpb3IgTElNSVQgODAwMFwiKVxuXG5gYGAifQ== -->
+<pre class="r"><code>aisle &lt;- dbGetQuery(con,  &quot;SELECT * From aisle LIMIT 8000&quot;)
+department &lt;- dbGetQuery(con,  &quot;SELECT * From department LIMIT 8000&quot;)
+orders &lt;- dbGetQuery(con,  &quot;SELECT * From orders LIMIT 8000&quot;)
+orders_product_prior &lt;- dbGetQuery(con,  &quot;SELECT * From orders_product_prior LIMIT 8000&quot;)
+</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2Fpc2xlX2RiIDwtIHRibChjb24sIFwiYWlzbGVcIilcbmBgYCJ9 -->
+<pre class="r"><code>#aisle_db &lt;- tbl(con, &quot;aisle&quot;)</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG5nZ3Bsb3QoZGF0YSA9IG9yZGVycykgKyBcbiAgZ2VvbV9iYXIobWFwcGluZyA9IGFlcyh4ID0gb3JkZXJfaG91cl9vZl9kYXkpKVxuYGBgIn0= -->
+<pre class="r"><code>
+ggplot(data = orders) + 
+  geom_bar(mapping = aes(x = order_hour_of_day))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2dwbG90KGRhdGEgPSBvcmRlcnMpICsgXG4gIGdlb21fYmFyKG1hcHBpbmcgPSBhZXMoeCA9IG9yZGVyX2RvdykpXG5gYGAifQ== -->
+<pre class="r"><code>ggplot(data = orders) + 
+  geom_bar(mapping = aes(x = order_dow))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2dwbG90KGRhdGEgPSBvcmRlcnMpICsgXG4gIGdlb21fYmFyKG1hcHBpbmcgPSBhZXMoeCA9IG9yZGVyX2hvdXJfb2ZfZGF5KSkgK1xuICBmYWNldF93cmFwKH4gb3JkZXJfZG93LCBucm93ID0gMylcbmBgYCJ9 -->
+<pre class="r"><code>ggplot(data = orders) + 
+  geom_bar(mapping = aes(x = order_hour_of_day)) +
+  facet_wrap(~ order_dow, nrow = 3)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2dwbG90KGRhdGEgPSBvcmRlcnNfcHJvZHVjdF9wcmlvcikgKyBcbiAgZ2VvbV92aW9saW4obWFwcGluZyA9IGFlcyh4ID0gb3JkZXJzX2lkLCB5ID0gcHJvZHVjdF9pZCkpXG5gYGAifQ== -->
+<pre class="r"><code>ggplot(data = orders_product_prior) + 
+  geom_violin(mapping = aes(x = orders_id, y = product_id))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBjbG9zZSB0aGUgY29ubmVjdGlvbiAoZG9uJ3QgZm9yZ2V0IHRvIGNsZWFudXApXG5kYkRpc2Nvbm5lY3QoY29uKVxuZGJVbmxvYWREcml2ZXIoZHJ2KVxuYGBgIn0= -->
+<pre class="r"><code># close the connection (don't forget to cleanup)
+dbDisconnect(con)
+dbUnloadDriver(drv)</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2sgTGFkZW7DtmZmbnVuZ3N6ZWl0ZW4gLyBFaW5zYXR6cGzDpG5lIg0Kb3V0cHV0OiBodG1sX25vdGVib29rDQotLS0NCg0KYGBge3J9DQojIGFjdGl2YXRlIGluc3RhbGwgaWYgbmVlZGVkDQppbnN0YWxsLnBhY2thZ2VzKCJSUG9zdGdyZVNRTCIpDQppbnN0YWxsLnBhY2thZ2VzKCJ0aWR5dmVyc2UiKQ0KYGBgDQoNCg0KYGBge3J9DQpyZXF1aXJlKCJSUG9zdGdyZVNRTCIpDQpsaWJyYXJ5KERCSSkNCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShkcGx5cikNCg0KIyBkZWZpbmUgdGhlIGRhdGFiYXNlIGNvbm5lY3Rpb24gc3RyaW5nDQpEQl9IT1NUPSdzZXJ2ZXIyMDUzLmNzLnRlY2huaWsuZmhudy5jaCcNCkRCX1BPUlQgPSA1NDMyDQpEQl9EQk5BTUUgPSAgJ3dhcmVua29yYl9kYicgIyBvcidiYW5rX2RiJyANCkRCX1VTRVJOQU1FID0gJ2RiX3VzZXInDQpEQl9QQVNTV09SRCA9ICdkYl91c2VyX3B3Jw0KDQpjb24gPC0gREJJOjpkYkNvbm5lY3QoDQogIG9kYmM6Om9kYmMoKSwNCiAgRHJpdmVyICAgPSAiUG9zdGdyZVNRTCBVbmljb2RlKHg2NCkiLA0KICBTZXJ2ZXIgICA9IERCX0hPU1QsDQogIERhdGFiYXNlID0gREJfREJOQU1FLA0KICBVSUQgICAgICA9IERCX1VTRVJOQU1FLA0KICBQV0QgICAgICA9IERCX1BBU1NXT1JELA0KICBQb3J0ICAgICA9IERCX1BPUlQpDQoNCg0KIyBsb2FkIHRoZSBQb3N0Z3JlU1FMIGRyaXZlcg0KZHJ2IDwtIGRiRHJpdmVyKCJQb3N0Z3JlU1FMIikNCiMgY29ubmVjdCB0byB0aGUgZGF0YWJhc2UNCmNvbiA8LSBkYkNvbm5lY3QoZHJ2LCBkYm5hbWUgPSBEQl9EQk5BTUUsDQogICAgICAgICAgICAgICAgIGhvc3QgPSBEQl9IT1NULCBwb3J0ID0gREJfUE9SVCwNCiAgICAgICAgICAgICAgICAgdXNlciA9IERCX1VTRVJOQU1FLCBwYXNzd29yZCA9IERCX1BBU1NXT1JEKQ0KYGBgDQoNCg0KYGBge3J9DQoNCmBgYA0KDQpgYGB7cn0NCg0KYGBgDQoNCmBgYHtyfQ0KDQpgYGA=</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2sgTGFkZW7DtmZmbnVuZ3N6ZWl0ZW4gLyBFaW5zYXR6cGzDpG5lIg0Kb3V0cHV0OiBodG1sX25vdGVib29rDQplZGl0b3Jfb3B0aW9uczogDQogIGNodW5rX291dHB1dF90eXBlOiBpbmxpbmUNCi0tLQ0KDQpgYGB7cn0NCiMgYWN0aXZhdGUgaW5zdGFsbCBpZiBuZWVkZWQNCiNpbnN0YWxsLnBhY2thZ2VzKCJSUG9zdGdyZVNRTCIpDQojaW5zdGFsbC5wYWNrYWdlcygidGlkeXZlcnNlIikNCiNpbnN0YWxsLnBhY2thZ2VzKCJkcGx5ciIpDQpgYGANCg0KDQpgYGB7cn0NCnJlcXVpcmUoIlJQb3N0Z3JlU1FMIikNCmxpYnJhcnkoREJJKQ0KbGlicmFyeSh0aWR5dmVyc2UpDQpsaWJyYXJ5KGRwbHlyKQ0KDQojIGRlZmluZSB0aGUgZGF0YWJhc2UgY29ubmVjdGlvbiBzdHJpbmcNCkRCX0hPU1Q9J3NlcnZlcjIwNTMuY3MudGVjaG5pay5maG53LmNoJw0KREJfUE9SVCA9IDU0MzINCkRCX0RCTkFNRSA9ICAnd2FyZW5rb3JiX2RiJyAjIG9yJ2JhbmtfZGInIA0KREJfVVNFUk5BTUUgPSAnZGJfdXNlcicNCkRCX1BBU1NXT1JEID0gJ2RiX3VzZXJfcHcnDQoNCmNvbiA8LSBEQkk6OmRiQ29ubmVjdCgNCiAgb2RiYzo6b2RiYygpLA0KICBEcml2ZXIgICA9ICJQb3N0Z3JlU1FMIFVuaWNvZGUoeDY0KSIsDQogIFNlcnZlciAgID0gREJfSE9TVCwNCiAgRGF0YWJhc2UgPSBEQl9EQk5BTUUsDQogIFVJRCAgICAgID0gREJfVVNFUk5BTUUsDQogIFBXRCAgICAgID0gREJfUEFTU1dPUkQsDQogIFBvcnQgICAgID0gREJfUE9SVCkNCg0KDQojIGxvYWQgdGhlIFBvc3RncmVTUUwgZHJpdmVyDQpkcnYgPC0gZGJEcml2ZXIoIlBvc3RncmVTUUwiKQ0KIyBjb25uZWN0IHRvIHRoZSBkYXRhYmFzZQ0KY29uIDwtIGRiQ29ubmVjdChkcnYsIGRibmFtZSA9IERCX0RCTkFNRSwNCiAgICAgICAgICAgICAgICAgaG9zdCA9IERCX0hPU1QsIHBvcnQgPSBEQl9QT1JULA0KICAgICAgICAgICAgICAgICB1c2VyID0gREJfVVNFUk5BTUUsIHBhc3N3b3JkID0gREJfUEFTU1dPUkQpDQpgYGANCg0KYGBge3J9DQphaXNsZSA8LSBkYkdldFF1ZXJ5KGNvbiwgICJTRUxFQ1QgKiBGcm9tIGFpc2xlIExJTUlUIDgwMDAiKQ0KZGVwYXJ0bWVudCA8LSBkYkdldFF1ZXJ5KGNvbiwgICJTRUxFQ1QgKiBGcm9tIGRlcGFydG1lbnQgTElNSVQgODAwMCIpDQpvcmRlcnMgPC0gZGJHZXRRdWVyeShjb24sICAiU0VMRUNUICogRnJvbSBvcmRlcnMgTElNSVQgODAwMCIpDQpvcmRlcnNfcHJvZHVjdF9wcmlvciA8LSBkYkdldFF1ZXJ5KGNvbiwgICJTRUxFQ1QgKiBGcm9tIG9yZGVyc19wcm9kdWN0X3ByaW9yIExJTUlUIDgwMDAiKQ0KDQpgYGANCg0KYGBge3J9DQojYWlzbGVfZGIgPC0gdGJsKGNvbiwgImFpc2xlIikNCmBgYA0KDQpgYGB7cn0NCg0KZ2dwbG90KGRhdGEgPSBvcmRlcnMpICsgDQogIGdlb21fYmFyKG1hcHBpbmcgPSBhZXMoeCA9IG9yZGVyX2hvdXJfb2ZfZGF5KSkNCmBgYCAgDQpgYGB7cn0NCmdncGxvdChkYXRhID0gb3JkZXJzKSArIA0KICBnZW9tX2JhcihtYXBwaW5nID0gYWVzKHggPSBvcmRlcl9kb3cpKQ0KYGBgDQoNCmBgYHtyfQ0KZ2dwbG90KGRhdGEgPSBvcmRlcnMpICsgDQogIGdlb21fYmFyKG1hcHBpbmcgPSBhZXMoeCA9IG9yZGVyX2hvdXJfb2ZfZGF5KSkgKw0KICBmYWNldF93cmFwKH4gb3JkZXJfZG93LCBucm93ID0gMykNCmBgYA0KDQoNCg0KYGBge3J9DQpnZ3Bsb3QoZGF0YSA9IG9yZGVyc19wcm9kdWN0X3ByaW9yKSArIA0KICBnZW9tX3Zpb2xpbihtYXBwaW5nID0gYWVzKHggPSBvcmRlcnNfaWQsIHkgPSBwcm9kdWN0X2lkKSkNCmBgYA0KDQpgYGB7cn0NCiMgY2xvc2UgdGhlIGNvbm5lY3Rpb24gKGRvbid0IGZvcmdldCB0byBjbGVhbnVwKQ0KZGJEaXNjb25uZWN0KGNvbikNCmRiVW5sb2FkRHJpdmVyKGRydikNCmBgYA==</div>
 
 
 

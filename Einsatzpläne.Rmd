@@ -1,12 +1,15 @@
 ---
 title: "R Notebook Ladenöffnungszeiten / Einsatzpläne"
 output: html_notebook
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r}
 # activate install if needed
-install.packages("RPostgreSQL")
-install.packages("tidyverse")
+#install.packages("RPostgreSQL")
+#install.packages("tidyverse")
+#install.packages("dplyr")
 ```
 
 
@@ -41,15 +44,43 @@ con <- dbConnect(drv, dbname = DB_DBNAME,
                  user = DB_USERNAME, password = DB_PASSWORD)
 ```
 
-
 ```{r}
+aisle <- dbGetQuery(con,  "SELECT * From aisle LIMIT 8000")
+department <- dbGetQuery(con,  "SELECT * From department LIMIT 8000")
+orders <- dbGetQuery(con,  "SELECT * From orders LIMIT 8000")
+orders_product_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior LIMIT 8000")
 
 ```
 
 ```{r}
-
+#aisle_db <- tbl(con, "aisle")
 ```
 
 ```{r}
 
+ggplot(data = orders) + 
+  geom_bar(mapping = aes(x = order_hour_of_day))
+```  
+```{r}
+ggplot(data = orders) + 
+  geom_bar(mapping = aes(x = order_dow))
+```
+
+```{r}
+ggplot(data = orders) + 
+  geom_bar(mapping = aes(x = order_hour_of_day)) +
+  facet_wrap(~ order_dow, nrow = 3)
+```
+
+
+
+```{r}
+ggplot(data = orders_product_prior) + 
+  geom_violin(mapping = aes(x = orders_id, y = product_id))
+```
+
+```{r}
+# close the connection (don't forget to cleanup)
+dbDisconnect(con)
+dbUnloadDriver(drv)
 ```
