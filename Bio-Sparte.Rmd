@@ -58,9 +58,20 @@ Jetzt wollen wir graphisch das verhältnis von Bio zu nicht Bio aufzeichnen
 ```{r}
 #ggplot(organic_count, notorganic_count ,mapping = aes(aes(y = tally(t_products)))) +
 #  geom_bar()
+organic_count
 ```
 
+Changes Mario und Riccard:
 
+```{r}
+t_products %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+  count() %>%
+  mutate(n = as.integer(n)) %>%
+  ggplot() +
+    geom_col(aes(x=organic,y=n))
+```
 
 
 
