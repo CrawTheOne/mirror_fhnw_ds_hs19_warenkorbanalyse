@@ -7,11 +7,34 @@ output: html_notebook
 
 ## Load libraries and connect to database
 
-```{r, echo=FALSE}
+```{r setup, echo=FALSE}
 library(arules)
 library(arulesViz)
 
-source('DbConnection.R')
+library(tidyverse)
+
+DB_HOST='server2053.cs.technik.fhnw.ch'
+DB_PORT = 5432
+DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
+DB_USERNAME = 'db_user' 
+DB_PASSWORD = 'db_user_pw'
+
+con <- DBI::dbConnect(odbc::odbc(),
+                      Driver   = "PostgreSQL Unicode(x64)",
+                      Server   = DB_HOST,
+                      Database = DB_DBNAME,
+                      UID      = DB_USERNAME,
+                      PWD      = DB_PASSWORD,
+                      Port     = DB_PORT)
+
+knitr::opts_chunk$set(connection = "con")
+
+t_products <- tbl(con, "product")
+t_aisles <- tbl(con, "aisle")
+t_departments <- tbl(con, "department")
+t_orders <- tbl(con, "orders")
+t_orders_product = tbl(con, "orders_product_prior") %>%
+  union_all(tbl(con, "orders_product_train"))
 ```
 
 
@@ -66,26 +89,34 @@ support_threshold
 ```
 
 
-Für die Warenkorbanalyse benötigen wir die Transaktionen als Key und kommasepariert alle Produkte, welche zu dieser Transaktion gehören.
+Für die Warenkorbanalyse benötigen wir die Transaktionen als Key und kommasepariert alle Produkte, welche zu dieser Transaktion gehören. Dies erreichen wir mit folgendem SQL Query:
+
+```{sql,concection=con,output.var=order_to_product}
+SELECT o.orders_id, p.product_name
+FROM orders o
+JOIN (
+    SELECT *
+    FROM orders_product_prior opp
+    UNION ALL
+    SELECT *
+    FROM orders_product_train opt
+    ) AS op
+    ON op.orders_id = o.orders_id
+JOIN product p ON p.product_id = op.product_id
+WHERE o.eval_set = 'prior'
+```
+
+
 
 ```{r}
-baskets <- t_orders_product %>%
-  left_join(t_products, "product_id") %>%
+baskets <- order_to_product %>% 
   group_by(orders_id) %>%
-  summarise(items = string_agg(product_name, ',')) %>%
-  selet(items)
+  summarise(items = as.vector(list(product_name)))
 ```
 
-Da das relativ viele Daten sind, lohnt es sich diese zwischen zu speichern:
 
 ```{r}
-write.csv(baskets, file="baskets.csv", row.names = FALSE)
-```
-
-Jetzt kann man diese aus der gespeicherten CSV Datei benutzen:
-
-```{r}
-transactions <- read.transactions('baskets.csv', format = 'basket', sep=',')
+transactions <- as(baskets$items, "transactions")
 ```
 
 ```{r}
@@ -100,8 +131,8 @@ arules::itemFrequencyPlot(transactions,
 
 
 ```{r}
-rules <- transactions %>%
-  apriori(parameter = list(support = 0.005, confidence = 0.25))
+rules <- apriori(transactions, parameter = list(supp = 0.0025, conf = 0.2, target="rules"))
+rules <- rules[!is.redundant(rules)]
 ```
 
 ```{r}
