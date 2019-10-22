@@ -43,3 +43,6 @@ vignettes/*.pdf
 
 ### nb.html files ###
 *.nb.html
+
+### data cache ###
+/data/

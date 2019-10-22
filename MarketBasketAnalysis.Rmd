@@ -14,12 +14,6 @@ library(arulesViz)
 source('DbConnection.R')
 ```
 
-## Damit manche Queries nicht immer und immer wieder laufen müssen, cachen wir diese in einer temporären SQLite Instanz
-
-```{r}
-sqlite_con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
-```
-
 
 # Warenkorbanalyse
 
@@ -49,13 +43,11 @@ total_products_bought <- orders_products %>%
 Daraus können wir den Support pro Produkt berechnen und danach sortieren. Damit haben wir die Reihenfolge der meistverkauften Produkte incl. des Anteils.
 
 ```{r}
-support <- orders_products %>%
+t_support <- orders_products %>%
   group_by(product_name) %>%
   summarise(n = n()) %>%
   mutate(support = as.numeric(n)/total_products_bought) %>%
   arrange(desc(support))
-
-t_support <- copy_to(sqlite_con, support, "support")
 ```
 
 Als Threshold für den Apriori-Algorithmus können wir nun den Median des Supports bestimmen.
@@ -68,7 +60,7 @@ t_support
 ```{r}
 support_threshold <- t_support %>%
   summarise(median = median(support)) %>%
-  dbplyr::sql_render()
+  pull(median)
 
 support_threshold
 ```
@@ -80,7 +72,43 @@ Für die Warenkorbanalyse benötigen wir die Transaktionen als Key und kommasepa
 baskets <- t_orders_product %>%
   left_join(t_products, "product_id") %>%
   group_by(orders_id) %>%
-  summarise(products = string_agg(product_name, ',')) %>%
-  
+  summarise(items = string_agg(product_name, ',')) %>%
+  selet(items)
 ```
 
+Da das relativ viele Daten sind, lohnt es sich diese zwischen zu speichern:
+
+```{r}
+write.csv(baskets, file="baskets.csv", row.names = FALSE)
+```
+
+Jetzt kann man diese aus der gespeicherten CSV Datei benutzen:
+
+```{r}
+transactions <- read.transactions('baskets.csv', format = 'basket', sep=',')
+```
+
+```{r}
+library("RColorBrewer")
+arules::itemFrequencyPlot(transactions,
+   topN=30,
+   col=brewer.pal(8,'Pastel1'),
+   main='Relative Item Frequency Plot',
+   type="relative",
+   ylab="Item Frequency (Relative)") 
+```
+
+
+```{r}
+rules <- transactions %>%
+  apriori(parameter = list(support = 0.005, confidence = 0.25))
+```
+
+```{r}
+rules_tib <- 
+  tibble( lhs = labels( lhs(rules) ), 
+          rhs = labels( rhs(rules) ), 
+          lift = (quality(rules) %>% pull(lift))) %>%
+  arrange(-lift)
+rules_tib
+```
