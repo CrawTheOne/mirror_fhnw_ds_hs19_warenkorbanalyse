@@ -11,8 +11,7 @@ editor_options:
 #install.packages("tidyverse")
 #install.packages("dplyr")
 ```
-
-
+#Create a connection to the Database
 ```{r}
 require("RPostgreSQL")
 library(DBI)
@@ -45,28 +44,32 @@ con <- dbConnect(drv, dbname = DB_DBNAME,
 ```
 
 ```{r}
-aisle <- dbGetQuery(con,  "SELECT * From aisle LIMIT 30000")
-department <- dbGetQuery(con,  "SELECT * From department LIMIT 30000")
-orders <- dbGetQuery(con,  "SELECT * From orders LIMIT 30000")
-orders_product_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior LIMIT 30000")
-orders_product_train <- dbGetQuery(con,  "SELECT * From orders_product_train LIMIT 30000")
-product <- dbGetQuery(con,  "SELECT * From product LIMIT 30000")
+aisle <- dbGetQuery(con,  "SELECT * From aisle")
+department <- dbGetQuery(con,  "SELECT * From department")
+orders <- dbGetQuery(con,  "SELECT * From orders")
+orders_product_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior")
+orders_product_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
+product <- dbGetQuery(con,  "SELECT * From product")
 ```
 
 ```{r}
 #aisle_db <- tbl(con, "aisle")
 ```
 
+#Plot orders over 24 hours
 ```{r}
 
 ggplot(data = orders) + 
   geom_bar(mapping = aes(x = order_hour_of_day))
 ```  
+
+#Plot orders over 7 days
 ```{r}
 ggplot(data = orders) + 
   geom_bar(mapping = aes(x = order_dow))
 ```
 
+# Plot orders over 24 hours and 7 days
 ```{r}
 ggplot(data = orders) + 
   geom_bar(mapping = aes(x = order_hour_of_day)) +
@@ -74,16 +77,30 @@ ggplot(data = orders) +
 ```
 
 
-
 ```{r}
-items_per_order <- orders_product_prior %>% 
+
+items_per_order <- bind_rows(orders_product_prior, orders_product_train) %>% 
   group_by(orders_id) %>%
   summarise(nr_of_items = last(add_to_cart_order))
 
 ggplot(data = items_per_order) + 
   geom_bar(mapping = aes(x = nr_of_items)) +
-  xlab("Items per order") + ylab("Nr of orders")
+  xlab("Items per order") + ylab("Nr of orders") 
+```
 
+
+```{r}
+
+product_sales_per_week <- orders %>%
+  group_by(orders_id) %>%
+  left_join(select(items_per_order, orders_id, nr_of_items),by="orders_id")
+
+```
+
+```{r}
+ggplot(data = product_sales_per_week) + 
+  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_items)) +
+  facet_wrap(~ order_dow,  nrow = 3)
 ```
 
 ```{r}
