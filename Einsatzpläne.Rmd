@@ -4,20 +4,24 @@ output: html_notebook
 editor_options: 
   chunk_output_type: inline
 ---
-
+#Install packages if necessary
 ```{r}
 # activate install if needed
 #install.packages("RPostgreSQL")
 #install.packages("tidyverse")
 #install.packages("dplyr")
 ```
-#Create a connection to the Database
+
+#install libraries
 ```{r}
 require("RPostgreSQL")
 library(DBI)
 library(tidyverse)
 library(dplyr)
+```
 
+#Create a connection to the Database
+```{r}
 # define the database connection string
 DB_HOST='server2053.cs.technik.fhnw.ch'
 DB_PORT = 5432
@@ -55,21 +59,21 @@ product <- dbGetQuery(con,  "SELECT * From product")
 ```{r}
 #aisle_db <- tbl(con, "aisle")
 ```
-
-#Plot orders over 24 hours
+#Plots (ggplot2)
+##Orders over 24 hours
 ```{r}
 
 ggplot(data = orders) + 
   geom_bar(mapping = aes(x = order_hour_of_day))
 ```  
 
-#Plot orders over 7 days
+##Orders over 7 days
 ```{r}
 ggplot(data = orders) + 
   geom_bar(mapping = aes(x = order_dow))
 ```
 
-# Plot orders over 24 hours and 7 days
+##Orders over 24 hours and 7 days
 ```{r}
 ggplot(data = orders) + 
   geom_bar(mapping = aes(x = order_hour_of_day)) +
@@ -78,11 +82,14 @@ ggplot(data = orders) +
 
 
 ```{r}
-
+#Create a new table with Order_id and nr_of_items per order
 items_per_order <- bind_rows(orders_product_prior, orders_product_train) %>% 
   group_by(orders_id) %>%
   summarise(nr_of_items = last(add_to_cart_order))
+```
 
+##Nr of items per order
+```{r}
 ggplot(data = items_per_order) + 
   geom_bar(mapping = aes(x = nr_of_items)) +
   xlab("Items per order") + ylab("Nr of orders") 
@@ -90,13 +97,13 @@ ggplot(data = items_per_order) +
 
 
 ```{r}
-
 product_sales_per_week <- orders %>%
   group_by(orders_id) %>%
   left_join(select(items_per_order, orders_id, nr_of_items),by="orders_id")
 
 ```
 
+##Items over 24 hours and 7 days
 ```{r}
 ggplot(data = product_sales_per_week) + 
   geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_items)) +
