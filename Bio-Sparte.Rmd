@@ -147,56 +147,87 @@ Jetzt wollen wir graphisch das verhältnis von Bio zu nicht Bio aufzeichnen
 Changes Mario und Riccard:
 
 ```{r}
-t_products %>%
+org_notorg <- t_products %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(organic) %>%
   count() %>%
-  mutate(n = as.integer(n)) %>%
-  ggplot() +
-    geom_col(aes(x=organic,y=n))
+  mutate(n = as.integer(n))
+
+ggplot(org_notorg) +
+  geom_col(aes(x = organic, y = n))
+
 ```
 
 
 
 ### Verhältnis Bio/Nicht-bio in departments & aisles
-```{r}
-
+```{r, fig.height = 7}
 Verhalt_dep <- full_join(t_products, t_aisles, "aisle_id") %>%
 	full_join(t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(department, organic) %>%
-	count() %>%
-  mutate(n = as.integer(n))
+	count(name = "anzahl_produkte") %>%
+  mutate(anzahl_produkte = as.integer(anzahl_produkte))
 
 ggplot(Verhalt_dep) +
-  geom_col(aes(x=department,y=n, fill = organic))
+  geom_col(aes(x = department,y = anzahl_produkte, fill = organic))  +
+  coord_flip()
+```
 
+```{r, fig.height = 18}
 Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
 	full_join(t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(aisle, organic) %>%
-	count() %>%
-  mutate(n = as.integer(n))
+	count(name = "anzahl_produkte") %>%
+  mutate(anzahl_produkte = as.integer(anzahl_produkte))
 
 ggplot(Verhalt_aisle) +
-  geom_col(aes(x = aisle, y=n, fill = organic))
-
+  geom_col(aes(x = aisle, y = anzahl_produkte, fill = organic)) +
+  coord_flip()
 ```
+
 ### Determine most bought products
 
 ```{r}
-most_bought <- full_join(t_products, t_orders_train, "product_id") %>%
+most_bought_all <- full_join(t_products, t_orders_train, "product_id") %>%
 	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
 	count(product_name) %>%
   mutate(n = as.integer(n)) %>%
 	arrange(-n)
 
-most_bought
+most_bought_all
 ```
 
+#### Determine most bought organic products
+```{r}
+most_bought_org <- full_join(t_products, t_orders_train, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  mutate(organic = as.integer(organic)) %>%
+  filter(organic == 1) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n)
 
+most_bought_org
+```
+
+#### Determine most bought non-organic products
+```{r}
+most_bought_nonorg <- full_join(t_products, t_orders_train, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  mutate(organic = as.integer(organic)) %>%
+  filter(organic == 0) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n)
+
+most_bought_nonorg
+```
 
 
 
