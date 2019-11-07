@@ -47,6 +47,8 @@ con <- dbConnect(drv, dbname = DB_DBNAME,
                  user = DB_USERNAME, password = DB_PASSWORD)
 ```
 
+
+#Defines SQL Query
 ```{r}
 aisle <- dbGetQuery(con,  "SELECT * From aisle")
 department <- dbGetQuery(con,  "SELECT * From department")
@@ -56,9 +58,12 @@ orders_product_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
 product <- dbGetQuery(con,  "SELECT * From product")
 ```
 
-```{r}
-#aisle_db <- tbl(con, "aisle")
+#Alternative example Code for SQL only
+```{sql connection=con, output.var= (aisle2)} 
+SELECT * FROM aisle LIMIT 30; /* Gets first 30 rows from the aisle table*/
 ```
+
+
 #Plots (ggplot2)
 ##Orders over 24 hours
 ```{r}
@@ -110,8 +115,18 @@ ggplot(data = product_sales_per_week) +
   facet_wrap(~ order_dow,  nrow = 3)
 ```
 
+
+#Disconnect from the DB
 ```{r}
 # close the connection (don't forget to cleanup)
 dbDisconnect(con)
 dbUnloadDriver(drv)
 ```
+
+#Remove Variables from Global Environement
+```{r}
+remove(var_XYZ)
+```
+
+
+
