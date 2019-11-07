@@ -7,13 +7,12 @@ library aufrufen das wir nutzen wollen
 
 ```{r setup}
 library(tidyverse)
-
 ```
 
 Datanbankverbindung aufbauen
 
 ```{r}
-DB_HOST='86.119.36.94' #or 86.119.36.94 or server2053.cs.technik.fhnw.ch
+DB_HOST='server2053.cs.technik.fhnw.ch' #or 86.119.36.94 or server2053.cs.technik.fhnw.ch
 DB_PORT = 5432
 DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
 DB_USERNAME = 'db_user' 
@@ -53,14 +52,98 @@ organic_count <- tally(t_organic_products)
 notorganic_count <- tally(t_notorganic_products)
 ```
 
-Jetzt wollen wir graphisch das verhältnis von Bio zu nicht Bio aufzeichnen
+Kontrolle ob es fehlende werte gibt in der tabelle t_aisles
 
 ```{r}
-#ggplot(organic_count, notorganic_count ,mapping = aes(aes(y = tally(t_products)))) +
-#  geom_bar()
-organic_count
+#RETURNS INTEGER, SLOWER
+t_aisles %>% 
+	pull(aisle) %>% 
+	is.na() %>% 
+	sum()
+
+#RETURNS LIST, FASTER
+t_aisles %>%
+  filter(is.na(aisle)) %>%
+	count()
+
+t_aisles %>%
+  filter(is.na(aisle_id)) %>%
+	count()
+
+#only works with tabellen
+#t_aisles %>% 
+#	mutate(aisle_id_NA = is.na(aisle_id)) %>% 
+#	summarise(aisle_id_NA_sum = sum(aisle_id_NA))
 ```
 
+```{r}
+t_departments %>%
+  filter(is.na(department)) %>%
+	count()
+
+t_departments %>%
+  filter(is.na(department_id)) %>%
+	count()
+```
+
+```{r}
+t_orders %>%
+  filter(is.na(orders_id)) %>%
+	count()
+
+t_orders %>%
+  filter(is.na(user_id)) %>%
+	count()
+
+t_orders %>%
+  filter(is.na(eval_set)) %>%
+	count()
+
+t_orders %>%
+  filter(is.na(order_number)) %>%
+	count()
+
+t_orders %>%
+  filter(is.na(order_dow)) %>%
+	count()
+
+t_orders %>%
+  filter(is.na(order_hour_of_day)) %>%
+	count()
+
+t_orders %>%
+  filter(is.na(days_since_prior_order)) %>%
+	count()
+
+missing_prior_orders <- t_orders %>% 
+	pull(days_since_prior_order) %>% 
+	is.na() %>% 
+	sum()
+
+x <- t_orders %>% 
+	summarize(n())
+#x <- tally(t_orders) #geht auch
+
+x <- as.data.frame(x)
+number_orders_tot <- as.integer(x[[1]])
+
+missing_prior_prozent <- round(100*missing_prior_orders/number_orders_tot, 10)
+```
+
+### Kunden die zum ersten ma einkaufen
+Es fehlen `r missing_prior_orders` werte von `r number_orders_tot` für days_since_prior (`r missing_prior_prozent`% . 
+
+Es könnten first-time Kunden sein, also die Kunden die ihre erste Bestellung machen
+
+```{r}
+t_products %>%
+  filter(is.na(product_id))
+
+t_products %>%
+  filter(is.na(product_name))
+```
+
+Jetzt wollen wir graphisch das verhältnis von Bio zu nicht Bio aufzeichnen
 Changes Mario und Riccard:
 
 ```{r}
@@ -72,6 +155,47 @@ t_products %>%
   ggplot() +
     geom_col(aes(x=organic,y=n))
 ```
+
+
+
+### Verhältnis Bio/Nicht-bio in departments & aisles
+```{r}
+
+Verhalt_dep <- full_join(t_products, t_aisles, "aisle_id") %>%
+	full_join(t_departments, "department_id") %>%
+	select(-c(aisle_id, department_id, product_id)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(department, organic) %>%
+	count() %>%
+  mutate(n = as.integer(n))
+
+ggplot(Verhalt_dep) +
+  geom_col(aes(x=department,y=n, fill = organic))
+
+Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
+	full_join(t_departments, "department_id") %>%
+	select(-c(aisle_id, department_id, product_id)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(aisle, organic) %>%
+	count() %>%
+  mutate(n = as.integer(n))
+
+ggplot(Verhalt_aisle) +
+  geom_col(aes(x = aisle, y=n, fill = organic))
+
+```
+### Determine most bought products
+
+```{r}
+most_bought <- full_join(t_products, t_orders_train, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n)) %>%
+	arrange(-n)
+
+most_bought
+```
+
 
 
 
