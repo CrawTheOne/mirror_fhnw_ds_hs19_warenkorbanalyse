@@ -10,6 +10,7 @@ editor_options:
 #install.packages("RPostgreSQL")
 #install.packages("tidyverse")
 #install.packages("dplyr")
+#install.packages("RColorBrewer")
 ```
 
 #install libraries
@@ -18,6 +19,7 @@ require("RPostgreSQL")
 library(DBI)
 library(tidyverse)
 library(dplyr)
+library(RColorBrewer)
 ```
 
 #Create a connection to the Database
@@ -59,32 +61,51 @@ product <- dbGetQuery(con,  "SELECT * From product")
 ```
 
 #Alternative example Code for SQL only
-```{sql connection=con, output.var= (aisle2)} 
+```{sql connection=con, output.var= (aisle_sql)} 
 SELECT * FROM aisle LIMIT 30; /* Gets first 30 rows from the aisle table*/
 ```
 
 
 #Plots (ggplot2)
 ##Orders over 24 hours
-```{r}
 
-ggplot(data = orders) + 
-  geom_bar(mapping = aes(x = order_hour_of_day))
+
+```{r}
+orders_per_hour_per_day <- orders %>%
+  group_by(order_dow, order_hour_of_day) %>%
+  summarise(nr_of_orders = n())
+  
+ggplot(data = orders_per_hour_per_day) + 
+  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders/7)) + 
+  ggtitle("Average Nr of orders per hour") 
 ```  
 
 ##Orders over 7 days
 ```{r}
-ggplot(data = orders) + 
-  geom_bar(mapping = aes(x = order_dow))
+ggplot(data = orders_per_hour_per_day) + 
+  geom_col(mapping = aes(x = order_dow, y = nr_of_orders, fill = as.factor(order_dow))) +
+  ggtitle("Average Nr of orders per Day ") +
+  labs(fill='order_dow') +
+  scale_fill_brewer(palette="Spectral")
+  
 ```
 
 ##Orders over 24 hours and 7 days
 ```{r}
-ggplot(data = orders) + 
-  geom_bar(mapping = aes(x = order_hour_of_day)) +
-  facet_wrap(~ order_dow,  nrow = 3)
+ggplot(data = orders_per_hour_per_day) + 
+  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders, fill = as.factor(order_dow))) + 
+  facet_wrap(~ order_dow,  nrow = 3) +
+  labs(fill='order_dow') +
+  scale_fill_brewer(palette="Spectral")
 ```
 
+```{r}
+ggplot(data = orders) + 
+  geom_boxplot(mapping = aes(x = order_dow, y = order_hour_of_day, group = order_dow, fill = as.factor(order_dow))) + 
+  scale_fill_brewer(palette="Spectral") +
+  labs(fill='order_dow') +
+  ggtitle("Boxplot avg distribution of orders over the days over one week ")
+```
 
 ```{r}
 #Create a new table with Order_id and nr_of_items per order
@@ -96,8 +117,10 @@ items_per_order <- bind_rows(orders_product_prior, orders_product_train) %>%
 ##Nr of items per order
 ```{r}
 ggplot(data = items_per_order) + 
-  geom_bar(mapping = aes(x = nr_of_items)) +
-  xlab("Items per order") + ylab("Nr of orders") 
+  geom_bar(mapping = aes(x = nr_of_items), width=0.9) +
+  xlab("Products per order") + ylab("Nr of orders") +
+  coord_cartesian(xlim=c(0,75)) +
+  ggtitle("Average Nr of products per order") 
 ```
 
 
@@ -108,11 +131,59 @@ product_sales_per_week <- orders %>%
 
 ```
 
+
 ##Items over 24 hours and 7 days
 ```{r}
 ggplot(data = product_sales_per_week) + 
-  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_items)) +
-  facet_wrap(~ order_dow,  nrow = 3)
+  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_items, fill = as.factor(order_dow))) +
+  facet_wrap(~ order_dow,  nrow = 3) +
+  labs(fill='order_dow') +
+  scale_fill_brewer(palette="Spectral")
+```
+
+```{r}
+products_per_hour_per_day <- orders %>%
+  group_by(order_dow, order_hour_of_day) %>%
+  left_join(select(bind_rows(orders_product_prior, orders_product_train), orders_id, product_id),by="orders_id") %>%
+  summarise(nr_of_products = n())
+
+max_products <- products_per_hour_per_day %>%
+  summarise(max_day = max(nr_of_products)) %>%
+  summarise(max_week = max(max_day)) 
+
+max <- (max_products$max_week)
+```
+
+```{r}
+
+order_product_ratio <- orders_per_hour_per_day %>%
+  left_join(products_per_hour_per_day, by = c("order_dow" = "order_dow", "order_hour_of_day" = "order_hour_of_day")) %>%
+  mutate(order_product_ratio  = nr_of_products/nr_of_orders, workload = nr_of_products/max, avg_clients = nr_of_products/order_product_ratio)
+```
+
+
+```{r}
+ggplot(data = order_product_ratio) + 
+  geom_line(mapping = aes(x = order_hour_of_day, y = order_product_ratio, color=as.factor(order_dow), group = order_dow), size = 1) +
+  ggtitle("Average ratio of products per order")  +
+  labs(color='order_dow') +
+  scale_color_brewer(palette="Spectral")
+```
+
+```{r}
+ggplot(data = order_product_ratio) + 
+  geom_line(mapping = aes(x = order_hour_of_day, y = workload, color=as.factor(order_dow), group = order_dow), size = 1) +
+  ggtitle("Average workload")  +
+  labs(color='order_dow') +
+  scale_color_brewer(palette="Spectral")
+```
+
+```{r}
+ggplot(data = orders_per_hour_per_day) + 
+  geom_line(mapping = aes(x = order_hour_of_day, y = nr_of_orders,color=as.factor(order_dow), group = order_dow), size = 1) + 
+  labs(fill='order_dow') +
+  labs(color='order_dow') +
+  scale_color_brewer(palette="Spectral")
 ```
 
 
@@ -125,8 +196,7 @@ dbUnloadDriver(drv)
 
 #Remove Variables from Global Environement
 ```{r}
-remove(var_XYZ)
+remove(max)
 ```
-
 
 
