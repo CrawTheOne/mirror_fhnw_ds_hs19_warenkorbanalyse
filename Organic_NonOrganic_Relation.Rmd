@@ -1,0 +1,22 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+source('./DbConnection.R')
+```
+
+```{r}
+products <- t_products %>%
+  select(product_name) %>%
+  collect()
+  
+write.csv(products, './data/products.csv', row.names = FALSE)
+```
+
+```{r}
+
+```
+
+
