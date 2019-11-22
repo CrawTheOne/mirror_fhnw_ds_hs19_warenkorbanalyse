@@ -115,6 +115,8 @@ items_per_order <- bind_rows(orders_product_prior, orders_product_train) %>%
 ```
 
 ##Nr of items per order
+Ziel: Untersuchung der Bestellgrössen.
+Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
 ```{r}
 ggplot(data = items_per_order) + 
   geom_bar(mapping = aes(x = nr_of_items), width=0.9) +
@@ -150,16 +152,22 @@ products_per_hour_per_day <- orders %>%
 max_products <- products_per_hour_per_day %>%
   summarise(max_day = max(nr_of_products)) %>%
   summarise(max_week = max(max_day)) 
+max_p <- (max_products$max_week)
 
-max <- (max_products$max_week)
+max_orders <- orders_per_hour_per_day %>%
+  summarise(max_day = max(nr_of_orders)) %>%
+  summarise(max_week = max(max_day)) 
+max_o <- (max_orders$max_week)
 ```
 
 ```{r}
 
 order_product_ratio <- orders_per_hour_per_day %>%
   left_join(products_per_hour_per_day, by = c("order_dow" = "order_dow", "order_hour_of_day" = "order_hour_of_day")) %>%
-  mutate(order_product_ratio  = nr_of_products/nr_of_orders, workload = nr_of_products/max, avg_clients = nr_of_products/order_product_ratio)
+  mutate(order_product_ratio  = nr_of_products/nr_of_orders, workload_orders = nr_of_orders/max_o, workload_products = nr_of_products/max_p)
+
 ```
+Ziel: Durchschnittliche Bestellgrössen pro Tag pro Woche.
 
 
 ```{r}
@@ -170,22 +178,38 @@ ggplot(data = order_product_ratio) +
   scale_color_brewer(palette="Spectral")
 ```
 
+
+
+
 ```{r}
 ggplot(data = order_product_ratio) + 
-  geom_line(mapping = aes(x = order_hour_of_day, y = workload, color=as.factor(order_dow), group = order_dow), size = 1) +
+  geom_line(mapping = aes(x = order_hour_of_day, y = workload_orders, color=as.factor(order_dow), group = order_dow), size = 1) +
+  ggtitle("Average ratio orders")  +
+  labs(color='order_dow') +
+  scale_color_brewer(palette="Spectral")
+```
+
+
+```{r}
+ggplot(data = order_product_ratio) + 
+  geom_line(mapping = aes(x = order_hour_of_day, y = workload_products, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average workload")  +
   labs(color='order_dow') +
   scale_color_brewer(palette="Spectral")
 ```
 
 ```{r}
-ggplot(data = orders_per_hour_per_day) + 
-  geom_line(mapping = aes(x = order_hour_of_day, y = nr_of_orders,color=as.factor(order_dow), group = order_dow), size = 1) + 
-  labs(fill='order_dow') +
-  labs(color='order_dow') +
-  scale_color_brewer(palette="Spectral")
+ggplot(data = order_product_ratio) + 
+  geom_raster(mapping = aes(x = order_hour_of_day, y = order_dow, fill = workload_products)) +
+  ggtitle("Average workload")+
+  scale_fill_gradientn(colours=c("#000000","#0000FF","#00FF00","#FFFF00","#FF0000","#990000"))
+  
+  
 ```
 
+```{r}
+head(order_product_ratio)
+```
 
 #Disconnect from the DB
 ```{r}
