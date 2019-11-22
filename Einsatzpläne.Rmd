@@ -1,8 +1,10 @@
 ---
-title: "R Notebook Ladenöffnungszeiten / Einsatzpläne"
-output: html_notebook
-editor_options: 
-  chunk_output_type: inline
+title: "R Notebook LadenÃƒÆ’Ã‚Â¶ffnungszeiten / EinsatzplÃƒÆ’Ã‚Â¤ne"
+output:
+  html_document:
+    df_print: paged
+  df_print: paged
+  pdf_document: default
 ---
 #Install packages if necessary
 ```{r}
@@ -60,12 +62,6 @@ orders_product_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
 product <- dbGetQuery(con,  "SELECT * From product")
 ```
 
-#Alternative example Code for SQL only
-```{sql connection=con, output.var= (aisle_sql)} 
-SELECT * FROM aisle LIMIT 30; /* Gets first 30 rows from the aisle table*/
-```
-
-
 #Plots (ggplot2)
 ##Orders over 24 hours
 
@@ -75,9 +71,10 @@ orders_per_hour_per_day <- orders %>%
   group_by(order_dow, order_hour_of_day) %>%
   summarise(nr_of_orders = n())
   
-ggplot(data = orders_per_hour_per_day) + 
-  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders/7)) + 
-  ggtitle("Average Nr of orders per hour") 
+print(ggplot(data = orders_per_hour_per_day) + 
+      geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders/7)) + 
+      ggtitle("Average Nr of orders per hour") )
+
 ```  
 
 ##Orders over 7 days
@@ -90,14 +87,6 @@ ggplot(data = orders_per_hour_per_day) +
   
 ```
 
-##Orders over 24 hours and 7 days
-```{r}
-ggplot(data = orders_per_hour_per_day) + 
-  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders, fill = as.factor(order_dow))) + 
-  facet_wrap(~ order_dow,  nrow = 3) +
-  labs(fill='order_dow') +
-  scale_fill_brewer(palette="Spectral")
-```
 
 ```{r}
 ggplot(data = orders) + 
@@ -107,22 +96,45 @@ ggplot(data = orders) +
   ggtitle("Boxplot avg distribution of orders over the days over one week ")
 ```
 
+
+
+##Orders over 24 hours and 7 days
+```{r}
+ggplot(data = orders_per_hour_per_day) + 
+  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders, fill = as.factor(order_dow))) + 
+  facet_wrap(~ order_dow,  nrow = 3) +
+  labs(fill='order_dow') +
+  scale_fill_brewer(palette="Spectral")
+```
+
+
+##Nr of items per order
+Ziel: Untersuchung der Bestellgrössen.
+Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
+
+Das arithmetische Mittel über alle Bestellungen liegt bei 10.107 verschiedenen Produkten pro Bestellung.
+
+Das Median über alle Bestellungen liegt bei 8 verschiedenen Produkten pro Bestellung. Die hälfte aller Bestellungen enthällt entsprechend 8 oder Weniger Produkte.
+
+75% aller Bestellungen enthalten 14 oder weniger unterschiedliche Produkte.
+
+Fazit: Um genauere Aussagen über Aussagen zum individuellen Auslastung machen zu können müssen erst die durchschnittlichen Bestellgrössen der einzelnen Stunden und Tage Analysiert werden.
 ```{r}
 #Create a new table with Order_id and nr_of_items per order
 items_per_order <- bind_rows(orders_product_prior, orders_product_train) %>% 
   group_by(orders_id) %>%
   summarise(nr_of_items = last(add_to_cart_order))
-```
 
-##Nr of items per order
-Ziel: Untersuchung der Bestellgrössen.
-Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
-```{r}
 ggplot(data = items_per_order) + 
   geom_bar(mapping = aes(x = nr_of_items), width=0.9) +
   xlab("Products per order") + ylab("Nr of orders") +
   coord_cartesian(xlim=c(0,75)) +
   ggtitle("Average Nr of products per order") 
+
+mean_order_size <- mean(items_per_order$nr_of_items)
+median_order_size <- median(items_per_order$nr_of_items)
+max_order_size <- max(items_per_order$nr_of_items)
+quantile_order_size <- quantile(items_per_order$nr_of_items)
 ```
 
 
@@ -139,7 +151,8 @@ product_sales_per_week <- orders %>%
 ggplot(data = product_sales_per_week) + 
   geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_items, fill = as.factor(order_dow))) +
   facet_wrap(~ order_dow,  nrow = 3) +
-  labs(fill='order_dow') +
+  labs(fill='Day of Week') +
+  xlab("Hour of Day") + ylab("Nr of Items") +
   scale_fill_brewer(palette="Spectral")
 ```
 
@@ -167,17 +180,24 @@ order_product_ratio <- orders_per_hour_per_day %>%
   mutate(order_product_ratio  = nr_of_products/nr_of_orders, workload_orders = nr_of_orders/max_o, workload_products = nr_of_products/max_p)
 
 ```
-Ziel: Durchschnittliche Bestellgrössen pro Tag pro Woche.
+
+
+Aussage: Die grösse der einzelnen Bestellungen beeinflusst direkt den Arbeitsaufwand pro Bestellung
+Ziel: Durchschnittliche Bestellgrössen pro Stunde pro Tag. 
+
+
+Aus dem folgenden Diagramm ist ersichtlich, dass die Bestellgrösse am Wochentagag 0 um 8:00Uhr mit durchschnittlich 11.48 verschiedenen items am grössten ist.
+
+Interessant ist, dass die Bestellgrössen über alle Wochentage von 20:00 bis 23:00 im Schnitt um 2 bis 2.5 items pro Bestellung ansteigen. Eine mögliche Erklärung wäre, dass die Kunden, welche online einkaufen, im Schnitt grössere Bestellungen haben.
 
 
 ```{r}
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = order_product_ratio, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio of products per order")  +
-  labs(color='order_dow') +
+  labs(color='Day of Week') +
   scale_color_brewer(palette="Spectral")
 ```
-
 
 
 
@@ -185,7 +205,7 @@ ggplot(data = order_product_ratio) +
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_orders, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio orders")  +
-  labs(color='order_dow') +
+  labs(color='Day of Week') +
   scale_color_brewer(palette="Spectral")
 ```
 
@@ -194,22 +214,27 @@ ggplot(data = order_product_ratio) +
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_products, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average workload")  +
-  labs(color='order_dow') +
+  labs(color='Day of Week') +
   scale_color_brewer(palette="Spectral")
 ```
 
-```{r}
+```{r echo=TRUE}
 ggplot(data = order_product_ratio) + 
   geom_raster(mapping = aes(x = order_hour_of_day, y = order_dow, fill = workload_products)) +
   ggtitle("Average workload")+
-  scale_fill_gradientn(colours=c("#000000","#0000FF","#00FF00","#FFFF00","#FF0000","#990000"))
-  
-  
+  scale_fill_gradientn(colours=c("#000000","#0000FF","#00FF00","#FFFF00","#FF0000","#990000")) +
+  labs(fill='Workload')
 ```
 
 ```{r}
-head(order_product_ratio)
+deployment_plan <- order_product_ratio %>%
+  select(order_dow, order_hour_of_day, workload_products)
+deployment_plan
 ```
+
+
+
+
 
 #Disconnect from the DB
 ```{r}
