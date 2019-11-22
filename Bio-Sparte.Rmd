@@ -1,18 +1,25 @@
 ---
 title: "Bio-Sparte"
 output: html_notebook
+editor_options: 
+  chunk_output_type: inline
 ---
 
 library aufrufen das wir nutzen wollen
 
 ```{r setup}
+#install.packages("RPostgreSQL")
+#install.packages("tidyverse")
+
+library(DBI)
 library(tidyverse)
+require("RPostgreSQL")
 ```
 
 Datanbankverbindung aufbauen
 
 ```{r}
-DB_HOST='server2053.cs.technik.fhnw.ch' #or 86.119.36.94 or server2053.cs.technik.fhnw.ch
+DB_HOST='86.119.36.94' #or 86.119.36.94 or server2053.cs.technik.fhnw.ch
 DB_PORT = 5432
 DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
 DB_USERNAME = 'db_user' 
@@ -24,18 +31,38 @@ con <- DBI::dbConnect(odbc::odbc(),
                       Database = DB_DBNAME,
                       UID      = DB_USERNAME,
                       PWD      = DB_PASSWORD,
-                      Port     = DB_PORT)
+                      Port     = DB_PORT,
+											encoding = "latin1" )
 ```
 
 Definition von tabellen auf variabeln in R um damit umzugehen
 
 ```{r}
 t_products <- tbl(con, "product")
+t_products <- as.data.frame(t_products)
+
 t_aisles <- tbl(con, "aisle")
+t_aisles <- as.data.frame(t_aisles)
+
 t_departments <- tbl(con, "department")
+t_departments <- as.data.frame(t_departments)
+
 t_orders <- tbl(con, "orders")
-t_orders_prior <- tbl(con, "orders_product_prior")
+t_orders <- as.data.frame(t_orders)
+
+#t_orders_prior <- tbl(con, "orders_product_prior")
+#t_orders_prior <- as.data.frame("t_orders_prior")
+
 t_orders_train <- tbl(con, "orders_product_train")
+t_orders_train <- as.data.frame(t_orders_train)
+
+
+#t_products <- dbGetQuery(con,  "SELECT * From product")
+#t_aisles <- dbGetQuery(con,  "SELECT * From aisle")
+#t_departments <- dbGetQuery(con,  "SELECT * From department")
+#t_orders <- dbGetQuery(con,  "SELECT * From orders")
+#t_orders_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior")
+#t_orders_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
 ```
 Wir wollen die Anzahl and organische produkte und nicht organische produkte erhalten und aufzeigen
 
@@ -71,9 +98,9 @@ t_aisles %>%
 	count()
 
 #only works with tabellen
-#t_aisles %>% 
-#	mutate(aisle_id_NA = is.na(aisle_id)) %>% 
-#	summarise(aisle_id_NA_sum = sum(aisle_id_NA))
+t_aisles %>% 
+	mutate(aisle_id_NA = is.na(aisle_id)) %>% 
+	summarise(aisle_id_NA_sum = sum(aisle_id_NA))
 ```
 
 ```{r}
@@ -178,6 +205,10 @@ ggplot(Verhalt_dep) +
   coord_flip()
 ```
 
+
+#change into standard dataframe
+
+
 ```{r, fig.height = 18}
 Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
 	full_join(t_departments, "department_id") %>%
@@ -191,9 +222,65 @@ Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
 Verhalt_aisle
 
 ggplot(Verhalt_aisle) +
-  geom_col(aes(x = reorder(aisle, anzahl_produkte), y = anzahl_produkte, fill = organic)) +
+  geom_col(aes(x = reorder(as.factor(aisle), anzahl_produkte), y = anzahl_produkte, fill = as.factor(organic))) +
   coord_flip()
+
+full_join(t_products, t_aisles, "aisle_id") %>%
+	full_join(t_departments, "department_id") %>%
+	select(-c(aisle_id, department_id, product_id)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(aisle, organic) %>%
+	count(name = "anzahl_produkte") %>%
+  mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
+	mutate(type = as.character(organic)) %>%
+	ungroup() %>%
+	arrange(-anzahl_produkte) %>%
+	select(-organic) -> g
+
+g
+
+ggplot(g) +
+  geom_col(aes(x = reorder(as.factor(aisle), anzahl_produkte), y = anzahl_produkte, fill = type)) +
+  coord_flip()
+
+#verhalt_aisle save or as csv
+#save(Verhalt_aisle, file = "Verhalt_aisle.RData")
+#write.csv(Verhalt_aisle,'Verhalt_aisle.csv')
 ```
+
+```{r, fig.height = 18}
+Verhalt_aisle_norg <- full_join(t_products, t_aisles, "aisle_id") %>%
+	full_join(t_departments, "department_id") %>%
+	select(-c(aisle_id, department_id, product_id)) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(aisle, organic) %>%
+	count(name = "anzahl_produkte") %>%
+  mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
+	filter(organic == FALSE)
+
+Verhalt_aisle_org <- full_join(t_products, t_aisles, "aisle_id") %>%
+	full_join(t_departments, "department_id") %>%
+	select(-c(aisle_id, department_id, product_id)) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(aisle, organic) %>%
+	count(name = "anzahl_produkte") %>%
+  mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
+	filter(organic == TRUE)
+
+New_Verhalt_aisle <- full_join(Verhalt_aisle_org, Verhalt_aisle_norg, "aisle") %>%
+	mutate(anzahl_produkte_org = anzahl_produkte.x) %>%
+	mutate(anzahl_produkte_norg = anzahl_produkte.y) %>%
+	ungroup() %>%
+	select(c(aisle, anzahl_produkte_org, anzahl_produkte_norg))
+
+New_Verhalt_aisle[is.na(New_Verhalt_aisle)] <- 0
+
+ggplot(New_Verhalt_aisle) +
+  geom_col(aes(x = reorder(as.factor(aisle), anzahl_produkte_org + anzahl_produkte_norg), y = anzahl_produkte_org + anzahl_produkte_norg)) +
+  coord_flip()
+
+```
+
 
 ### Determine most bought products
 
@@ -253,12 +340,17 @@ ggplot(most_bought_nonorg) +
 ```
 
 
+## A priori Algorithmus
 
 
 
 
 
-
+```{r}
+# close the connection (don't forget to cleanup)
+dbDisconnect(con)
+dbUnloadDriver(drv)
+```
 
 
 
