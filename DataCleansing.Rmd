@@ -1,0 +1,89 @@
+---
+title: "DataCleansing"
+output: html_notebook
+---
+```{r setup}
+#install.packages("RPostgreSQL")
+#install.packages("tidyverse")
+
+library(DBI)
+library(tidyverse)
+require("RPostgreSQL")
+```
+Datanbankverbindung aufbauen
+```{r}
+source('DbConnection.R')
+```
+Data Cleansing nach Quelle : https://towardsdatascience.com/data-cleaning-with-r-and-the-tidyverse-detecting-missing-values-ea23c519bc62
+```{r}
+#Alle Produkte
+t_products <- tbl(con, "product")
+t_products <- as.data.frame(t_products)
+#glimpse(t_products)
+
+#Alle Gänge
+t_aisles <- tbl(con, "aisle")
+t_aisles <- as.data.frame(t_aisles)
+#glimpse(t_aisles)
+
+#Alle Abteilungen
+t_departments <- tbl(con, "department")
+t_departments <- as.data.frame
+#glimpse(t_departments)
+
+#Alle Bestellungen
+t_orders <- tbl(con, "orders")
+t_orders <- as.data.frame(t_orders)
+#glimpse(t_orders)
+
+t_orders_prior <- tbl(con, "orders_product_prior")
+t_orders_prior <- as.data.frame("t_orders_prior")
+#glimpse(t_orders_prior)
+
+t_orders_train <- tbl(con, "orders_product_train")
+t_orders_train <- as.data.frame(t_orders_train)
+#glimpse(t_orders_train)
+
+```
+Untersuchung der NA Werte
+```{r}
+sum(is.na(t_products)) #0
+sum(is.na(t_aisles)) #0
+sum(is.na(t_departments))# ?
+sum(is.na(t_orders))#c.a 200`000
+sum(is.na(t_orders_prior)) #0
+sum(is.na(t_orders_train)) #0
+```
+Zusammenfassung der NA Werte
+```{r}
+#Alle NA Werte sind
+
+sum(is.na(t_orders$days_since_prior_order))
+
+t_orders %>% 
+  group_by(days_since_prior_order) %>% 
+  summarise(non_na_count = sum(is.na(days_since_prior_order)))
+```
+Überschreibung der NA Werte in t_orders
+```{r}
+#Für was für einen Wert soll ich NA ersetzten, o gibt es schon. NA sollten aussortiert werden
+
+# esetzen der NA  Werte mit 0
+#t_orders <- t_orders %>%
+#  mutate(days_since_prior_order = replace(days_since_prior_order, is.na(days_since_prior_order), 0))
+
+#t_orders
+
+#sum(is.na(t_orders$days_since_prior_order))
+
+```
+Unterteilung in Neukunden und Bestehende Kunden 
+```{r}
+t_orders_NAasNEW <- t_orders %>%
+          filter(is.na(days_since_prior_order)) %>%
+          mutate(days_since_prior_order = replace(days_since_prior_order, x = is.na(days_since_prior_order), 0))
+
+t_orders_NAasNEW
+
+glimpse(t_orders_NAasNEW)
+```
