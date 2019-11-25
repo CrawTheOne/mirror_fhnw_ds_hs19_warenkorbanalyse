@@ -5,6 +5,7 @@ editor_options:
   chunk_output_type: inline
 ---
 
+### Libraries
 library aufrufen das wir nutzen wollen
 
 ```{r setup}
@@ -16,6 +17,7 @@ library(tidyverse)
 require("RPostgreSQL")
 ```
 
+### Connection
 Datanbankverbindung aufbauen
 
 ```{r}
@@ -35,6 +37,7 @@ con <- DBI::dbConnect(odbc::odbc(),
 											encoding = "latin1" )
 ```
 
+### Grabbing the data
 Definition von tabellen auf variabeln in R um damit umzugehen
 
 ```{r}
@@ -64,23 +67,11 @@ t_orders_train <- as.data.frame(t_orders_train)
 #t_orders_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior")
 #t_orders_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
 ```
-Wir wollen die Anzahl and organische produkte und nicht organische produkte erhalten und aufzeigen
 
-```{r}
-t_organic_products <- t_products %>% 
-  select(product_name) %>%
-  filter(str_detect(tolower(product_name), pattern = "organic"))
-
-t_notorganic_products <- t_products %>% 
-  select(product_name) %>%
-  filter(!str_detect(tolower(product_name), pattern = "organic"))
-
-organic_count <- tally(t_organic_products)
-notorganic_count <- tally(t_notorganic_products)
-```
-
+#### Control missing data (NA)
 Kontrolle ob es fehlende werte gibt in der tabelle t_aisles
 
+##### Aisle
 ```{r}
 #RETURNS INTEGER, SLOWER
 t_aisles %>% 
@@ -103,6 +94,7 @@ t_aisles %>%
 	summarise(aisle_id_NA_sum = sum(aisle_id_NA))
 ```
 
+##### Departments
 ```{r}
 t_departments %>%
   filter(is.na(department)) %>%
@@ -113,6 +105,7 @@ t_departments %>%
 	count()
 ```
 
+##### Orders
 ```{r}
 t_orders %>%
   filter(is.na(orders_id)) %>%
@@ -157,11 +150,12 @@ number_orders_tot <- as.integer(x[[1]])
 missing_prior_prozent <- round(100*missing_prior_orders/number_orders_tot, 10)
 ```
 
-### Kunden die zum ersten ma einkaufen
+###### Kunden die zum ersten ma einkaufen
 Es fehlen `r missing_prior_orders` werte von `r number_orders_tot` für days_since_prior (`r missing_prior_prozent`% . 
 
 Es könnten first-time Kunden sein, also die Kunden die ihre erste Bestellung machen
 
+##### Products
 ```{r}
 t_products %>%
   filter(is.na(product_id))
@@ -182,7 +176,6 @@ org_notorg <- t_products %>%
 
 ggplot(org_notorg) +
   geom_col(aes(x = organic, y = n))
-
 ```
 
 
@@ -206,8 +199,6 @@ ggplot(Verhalt_dep) +
 ```
 
 
-#change into standard dataframe
-
 
 ```{r, fig.height = 18}
 Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
@@ -222,7 +213,7 @@ Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
 Verhalt_aisle
 
 ggplot(Verhalt_aisle) +
-  geom_col(aes(x = reorder(as.factor(aisle), anzahl_produkte), y = anzahl_produkte, fill = as.factor(organic))) +
+  geom_col(aes(x = reorder(as.factor(aisle), anzahl_produkte), y = anzahl_produkte, fill = organic)) +
   coord_flip()
 
 full_join(t_products, t_aisles, "aisle_id") %>%
@@ -271,14 +262,20 @@ New_Verhalt_aisle <- full_join(Verhalt_aisle_org, Verhalt_aisle_norg, "aisle") %
 	mutate(anzahl_produkte_org = anzahl_produkte.x) %>%
 	mutate(anzahl_produkte_norg = anzahl_produkte.y) %>%
 	ungroup() %>%
-	select(c(aisle, anzahl_produkte_org, anzahl_produkte_norg))
+	select(c(aisle, anzahl_produkte_org, anzahl_produkte_norg)) %>%
+	mutate(anzahl_produkte_org = as.integer(anzahl_produkte_org))
 
-New_Verhalt_aisle[is.na(New_Verhalt_aisle)] <- 0
+New_Verhalt_aisle[is.na(New_Verhalt_aisle)] <- as.integer(0)
+
+New_Verhalt_aisle
 
 ggplot(New_Verhalt_aisle) +
   geom_col(aes(x = reorder(as.factor(aisle), anzahl_produkte_org + anzahl_produkte_norg), y = anzahl_produkte_org + anzahl_produkte_norg)) +
+	#scale_colour_manual(values = c("anzahl_produkte_org" = "#E08214", "anzahl_produkte_norg" = "#A08214"))+
+	
+	#https://stackoverflow.com/questions/6919025/how-to-assign-colors-to-categorical-variables-in-ggplot2-that-have-stable-mappin
+	
   coord_flip()
-
 ```
 
 
@@ -340,9 +337,112 @@ ggplot(most_bought_nonorg) +
 ```
 
 
+
+## Stammkunden analyse
+
+```{r}
+order_number_range_client <- t_orders %>% 
+  group_by(orders_id) %>%
+  summarise(nr_of_orders = last(order_number)) %>%
+	count(nr_of_orders)
+
+order_range_client <- t_orders %>% 
+  group_by(orders_id) %>%
+  summarise(nr_of_orders = last(order_number))
+
+order_number_range_client
+order_range_client
+
+ggplot(data = order_number_range_client) + 
+  geom_col(mapping = aes(x = nr_of_orders, y = n), width=0.9) +
+  xlab("nr_of_orders") + ylab("Nr of clients") +
+	coord_cartesian(xlim = c(0,50)) +
+  ggtitle("Number of clients with same order count") 
+
+mean_range_clients_size <- mean(order_range_client$nr_of_orders)
+quantile_range_clients_size <- quantile(order_range_client$nr_of_orders)
+
+mean_range_clients_size
+quantile_range_clients_size
+```
+
+```{r}
+order_freq <- t_orders %>% 
+  group_by(user_id) %>%
+	na.omit %>%
+	mutate(mean_freq = mean(days_since_prior_order)) %>%
+	summarise(mean_freq = last(mean_freq)) %>%
+	mutate(mean_freq = as.integer(mean_freq)) 
+	
+order_freq
+
+ggplot(data = order_freq) + 
+  geom_bar(mapping = aes(x = mean_freq), width = 0.9) +
+  xlab("clients buy every n days") + ylab("Nr of clients") +
+  ggtitle("Average frequency of days since last order")
+
+max_days_since_last_for_stamm <- 7
+```
+
+Wir definieren Stammkunden die die mindestens einmal alle `r max_days_since_last_for_stamm` Tagen bei uns einkaufen (Alle `r max_days_since_last_for_stamm` Tage, im diagramm 0 bis `r max_days_since_last_for_stamm-1`)
+
+```{r}
+Anzahl_stammkunden <- order_freq %>%
+	filter(mean_freq <= max_days_since_last_for_stamm) %>%
+	count()
+Tot_kunden <- order_freq %>%
+	count()
+
+Anzahl_stammkunden <- Anzahl_stammkunden$n
+Tot_kunden <- Tot_kunden$n
+Prozent_stamm <- 100*Anzahl_stammkunden/Tot_kunden
+```
+
+Die totale anzahl an stammkunden ist `r Anzahl_stammkunden` von `r Tot_kunden`. Dies entsprecht `r Prozent_stamm`% von  aller Kunden die je im laden waren
+
+```{r}
+#Create a new table with Order_id and nr_of_items per order
+items_per_order <- t_orders_train %>% 
+  group_by(orders_id) %>%
+  summarise(nr_of_items = last(add_to_cart_order)) %>%
+	arrange(orders_id)
+
+items_per_order
+
+#count the total number of bought items
+tot_num_transactions <- items_per_order %>%
+	select(nr_of_items) %>%
+	sum()
+
+#join items_per_order table and order_freq over t_orders table
+frankenstein <- left_join(order_freq, t_orders, "user_id") %>%
+	left_join(items_per_order, "orders_id") %>%
+	na.omit() %>%
+	select(-c(eval_set, order_dow, order_hour_of_day, order_number, days_since_prior_order)) %>%
+	filter(mean_freq <= max_days_since_last_for_stamm) %>%
+	group_by(nr_of_items)
+
+#resulting table is 
+frankenstein
+
+ggplot(data = frankenstein) + 
+  geom_bar(mapping = aes(x = nr_of_items), width = 0.9) +
+  xlab("Number of items per client") + ylab("Nr of clients")
+
+#count the toal number of bought items for stammkunden
+Num_of_transactions_stamm <- frankenstein %>%
+	select(nr_of_items) %>%
+	sum()
+
+Num_of_transactions_stamm
+tot_num_transactions
+
+Perzent_trans_stamm <- 100*Num_of_transactions_stamm/tot_num_transactions
+Perzent_trans_stamm
+```
+
+
 ## A priori Algorithmus
-
-
 
 
 
