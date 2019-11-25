@@ -65,24 +65,57 @@ product <- dbGetQuery(con,  "SELECT * From product")
 #Plots (ggplot2)
 ##Orders over 24 hours
 
+Als erstes wäre es interessant zu sehen, wie die Verteilung aller Bestellungen über den Zeitraum von 24 Stunden aussieht, da davon auszugehen ist, dass die Anzahl der Bestellungen pro uhrzeit variieren. 
+
+```{sql, connection=con, output.var=orders_per_hour_per_day_sql}
+SELECT order_dow, order_hour_of_day, COUNT(orders_id) 
+FROM orders
+GROUP BY order_dow, order_hour_of_day
+```
+
+
 
 ```{r}
+abc <- function(some_args){
+  
+}
+
 orders_per_hour_per_day <- orders %>%
   group_by(order_dow, order_hour_of_day) %>%
-  summarise(nr_of_orders = n())
+  summarise(nr_of_orders = n()) 
+
+orders_per_hour <- orders_per_hour_per_day%>%
+  group_by(order_hour_of_day) %>%
+  summarise(Total_Week = sum(nr_of_orders), Average = (sum(nr_of_orders)/7))
   
-print(ggplot(data = orders_per_hour_per_day) + 
-      geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders/7)) + 
-      ggtitle("Average Nr of orders per hour") )
+  
+ggplot(data = orders_per_hour_per_day) + 
+  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders/7)) + 
+  ggtitle("Total Nr of orders per hour") +
+  xlab("Order hour") + ylab("Nr of orders")
+
+Total <- sum(orders_per_hour$Average)
+
+Orders_80P <- orders_per_hour %>%
+    select(order_hour_of_day, Average) %>%
+    filter(Average > (Total*0.8))
+
+Total_80P <- sum((orders_per_hour$Average))
 
 ```  
+Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag eingehen. Ab 6 Uhr ist ein Starker Anstieg der eingehenden Produkte bemerkbar
+
+
 
 ##Orders over 7 days
+
+
 ```{r}
 ggplot(data = orders_per_hour_per_day) + 
   geom_col(mapping = aes(x = order_dow, y = nr_of_orders, fill = as.factor(order_dow))) +
-  ggtitle("Average Nr of orders per Day ") +
-  labs(fill='order_dow') +
+  ggtitle("Total Nr of orders per Day ") +
+  xlab("Order day") + ylab("Nr of orders") +
+  labs(fill='Weekday') +
   scale_fill_brewer(palette="Spectral")
   
 ```
@@ -92,7 +125,7 @@ ggplot(data = orders_per_hour_per_day) +
 ggplot(data = orders) + 
   geom_boxplot(mapping = aes(x = order_dow, y = order_hour_of_day, group = order_dow, fill = as.factor(order_dow))) + 
   scale_fill_brewer(palette="Spectral") +
-  labs(fill='order_dow') +
+  labs(fill='Weekday') +
   ggtitle("Boxplot avg distribution of orders over the days over one week ")
 ```
 
@@ -103,13 +136,25 @@ ggplot(data = orders) +
 ggplot(data = orders_per_hour_per_day) + 
   geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders, fill = as.factor(order_dow))) + 
   facet_wrap(~ order_dow,  nrow = 3) +
-  labs(fill='order_dow') +
+  labs(fill='Weekday') +
   scale_fill_brewer(palette="Spectral")
 ```
 
 
 ##Nr of items per order
 Ziel: Untersuchung der Bestellgrössen.
+
+```{sql, connection=con, output.var=items_per_order_sql}
+SELECT X.orders_id, max(X.add_to_cart_order) FROM (
+SELECT "index", orders_id, product_id, add_to_cart_order FROM orders_product_prior 
+UNION 
+SELECT "index", orders_id, product_id, add_to_cart_order FROM orders_product_train
+) AS X 
+GROUP BY X.orders_id
+ORDER BY X.orders_id ASC 
+LIMIT 30
+
+```
 
 ```{r}
 #Create a new table with Order_id and nr_of_items per order
@@ -140,8 +185,6 @@ Fazit: Um genauere Aussagen über Aussagen zum individuellen Auslastung machen z
 
 
 
-
-
 ```{r}
 product_sales_per_week <- orders %>%
   group_by(orders_id) %>%
@@ -155,10 +198,11 @@ product_sales_per_week <- orders %>%
 ggplot(data = product_sales_per_week) + 
   geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_items, fill = as.factor(order_dow))) +
   facet_wrap(~ order_dow,  nrow = 3) +
-  labs(fill='Day of Week') +
+  labs(fill='Weekday') +
   xlab("Hour of Day") + ylab("Nr of Items") +
   scale_fill_brewer(palette="Spectral")
 ```
+
 
 ```{r}
 products_per_hour_per_day <- orders %>%
@@ -190,16 +234,16 @@ Aussage: Die grösse der einzelnen Bestellungen beeinflusst direkt den Arbeitsau
 Ziel: Durchschnittliche Bestellgrössen pro Stunde pro Tag. 
 
 
-Aus dem folgenden Diagramm ist ersichtlich, dass die Bestellgrösse am Wochentagag 0 um 8:00Uhr mit durchschnittlich 11.48 verschiedenen items am grössten ist.
+Aus dem folgenden Diagramm ist ersichtlich, dass die Bestellgrösse am Wochentagag 0 um 8:00 Uhr mit durchschnittlich 11.48 verschiedenen items am grössten ist.
 
-Interessant ist, dass die Bestellgrössen über alle Wochentage von 20:00 bis 23:00 im Schnitt um 2 bis 2.5 items pro Bestellung ansteigen. Eine mögliche Erklärung wäre, dass die Kunden, welche online einkaufen, im Schnitt grössere Bestellungen haben.
+Interessant ist, dass die Bestellgrössen über alle Wochentage von 20:00 bis 23:00 im Schnitt um 2 bis 2.5 items pro Bestellung ansteigen. Eine mögliche Erklärung wäre: Da bei instacart online Bestellungen mit home deliveries möglich sind, ein Teil abends nach der Arbeit so den einkauf erledigt.
 
 
 ```{r}
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = order_product_ratio, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio of products per order")  +
-  labs(color='Day of Week') +
+  labs(color='Weekday') +
   scale_color_brewer(palette="Spectral")
 ```
 
@@ -209,7 +253,7 @@ ggplot(data = order_product_ratio) +
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_orders, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio orders")  +
-  labs(color='Day of Week') +
+  labs(color='Weekday') +
   scale_color_brewer(palette="Spectral")
 ```
 
@@ -218,7 +262,7 @@ ggplot(data = order_product_ratio) +
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_products, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average workload")  +
-  labs(color='Day of Week') +
+  labs(color='Weekday') +
   scale_color_brewer(palette="Spectral")
 ```
 
