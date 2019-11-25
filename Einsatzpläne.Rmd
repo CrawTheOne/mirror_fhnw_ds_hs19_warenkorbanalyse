@@ -110,15 +110,7 @@ ggplot(data = orders_per_hour_per_day) +
 
 ##Nr of items per order
 Ziel: Untersuchung der Bestellgrössen.
-Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
 
-Das arithmetische Mittel über alle Bestellungen liegt bei 10.107 verschiedenen Produkten pro Bestellung.
-
-Das Median über alle Bestellungen liegt bei 8 verschiedenen Produkten pro Bestellung. Die hälfte aller Bestellungen enthällt entsprechend 8 oder Weniger Produkte.
-
-75% aller Bestellungen enthalten 14 oder weniger unterschiedliche Produkte.
-
-Fazit: Um genauere Aussagen über Aussagen zum individuellen Auslastung machen zu können müssen erst die durchschnittlichen Bestellgrössen der einzelnen Stunden und Tage Analysiert werden.
 ```{r}
 #Create a new table with Order_id and nr_of_items per order
 items_per_order <- bind_rows(orders_product_prior, orders_product_train) %>% 
@@ -136,6 +128,18 @@ median_order_size <- median(items_per_order$nr_of_items)
 max_order_size <- max(items_per_order$nr_of_items)
 quantile_order_size <- quantile(items_per_order$nr_of_items)
 ```
+Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
+
+Das arithmetische Mittel über alle Bestellungen liegt bei 10.107 verschiedenen Produkten pro Bestellung.
+
+Das Median über alle Bestellungen liegt bei `r median_order_size` verschiedenen Produkten pro Bestellung. Die hälfte aller Bestellungen enthällt entsprechend `r median_order_size` oder Weniger Produkte.
+
+75% aller Bestellungen enthalten 14 oder weniger unterschiedliche Produkte.
+
+Fazit: Um genauere Aussagen über Aussagen zum individuellen Auslastung machen zu können müssen erst die durchschnittlichen Bestellgrössen der einzelnen Stunden und Tage Analysiert werden.
+
+
+
 
 
 ```{r}
