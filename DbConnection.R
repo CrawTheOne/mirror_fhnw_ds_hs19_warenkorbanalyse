@@ -20,3 +20,44 @@ t_departments <- tbl(con, "department")
 t_orders <- tbl(con, "orders")
 t_orders_product = tbl(con, "orders_product_prior") %>%
   union_all(tbl(con, "orders_product_train"))
+
+show(t_products)
+
+#Data Cleaning
+
+#t_orders
+
+t_orders_Clean <- t_orders %>% drop_na()
+
+t_orders_FirstBuy <- t_orders %>%
+  filter(is.na(days_since_prior_order)) %>%
+  select(-c(days_since_prior_order))
+
+#t_orders
+
+t_orders_Clean <- t_orders %>% drop_na()
+
+t_orders_FirstBuy <- t_orders %>%
+  filter(is.na(days_since_prior_order)) %>%
+  select(-c(days_since_prior_order))
+
+#t_aisles
+
+t_aisles_Clean <- t_aisles %>%
+  filter(aisle != "missing" | aisle != "other")
+
+t_aisles_Missing <- t_aisles %>%
+  filter(aisle == "missing")
+
+t_aisles_Other <- t_aisles %>%
+  filter(aisle == "other")
+
+#t_departments
+t_departments_Clean <- t_departments %>%
+  filter(department != "missing" | department != "other")
+
+t_departments_Missing <- t_departments %>%
+  filter(department == "missing")
+
+t_departments_Other <- t_departments %>%
+  filter(department == "other")

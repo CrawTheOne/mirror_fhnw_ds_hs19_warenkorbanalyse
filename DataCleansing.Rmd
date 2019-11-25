@@ -10,51 +10,41 @@ library(DBI)
 library(tidyverse)
 require("RPostgreSQL")
 ```
-Datanbankverbindung aufbauen
+#Datanbankverbindung aufbauen
 ```{r}
 source('DbConnection.R')
 ```
-Data Cleansing nach Quelle : https://towardsdatascience.com/data-cleaning-with-r-and-the-tidyverse-detecting-missing-values-ea23c519bc62
+#Data Cleansing nach Quelle : https://towardsdatascience.com/data-cleaning-with-r-and-the-tidyverse-detecting-missing-values-ea23c519bc62
 ```{r}
 #Alle Produkte
-t_products <- tbl(con, "product")
 t_products <- as.data.frame(t_products)
 #glimpse(t_products)
 
 #Alle Gänge
-t_aisles <- tbl(con, "aisle")
 t_aisles <- as.data.frame(t_aisles)
 #glimpse(t_aisles)
 
 #Alle Abteilungen
-t_departments <- tbl(con, "department")
-t_departments <- as.data.frame
+t_departments <- as.data.frame(t_departments)
 #glimpse(t_departments)
 
 #Alle Bestellungen
-t_orders <- tbl(con, "orders")
 t_orders <- as.data.frame(t_orders)
 #glimpse(t_orders)
 
-t_orders_prior <- tbl(con, "orders_product_prior")
-t_orders_prior <- as.data.frame("t_orders_prior")
+#t_orders_product <- as.data.frame(t_orders_product)
 #glimpse(t_orders_prior)
-
-t_orders_train <- tbl(con, "orders_product_train")
-t_orders_train <- as.data.frame(t_orders_train)
-#glimpse(t_orders_train)
-
 ```
-Untersuchung der NA Werte
+#Untersuchung der NA Werte
 ```{r}
 sum(is.na(t_products)) #0
 sum(is.na(t_aisles)) #0
 sum(is.na(t_departments))# ?
 sum(is.na(t_orders))#c.a 200`000
-sum(is.na(t_orders_prior)) #0
-sum(is.na(t_orders_train)) #0
+#sum(is.na(t_orders_products)) #0
+#sum(is.na(t_orders_train)) #0
 ```
-Zusammenfassung der NA Werte
+#Zusammenfassung der NA Werte
 ```{r}
 #Alle NA Werte sind
 
@@ -64,7 +54,7 @@ t_orders %>%
   group_by(days_since_prior_order) %>% 
   summarise(non_na_count = sum(is.na(days_since_prior_order)))
 ```
-Überschreibung der NA Werte in t_orders
+#(Überschreibung der NA Werte in t_orders) wird nicht gemacht!
 ```{r}
 #Für was für einen Wert soll ich NA ersetzten, o gibt es schon. NA sollten aussortiert werden
 
@@ -77,13 +67,49 @@ t_orders %>%
 #sum(is.na(t_orders$days_since_prior_order))
 
 ```
-Unterteilung in Neukunden und Bestehende Kunden 
+#Unterteilung in Ersteinkauf und Cleanen Datensatz
 ```{r}
-t_orders_NAasNEW <- t_orders %>%
-          filter(is.na(days_since_prior_order)) %>%
-          mutate(days_since_prior_order = replace(days_since_prior_order, x = is.na(days_since_prior_order), 0))
+#Erstellung des Dataframes : t_orders_Clean
+#t_orders_Clean <- t_orders %>% drop_na()
+#t_orders_Clean
+#sum(is.na(t_orders_Clean))  # 0 NA Werte
 
-t_orders_NAasNEW
+#Erstellung des Dataframes : t_orders_FirstBuy
+#t_orders_FirstBuy <- t_orders %>%
+ # filter(is.na(days_since_prior_order)) %>%
+  #select(-c(days_since_prior_order))
+  
+t_orders_FirstBuy
+```
+#Aisles werte:missing und other aussortieren
+```{r}
+t_departments
 
-glimpse(t_orders_NAasNEW)
+#t_aisles_Clean <- t_aisles %>%
+ # filter(!str_detect(tolower(aisle), pattern = "missing"), !str_detect(tolower(aisle), pattern = "other"))
+
+#t_aisles_Missing <- t_aisles %>%
+ #   filter(aisle == "missing")
+
+#t_aisles_Other <- t_aisles %>%
+ #   filter(aisle == "other")
+
+t_aisles_Clean  
+t_aisles_Missing
+t_aisles_Other
+```
+#Deparetments werte:missing und other aussortieren
+```{r}
+#t_departments_Clean <- t_departments %>%
+ # filter(department != "missing" | department != "other")
+
+#t_departments_Missing <- t_departments %>%
+ #   filter(department == "missing")
+
+#t_departments_Other <- t_departments %>%
+ #   filter(department == "other")
+
+t_departments_Clean  
+t_departments_Missing
+t_departments_Other
 ```
