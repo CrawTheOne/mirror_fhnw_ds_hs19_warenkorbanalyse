@@ -34,10 +34,10 @@ ggplot(org_notorg, aes(x = "", y = n_produkte, fill = organic)) +
   coord_polar("y", start = 0)
 ```
 
-### Anzahl Gekaufte Bio-Produkte in respekt zu nicht Bio-Produkte
+### Anzahl Gekaufte Bio-Produkte in Gegensatz zu nicht Bio-Produkte
 
 ```{r}
-Verhalt_Bio_bought <- t_products %>%
+#Verhalt_Bio_bought <- t_products %>%
   
 ```
 
@@ -303,9 +303,21 @@ Perzent_trans_stamm <- 100*Num_of_transactions_stamm/tot_num_transactions
 ```
 Die Anzahl an transactionen das von Stammkunden geamcht wurden entsprechen `r Num_of_transactions_stamm` von `r tot_num_transactions`. Das entspricht `r Perzent_trans_stamm`% aller transactionen. 
 
-
 ## A priori Algorithmus
 
+# First Buy für Bioprodukte
+```{r}
+t_orders_FirstBuy
+t_orders_FirstBuy %>% inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  filter(organic == TRUE) %>%
+  count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n)
+
+#Die Rangliste der Meistgekauften Bio-Produkte unterscheiden sich nur sehr gering von der Rangliste der insgesammt Gekauften Bio-Produkte und daher Vernachlässigbar
+```
 
 
 ```{r, echo=FALSE, results="hide"}

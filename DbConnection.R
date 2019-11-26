@@ -29,7 +29,7 @@ t_orders_Clean <- t_orders %>% filter(is.na())
 
 t_orders_FirstBuy <- t_orders %>%
   filter(is.na(days_since_prior_order)) %>%
-  select(-c(days_since_prior_order))
+  select(-c(days_since_prior_order,order_number))
 
 #t_orders
 t_orders_Clean <- t_orders %>% filter(days_since_prior_order)
