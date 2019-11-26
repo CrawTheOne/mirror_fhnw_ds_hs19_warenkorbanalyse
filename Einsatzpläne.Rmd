@@ -54,12 +54,18 @@ con <- dbConnect(drv, dbname = DB_DBNAME,
 
 #Defines SQL Query
 ```{r}
-aisle <- dbGetQuery(con,  "SELECT * From aisle")
-department <- dbGetQuery(con,  "SELECT * From department")
 orders <- dbGetQuery(con,  "SELECT * From orders")
 orders_product_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior")
 orders_product_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
-product <- dbGetQuery(con,  "SELECT * From product")
+
+```
+
+```{r}
+orders <- tbl(con,  "orders")
+orders_product_prior <- tbl(con,  "orders_product_prior")
+orders_product_train <- tbl(con,  "orders_product_train")
+orders_product = tbl(con, "orders_product_prior") %>%
+  union_all(tbl(con, "orders_product_train"))
 ```
 
 #Plots (ggplot2)
@@ -76,34 +82,20 @@ GROUP BY order_dow, order_hour_of_day
 
 
 ```{r}
-abc <- function(some_args){
-  
-}
-
 orders_per_hour_per_day <- orders %>%
   group_by(order_dow, order_hour_of_day) %>%
-  summarise(nr_of_orders = n()) 
+  summarise(nr_of_orders = as.numeric(n())) %>%
+  collect()
 
-orders_per_hour <- orders_per_hour_per_day%>%
-  group_by(order_hour_of_day) %>%
-  summarise(Total_Week = sum(nr_of_orders), Average = (sum(nr_of_orders)/7))
-  
   
 ggplot(data = orders_per_hour_per_day) + 
   geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders/7)) + 
   ggtitle("Total Nr of orders per hour") +
   xlab("Order hour") + ylab("Nr of orders")
 
-Total <- sum(orders_per_hour$Average)
-
-Orders_80P <- orders_per_hour %>%
-    select(order_hour_of_day, Average) %>%
-    filter(Average > (Total*0.8))
-
-Total_80P <- sum((orders_per_hour$Average))
 
 ```  
-Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag eingehen. Ab 6 Uhr ist ein Starker Anstieg der eingehenden Produkte bemerkbar
+Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag eingehen. Ab 6 Uhr ist ein Starker Anstieg der eingehenden Produkte bemerkbar............
 
 
 
@@ -111,6 +103,7 @@ Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag ein
 
 
 ```{r}
+
 ggplot(data = orders_per_hour_per_day) + 
   geom_col(mapping = aes(x = order_dow, y = nr_of_orders, fill = as.factor(order_dow))) +
   ggtitle("Total Nr of orders per Day ") +
@@ -152,15 +145,15 @@ SELECT "index", orders_id, product_id, add_to_cart_order FROM orders_product_tra
 ) AS X 
 GROUP BY X.orders_id
 ORDER BY X.orders_id ASC 
-LIMIT 30
+
 
 ```
 
 ```{r}
 #Create a new table with Order_id and nr_of_items per order
-items_per_order <- bind_rows(orders_product_prior, orders_product_train) %>% 
+items_per_order <- orders_product %>% 
   group_by(orders_id) %>%
-  summarise(nr_of_items = last(add_to_cart_order))
+  summarise(nr_of_items = max(add_to_cart_order))
 
 ggplot(data = items_per_order) + 
   geom_bar(mapping = aes(x = nr_of_items), width=0.9) +
@@ -207,8 +200,9 @@ ggplot(data = product_sales_per_week) +
 ```{r}
 products_per_hour_per_day <- orders %>%
   group_by(order_dow, order_hour_of_day) %>%
-  left_join(select(bind_rows(orders_product_prior, orders_product_train), orders_id, product_id),by="orders_id") %>%
-  summarise(nr_of_products = n())
+  left_join(select(orders_product, orders_id, product_id),by="orders_id") %>%
+  summarise(nr_of_products = n()) %>%
+  collect()
 
 max_products <- products_per_hour_per_day %>%
   summarise(max_day = max(nr_of_products)) %>%
@@ -275,12 +269,109 @@ ggplot(data = order_product_ratio) +
 ```
 
 ```{r}
-deployment_plan <- order_product_ratio %>%
-  select(order_dow, order_hour_of_day, workload_products)
-deployment_plan
+Total_products <- sum(order_product_ratio$nr_of_products)
+Total_orders <- sum(order_product_ratio$nr_of_orders)
+
 ```
 
+```{r}
+open_from_60 <- order_product_ratio %>%
+  filter(workload_products >= 0.6)
 
+P_contains_from_60 <- sum(open_from_60$nr_of_products)
+P_loss_to_60 <- Total_products - P_contains_from_60
+
+O_contains_from_60 <- sum(open_from_60$nr_of_orders)
+O_loss_to_60 <- Total_orders - O_contains_from_60
+
+P_Percent_loss_60 = P_loss_to_60/Total_products
+P_Percent_contains_60 = P_contains_from_60/Total_products
+```
+
+```{r}
+open_from_50 <- order_product_ratio %>%
+  filter(workload_products >= 0.5)
+
+P_contains_from_50 <- sum(open_from_50$nr_of_products)
+P_loss_to_50 <- Total_products - P_contains_from_50
+
+O_contains_from_50 <- sum(open_from_50$nr_of_orders)
+O_loss_to_50 <- Total_orders - O_contains_from_50
+
+P_Percent_loss_50 = P_loss_to_50/Total_products
+P_Percent_contains_50 = P_contains_from_50/Total_products
+```
+
+```{r}
+open_from_35 <- order_product_ratio %>%
+  filter(workload_products >= 0.35) 
+
+
+P_contains_from_35 <- sum(open_from_35$nr_of_products)
+P_loss_to_35 <- Total_products - P_contains_from_35
+
+O_contains_from_35 <- sum(open_from_35$nr_of_orders)
+O_loss_to_35 <- Total_orders - O_contains_from_35
+
+P_Percent_loss_35 = P_loss_to_35/Total_products
+P_Percent_contains_35 = P_contains_from_35/Total_products
+
+```
+
+```{r}
+open_from_25 <- order_product_ratio %>%
+  filter(workload_products >= 0.25)
+
+P_contains_from_25 <- sum(open_from_25$nr_of_products)
+P_loss_to_25 <- Total_products - P_contains_from_25
+
+O_contains_from_25 <- sum(open_from_25$nr_of_orders)
+O_loss_to_25 <- Total_orders - O_contains_from_25
+
+P_Percent_loss_25 = P_loss_to_25/Total_products
+P_Percent_contains_25 = P_contains_from_25/Total_products
+```
+
+```{r}
+open_from_15 <- order_product_ratio %>%
+  filter(workload_products >= 0.15) %>%
+  group_by(order_dow) %>%
+  collect()
+
+P_contains_from_15 <- sum(open_from_15$nr_of_products)
+P_loss_to_15 <- Total_products - P_contains_from_15
+
+O_contains_from_15 <- sum(open_from_15$nr_of_orders)
+O_loss_to_15 <- Total_orders - O_contains_from_15
+
+P_Percent_loss_15 = P_loss_to_15/Total_products
+P_Percent_contains_15 = P_contains_from_15/Total_products
+
+open_from_15 <- open_from_15 %>%
+  group_by(order_dow) %>%
+  summarise(c(open = min(order_hour_of_day)), (close = max(order_hour_of_day)))
+
+open_time <- c(open_from_15$order_hour_of_day)
+close_time <- c(open_from_15$order_hour_of_day)
+```
+
+```{r}
+P_Percent_contains_60
+P_Percent_loss_60
+
+P_Percent_contains_50
+P_Percent_loss_50
+
+P_Percent_contains_35
+P_Percent_loss_35
+
+P_Percent_contains_25
+P_Percent_loss_25
+
+P_Percent_contains_15
+P_Percent_loss_15
+
+```
 
 
 
