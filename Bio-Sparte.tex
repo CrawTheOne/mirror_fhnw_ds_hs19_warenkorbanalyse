@@ -1,0 +1,361 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Bio-Sparte},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Bio-Sparte}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{}
+    \preauthor{}\postauthor{}
+    \date{}
+    \predate{}\postdate{}
+  
+
+\begin{document}
+\maketitle
+
+\hypertarget{libraries}{%
+\subsubsection{Libraries}\label{libraries}}
+
+Library aufrufen das wir nutzen wollen
+
+\begin{verbatim}
+## -- Attaching packages --------------------------------------- tidyverse 1.2.1 --
+\end{verbatim}
+
+\begin{verbatim}
+## v ggplot2 3.2.1     v purrr   0.3.2
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   1.0.0     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0
+\end{verbatim}
+
+\begin{verbatim}
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: RPostgreSQL
+\end{verbatim}
+
+\hypertarget{connection}{%
+\subsubsection{Connection}\label{connection}}
+
+Datanbankverbindung aufbauen
+
+\hypertarget{grabbing-the-data}{%
+\subsubsection{Grabbing the data}\label{grabbing-the-data}}
+
+Abrufen von daten um damit umzugehen
+
+\hypertarget{control-missing-data-na}{%
+\paragraph{Control missing data (NA)}\label{control-missing-data-na}}
+
+Kontrolle ob es fehlende werte gibt in der tabelle t\_aisles
+
+\hypertarget{aisle}{%
+\subparagraph{Aisle}\label{aisle}}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\hypertarget{departments}{%
+\subparagraph{Departments}\label{departments}}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\hypertarget{orders}{%
+\subparagraph{Orders}\label{orders}}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+Kunden die zum ersten mal einkaufen
+
+Es fehlen 206209 werte von 3421083 für days\_since\_prior (6.0275942\%.
+
+Es könnten first-time Kunden sein, also die Kunden die ihre erste
+Bestellung machen
+
+\hypertarget{products}{%
+\subparagraph{Products}\label{products}}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 0
+\end{verbatim}
+
+Jetzt wollen wir graphisch das verhältnis von Bio- zu nicht Bio-Produkte
+aufzeichnen
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\hypertarget{anzahl-gekaufte-bio-produkte-in-respekt-zu-nicht-bio-produkte}{%
+\subsubsection{Anzahl Gekaufte Bio-Produkte in respekt zu nicht
+Bio-Produkte}\label{anzahl-gekaufte-bio-produkte-in-respekt-zu-nicht-bio-produkte}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Verhalt_Bio_bought <-}\StringTok{ }\NormalTok{t_products}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{verhuxe4ltnis-bionicht-bio-in-departments-aisles}{%
+\subsubsection{Verhältnis Bio/Nicht-bio in departments \&
+aisles}\label{verhuxe4ltnis-bionicht-bio-in-departments-aisles}}
+
+Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die
+Offerte an Bio-produkte in den verschiedene Departments und Aisles.
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-9-1.pdf}
+
+Man kann sehen das die Anzahl an Bio-Produkte in den Departments sehr
+swach ist, im gegensatz zu den ``normalen'' Produkten.
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+Man kann auch hier sehen das der Verhältniss zwischen Bio-Produkten und
+nicht Bio\_Produkten niedrig ist in spezifische aisles. Es gibt sogar
+aisles wo es keinlerei Bio-Produkten gibt. Dafür aber gibt es andere
+aisles wo der Verhältnis viel grösser ist, z.b. Baby Food Formulas und
+Fresh Vegetables.
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-11-1.pdf}
+
+\hypertarget{determine-most-bought-products}{%
+\subsubsection{Determine most bought
+products}\label{determine-most-bought-products}}
+
+Wir möchten wissen welche Produkte am meisten eingekauft werden und ob
+diese Organic oder nicht sind
+
+\begin{verbatim}
+## # A tibble: 30 x 3
+## # Groups:   organic [2]
+##    organic product_name               n
+##    <lgl>   <chr>                  <int>
+##  1 FALSE   Banana                 18726
+##  2 TRUE    Bag of Organic Bananas 15480
+##  3 TRUE    Organic Strawberries   10894
+##  4 TRUE    Organic Baby Spinach    9784
+##  5 FALSE   Large Lemon             8135
+##  6 TRUE    Organic Avocado         7409
+##  7 TRUE    Organic Hass Avocado    7293
+##  8 FALSE   Strawberries            6494
+##  9 FALSE   Limes                   6033
+## 10 TRUE    Organic Raspberries     5546
+## # ... with 20 more rows
+\end{verbatim}
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-12-1.pdf}
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-13-1.pdf}
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-14-1.pdf}
+
+\hypertarget{stammkunden-analyse}{%
+\subsection{Stammkunden analyse}\label{stammkunden-analyse}}
+
+Ein ziele wäre die Stammkunden erkennen und sehen ob sie verschieden
+einkaufen, z.b eine höhere Anzahl an Produkten pro Bestellung kaufen.
+Daher haben wir der durschnitt an Bestellungen berechnet sowie die
+Quartilen: Ausser dem Visualizieren wir mit einen Plot die Anzahl kunden
+die Mehrmals bei uns eingekauft haben.
+
+\begin{verbatim}
+## # A tibble: 100 x 2
+##    nr_of_orders      n
+##           <int>  <int>
+##  1            1 206209
+##  2            2 206209
+##  3            3 206209
+##  4            4 206209
+##  5            5 182223
+##  6            6 162633
+##  7            7 146468
+##  8            8 132618
+##  9            9 120918
+## 10           10 110728
+## # ... with 90 more rows
+\end{verbatim}
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-15-1.pdf}
+
+\begin{verbatim}
+## [1] 17.15486
+\end{verbatim}
+
+\begin{verbatim}
+##   0%  25%  50%  75% 100% 
+##    1    5   11   23  100
+\end{verbatim}
+
+Wir wollen auch den Durschnitt von Bestellung von jeden Kunden
+Berechnen.
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-16-1.pdf}
+
+Wir definieren Stammkunden die die mindestens einmal alle 14 Tagen bei
+uns einkaufen (Alle 14 Tage, im diagramm 0 bis 13)
+
+Die totale anzahl an stammkunden ist 103005 von 206209. Dies entsprecht
+49.951748\% von aller Kunden die je im laden waren
+
+\includegraphics{Bio-Sparte_files/figure-latex/unnamed-chunk-18-1.pdf}
+Die Anzahl an transactionen das von Stammkunden geamcht wurden
+entsprechen 702319 von 1384617. Das entspricht 50.7229797\% aller
+transactionen.
+
+\hypertarget{a-priori-algorithmus}{%
+\subsection{A priori Algorithmus}\label{a-priori-algorithmus}}
+
+
+\end{document}
