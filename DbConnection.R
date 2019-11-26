@@ -26,7 +26,6 @@ show(t_products)
 #Data Cleaning
 
 #t_orders
-
 t_orders_Clean <- t_orders %>% drop_na()
 
 t_orders_FirstBuy <- t_orders %>%
@@ -34,7 +33,6 @@ t_orders_FirstBuy <- t_orders %>%
   select(-c(days_since_prior_order))
 
 #t_orders
-
 t_orders_Clean <- t_orders %>% drop_na()
 
 t_orders_FirstBuy <- t_orders %>%
@@ -42,9 +40,8 @@ t_orders_FirstBuy <- t_orders %>%
   select(-c(days_since_prior_order))
 
 #t_aisles
-
 t_aisles_Clean <- t_aisles %>%
-  filter(aisle != "missing" | aisle != "other")
+  filter(aisle != "missing" & aisle != "other")
 
 t_aisles_Missing <- t_aisles %>%
   filter(aisle == "missing")
@@ -54,10 +51,13 @@ t_aisles_Other <- t_aisles %>%
 
 #t_departments
 t_departments_Clean <- t_departments %>%
-  filter(department != "missing" | department != "other")
+  filter(department != "missing" & department != "other")
 
 t_departments_Missing <- t_departments %>%
   filter(department == "missing")
 
 t_departments_Other <- t_departments %>%
   filter(department == "other")
+
+
+show(t_aisles_Clean)
