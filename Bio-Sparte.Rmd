@@ -1,8 +1,10 @@
 ---
 title: "Bio-Sparte"
 output:
-  pdf_document: default
   html_notebook: default
+  html_document:
+    df_print: paged
+  pdf_document: default
 editor_options:
   chunk_output_type: inline
 ---
@@ -147,12 +149,12 @@ missing_prior_orders <- t_orders %>%
 	is.na() %>% 
 	sum()
 
-#x <- t_orders %>% 
-#	summarize(n())
+x <- t_orders %>% 
+	summarize(n())
 #x <- tally(t_orders) #geht auch
 
-#x <- as.data.frame(x)
-#number_orders_tot <- as.integer(x[[1]])
+x <- as.data.frame(x)
+number_orders_tot <- as.integer(x[[1]])
 
 missing_prior_prozent <- round(100*missing_prior_orders/number_orders_tot, 10)
 ```
@@ -187,6 +189,13 @@ org_notorg <- t_products %>%
 ggplot(org_notorg) +
   geom_col(aes(x = organic, y = n))
 ```
+
+### Anzahl Gekaufte Bio-Produkte in respekt zu nicht Bio-Produkte
+
+```{r}
+Verhalt_Bio_bought <- t_products
+```
+
 
 
 ### Verhältnis Bio/Nicht-bio in departments & aisles
@@ -236,7 +245,7 @@ ggplot(Verhalt_aisle) +
 
 Man kann auch hier sehen das der Verhältniss zwischen Bio-Produkten und nicht Bio_Produkten niedrig ist in spezifische aisles. Es gibt sogar aisles wo es keinlerei Bio-Produkten gibt. Dafür aber gibt es andere aisles wo der Verhältnis viel grösser ist, z.b. Baby Food Formulas und Fresh Vegetables. 
 
-```{r, fig.height = 18, echo=FALSE, results="hide"}
+```{r, fig.height = 18, include=FALSE}
 Verhalt_aisle_norg <- full_join(t_products, t_aisles, "aisle_id") %>%
 	full_join(t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
@@ -298,7 +307,7 @@ ggplot(most_bought_all) +
 ```
 
 
-```{r, echo=FALSE, results="hide"}
+```{r, include=FALSE}
 # Determine most bought organic products
 
 most_bought_org <- full_join(t_products, t_orders_train, "product_id") %>%
@@ -318,7 +327,7 @@ ggplot(most_bought_org) +
   coord_flip()
 ```
 
-```{r, echo=FALSE, echo=FALSE, results="hide"}
+```{r, include=FALSE}
 #Most bought non-organic products
 
 most_bought_nonorg <- full_join(t_products, t_orders_train, "product_id") %>%
@@ -454,10 +463,9 @@ Die Anzahl an transactionen das von Stammkunden geamcht wurden entsprechen `r Nu
 
 
 
-```{r}
+```{r, echo=FALSE, results="hide"}
 # close the connection (don't forget to cleanup)
 dbDisconnect(con)
-dbUnloadDriver(drv)
 ```
 
 
