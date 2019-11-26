@@ -1,0 +1,128 @@
+---
+title: "Analyse der Kunden"
+output: html_notebook
+---
+
+```{r, echo=FALSE}
+library(tidyverse)
+
+DB_HOST='server2053.cs.technik.fhnw.ch'
+DB_PORT = 5432
+DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
+DB_USERNAME = 'db_user' 
+DB_PASSWORD = 'db_user_pw'
+
+con <- DBI::dbConnect(odbc::odbc(),
+                      Driver   = "PostgreSQL Unicode(x64)",
+                      Server   = DB_HOST,
+                      Database = DB_DBNAME,
+                      UID      = DB_USERNAME,
+                      PWD      = DB_PASSWORD,
+                      Port     = DB_PORT)
+
+knitr::opts_chunk$set(connection = "con")
+
+t_products <- tbl(con, "product")
+t_aisles <- tbl(con, "aisle")
+t_departments <- tbl(con, "department")
+t_orders <- tbl(con, "orders")
+t_orders_product = tbl(con, "orders_product_prior") %>%
+  union_all(tbl(con, "orders_product_train"))
+
+```
+
+# Stammkunden herausfiltern
+
+Wir definieren Stammkunden durch folgende Attribute:
+
+* Zeitraum über alle Einkäufe mindestens 90 Tage
+* Frequenz der Einkäufe im Durchschnitt mindestens alle 14 Tage
+
+```{sql, connection=con, output.var=patrons}
+SELECT
+  o.user_id,
+  avg(o.days_since_prior_order) as avg_days_since_prior_order,
+  sum(o.days_since_prior_order) as avg_timespan_for_all_orders,
+  count(o.orders_id) as total_nr_of_orders
+FROM orders o
+WHERE o.eval_set = 'prior'
+  AND o.days_since_prior_order > 0
+GROUP BY o.user_id
+HAVING
+  sum(o.days_since_prior_order) > 90
+  AND avg(o.days_since_prior_order) <= 14
+```
+
+
+## Verhältnis von Stammkunden zu allen Kunden
+
+```{r}
+patrons_count <- patrons %>% 
+  count() %>%
+  pull(n) %>%
+  as.numeric()
+
+no_patrons_count <- t_orders %>%
+  select(user_id) %>%
+  distinct() %>%
+  count() %>%
+  pull(n) %>%
+  as.numeric() - patrons_count
+
+slices <- c(patrons_count, no_patrons_count)
+lbls <- c("Stammkunden", "Keine Stammkunden")
+pct <- round(slices/sum(slices)*100)
+lbls <- paste(lbls, pct) # add percents to labels
+lbls <- paste(lbls,"%",sep="") # ad % to labels
+
+pie(slices, lbls, main="Verhältnis von Einkäufen von Stammkunden zu normalen Kunden")
+```
+
+Mit unserer Definition kann man sagen, dass `r pct[1]`% aller Einkäufe von Stammkunden getätigt werden.
+
+## Was sind die Lieblingsprodukte von Stammkunden
+
+```{sql, connection=con, output.var=patrons_most_bought}
+SELECT p.product_name, count(p.product_id) as count
+FROM orders o
+JOIN (
+    SELECT *
+    FROM orders_product_prior opp
+    UNION ALL
+    SELECT *
+    FROM orders_product_train opt
+    ) AS op
+    ON op.orders_id = o.orders_id
+JOIN product p ON p.product_id = op.product_id
+WHERE o.eval_set = 'prior'
+  AND o.user_id IN (SELECT
+                      o.user_id
+                    FROM orders o
+                    WHERE o.eval_set = 'prior'
+                      AND o.days_since_prior_order > 0
+                    GROUP BY o.user_id
+                    HAVING
+                      sum(o.days_since_prior_order) > 90
+                      AND avg(o.days_since_prior_order) <= 14)
+GROUP BY p.product_name
+ORDER BY count DESC 
+```
+
+```{r}
+patrons_most_bought %>%
+  top_n(30) %>%
+  mutate(count = as.integer(count)) %>%
+  ggplot(aes(x=reorder(product_name,count), y=count)) +
+  geom_col() + 
+  coord_flip()
+```
+
+
+```{r}
+ggplot(data = patrons) + 
+  geom_col(mapping = aes(x = nr_of_orders, y = n), width=0.9, fill = "#FF9999") +
+  xlab("nr_of_orders") + ylab("Nr of clients") +
+	coord_cartesian(xlim = c(0,50)) +
+  ggtitle("Number of clients with same order count")
+```
+
