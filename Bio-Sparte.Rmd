@@ -1,14 +1,16 @@
 ---
 title: "Bio-Sparte"
-output: html_notebook
-editor_options: 
+output:
+  pdf_document: default
+  html_notebook: default
+editor_options:
   chunk_output_type: inline
 ---
 
 ### Libraries
 Library aufrufen das wir nutzen wollen
 
-```{r setup, echo=FALSE}
+```{r setup, echo=FALSE, results="hide"}
 #install.packages("RPostgreSQL")
 #install.packages("tidyverse")
 
@@ -20,7 +22,7 @@ require("RPostgreSQL")
 ### Connection
 Datanbankverbindung aufbauen
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, results="hide"}
 DB_HOST='86.119.36.94' #or 86.119.36.94 or server2053.cs.technik.fhnw.ch
 DB_PORT = 5432
 DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
@@ -40,7 +42,7 @@ con <- DBI::dbConnect(odbc::odbc(),
 ### Grabbing the data
 Abrufen von daten um damit umzugehen
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, results="hide"}
 t_products <- tbl(con, "product")
 t_products <- as.data.frame(t_products)
 
@@ -386,7 +388,7 @@ ggplot(data = order_freq) +
   ggtitle("Average frequency of days since last order")
 
 #Maixmale anzahl tage zwischen einkäufe
-max_days_since_last_for_stamm <- 7
+max_days_since_last_for_stamm <- 14
 ```
 
 Wir definieren Stammkunden die die mindestens einmal alle `r max_days_since_last_for_stamm` Tagen bei uns einkaufen (Alle `r max_days_since_last_for_stamm` Tage, im diagramm 0 bis `r max_days_since_last_for_stamm-1`)
