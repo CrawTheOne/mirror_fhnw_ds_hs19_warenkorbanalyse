@@ -71,7 +71,33 @@ ggplot(Verhalt_Bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(stat =
 ### Beliebheit der Bio-Produkte in den Departments/aisles
 
 ```{r}
+Beliebheit_bio_dep <- full_join(t_products, t_orders_product, "product_id") %>%
+  right_join(t_departments, "department_id") %>%
+	select(c(product_id, product_name, orders_id, aisle_id, department)) %>%
+	mutate(organic_yes = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(department) %>%
+	count(organic_yes) %>%
+  mutate(n = as.integer(n))
 
+# prod dep org 
+#groupby(dep) count organic
+
+Beliebheit_bio_dep
+
+# Create a basic bar
+ggplot(Beliebheit_bio_dep, aes(x = "", y = n, fill = department)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  #scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Eingekaufte Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))  
 ```
 
 
