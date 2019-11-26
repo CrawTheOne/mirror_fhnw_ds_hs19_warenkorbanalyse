@@ -26,21 +26,53 @@ org_notorg <- t_products %>%
   count() %>%
   mutate(n_produkte = as.integer(n))
 
-ggplot(org_notorg) +
-  geom_col(aes(x = organic, y = n_produkte)) 
-
-ggplot(org_notorg, aes(x = "", y = n_produkte, fill = organic)) +
-  geom_bar(stat = "identity", width = 1) +
-  coord_polar("y", start = 0)
+# Create a basic bar
+ggplot(org_notorg, aes(x = "", y = n_produkte, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n_produkte))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
 ```
 
 ### Anzahl Gekaufte Bio-Produkte in respekt zu nicht Bio-Produkte
 
 ```{r}
-Verhalt_Bio_bought <- t_products %>%
-  
+Verhalt_Bio_bought <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(c(product_id, product_name, orders_id)) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+	count(organic) %>%
+  mutate(n = as.integer(n))
+
+# Create a basic bar
+ggplot(Verhalt_Bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Eingekaufte Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))  
 ```
 
+### Beliebheit der Bio-Produkte in den Departments/aisles
+
+```{r}
+
+```
 
 
 ### Verhältnis Bio/Nicht-bio in departments & aisles
