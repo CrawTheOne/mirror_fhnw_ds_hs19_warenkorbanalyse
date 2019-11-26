@@ -1,4 +1,5 @@
 library(tidyverse)
+library(DBI)
 
 DB_HOST='server2053.cs.technik.fhnw.ch'
 DB_PORT = 5432
@@ -21,19 +22,17 @@ t_orders <- tbl(con, "orders")
 t_orders_product = tbl(con, "orders_product_prior") %>%
   union_all(tbl(con, "orders_product_train"))
 
-show(t_products)
-
 #Data Cleaning
 
 #t_orders
-t_orders_Clean <- t_orders %>% drop_na()
+t_orders_Clean <- t_orders %>% filter(is.na())
 
 t_orders_FirstBuy <- t_orders %>%
   filter(is.na(days_since_prior_order)) %>%
   select(-c(days_since_prior_order))
 
 #t_orders
-t_orders_Clean <- t_orders %>% drop_na()
+t_orders_Clean <- t_orders %>% filter(days_since_prior_order)
 
 t_orders_FirstBuy <- t_orders %>%
   filter(is.na(days_since_prior_order)) %>%

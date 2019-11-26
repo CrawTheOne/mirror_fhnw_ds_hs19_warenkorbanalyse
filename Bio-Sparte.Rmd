@@ -10,51 +10,11 @@ editor_options:
 ---
 
 ### Libraries
-Library aufrufen das wir nutzen wollen
+Library aufrufen das wir nutzen wollen und Connection
 
 ```{r setup, echo=FALSE, results="hide"}
-library(DBI)
-library(tidyverse)
 require("RPostgreSQL")
-```
-
-### Connection
-Datanbankverbindung aufbauen
-
-```{r, echo=FALSE, results="hide"}
-DB_HOST='86.119.36.94' #or 86.119.36.94 or server2053.cs.technik.fhnw.ch
-DB_PORT = 5432
-DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
-DB_USERNAME = 'db_user' 
-DB_PASSWORD = 'db_user_pw'
-
-con <- DBI::dbConnect(odbc::odbc(),
-                      Driver   = "PostgreSQL Unicode(x64)",
-                      Server   = DB_HOST,
-                      Database = DB_DBNAME,
-                      UID      = DB_USERNAME,
-                      PWD      = DB_PASSWORD,
-                      Port     = DB_PORT,
-											encoding = "latin1" )
-```
-
-### Grabbing the data
-Abrufen von daten um damit umzugehen
-
-```{r, echo=FALSE, results="hide"}
-t_products <- tbl(con, "product")
-t_aisles <- tbl(con, "aisle")
-t_departments <- tbl(con, "department")
-t_orders <- tbl(con, "orders")
-t_orders_prior <- tbl(con, "orders_product_prior")
-t_orders_train <- tbl(con, "orders_product_train")
-
-#t_products <- dbGetQuery(con,  "SELECT * From product")
-#t_aisles <- dbGetQuery(con,  "SELECT * From aisle")
-#t_departments <- dbGetQuery(con,  "SELECT * From department")
-#t_orders <- dbGetQuery(con,  "SELECT * From orders")
-#t_orders_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior")
-#t_orders_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
+source('DbConnection.R')
 ```
 
 Wir möchten graphisch das verhältnis von Bio- zu nicht Bio-Produkte aufzeichnen
