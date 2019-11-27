@@ -5,6 +5,8 @@ output:
     df_print: paged
   df_print: paged
   pdf_document: default
+editor_options: 
+  chunk_output_type: inline
 ---
 #Install packages if necessary
 ```{r}
@@ -52,14 +54,6 @@ con <- dbConnect(drv, dbname = DB_DBNAME,
 ```
 
 
-#Defines SQL Query
-```{r}
-orders <- dbGetQuery(con,  "SELECT * From orders")
-orders_product_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior")
-orders_product_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
-
-```
-
 ```{r}
 orders <- tbl(con,  "orders")
 orders_product_prior <- tbl(con,  "orders_product_prior")
@@ -72,12 +66,6 @@ orders_product = tbl(con, "orders_product_prior") %>%
 ##Orders over 24 hours
 
 Als erstes wäre es interessant zu sehen, wie die Verteilung aller Bestellungen über den Zeitraum von 24 Stunden aussieht, da davon auszugehen ist, dass die Anzahl der Bestellungen pro uhrzeit variieren. 
-
-```{sql, connection=con, output.var=orders_per_hour_per_day_sql}
-SELECT order_dow, order_hour_of_day, COUNT(orders_id) 
-FROM orders
-GROUP BY order_dow, order_hour_of_day
-```
 
 
 
@@ -137,23 +125,18 @@ ggplot(data = orders_per_hour_per_day) +
 ##Nr of items per order
 Ziel: Untersuchung der Bestellgrössen.
 
-```{sql, connection=con, output.var=items_per_order_sql}
-SELECT X.orders_id, max(X.add_to_cart_order) FROM (
-SELECT "index", orders_id, product_id, add_to_cart_order FROM orders_product_prior 
-UNION 
-SELECT "index", orders_id, product_id, add_to_cart_order FROM orders_product_train
-) AS X 
-GROUP BY X.orders_id
-ORDER BY X.orders_id ASC 
-
-
-```
-
 ```{r}
 #Create a new table with Order_id and nr_of_items per order
 items_per_order <- orders_product %>% 
   group_by(orders_id) %>%
-  summarise(nr_of_items = max(add_to_cart_order))
+  summarise(nr_of_items = as.numeric(max(add_to_cart_order))) 
+
+product_sales_per_week <- orders %>%
+  group_by(orders_id) %>%
+  left_join(select(items_per_order, orders_id, nr_of_items),by="orders_id")
+
+items_per_order <- items_per_order %>% 
+  collect()
 
 ggplot(data = items_per_order) + 
   geom_bar(mapping = aes(x = nr_of_items), width=0.9) +
@@ -163,8 +146,8 @@ ggplot(data = items_per_order) +
 
 mean_order_size <- mean(items_per_order$nr_of_items)
 median_order_size <- median(items_per_order$nr_of_items)
-max_order_size <- max(items_per_order$nr_of_items)
 quantile_order_size <- quantile(items_per_order$nr_of_items)
+percentages_order_size <- quantile(items_per_order$nr_of_items, c(.10, .20, .30, .40, .50, .60, .70, .80, .90)) 
 ```
 Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
 
@@ -172,18 +155,14 @@ Das arithmetische Mittel über alle Bestellungen liegt bei 10.107 verschiedenen 
 
 Das Median über alle Bestellungen liegt bei `r median_order_size` verschiedenen Produkten pro Bestellung. Die hälfte aller Bestellungen enthällt entsprechend `r median_order_size` oder Weniger Produkte.
 
-75% aller Bestellungen enthalten 14 oder weniger unterschiedliche Produkte.
+75% aller Bestellungen enthalten `r quantile_order_size[4]` oder weniger unterschiedliche Produkte. 
+25% aller Bestellungen enthalten `r quantile_order_size[2]` oder weniger unterschiedliche Produkte. 
 
-Fazit: Um genauere Aussagen über Aussagen zum individuellen Auslastung machen zu können müssen erst die durchschnittlichen Bestellgrössen der einzelnen Stunden und Tage Analysiert werden.
+Fazit: Aus der oberen Grafik ist zu sehen, dass es sich eher um kleinere Bestellungen bis XYZ verschiedenen Artikeln pro Bestellung Handelt. Nehmen wir nun an, dass Persohnen mit bis `r quantile_order_size[2]` verschiedenen Artikeln auch selbständig über einem Self-Check Automat bezahlen würden, könnte so bist 25% an kassenpersonal eingesparrt werden. Um genauere Aussagen zur individuellen Auslastung machen zu können, müssen erst die durchschnittlichen Bestellgrössen der einzelnen Stunden und Tage Analysiert werden.
 
 
 
-```{r}
-product_sales_per_week <- orders %>%
-  group_by(orders_id) %>%
-  left_join(select(items_per_order, orders_id, nr_of_items),by="orders_id")
 
-```
 
 
 ##Items over 24 hours and 7 days
@@ -274,9 +253,12 @@ Total_orders <- sum(order_product_ratio$nr_of_orders)
 
 ```
 
-```{r}
+```{r include=FALSE}
 open_from_60 <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.6)
+
+avg_workload_60 <- mean(open_from_60$workload_products)*100
 
 P_contains_from_60 <- sum(open_from_60$nr_of_products)
 P_loss_to_60 <- Total_products - P_contains_from_60
@@ -284,13 +266,20 @@ P_loss_to_60 <- Total_products - P_contains_from_60
 O_contains_from_60 <- sum(open_from_60$nr_of_orders)
 O_loss_to_60 <- Total_orders - O_contains_from_60
 
-P_Percent_loss_60 = P_loss_to_60/Total_products
-P_Percent_contains_60 = P_contains_from_60/Total_products
+P_Percent_loss_60 <- (P_loss_to_60/Total_products)*100
+P_Percent_contains_60 <- (P_contains_from_60/Total_products)*100
+
+open_from_60 <- open_from_60 %>%
+  group_by(order_dow) %>%
+  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
 ```
 
-```{r}
+```{r include=FALSE}
 open_from_50 <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.5)
+
+avg_workload_50 <- mean(open_from_50$workload_products)*100
 
 P_contains_from_50 <- sum(open_from_50$nr_of_products)
 P_loss_to_50 <- Total_products - P_contains_from_50
@@ -298,14 +287,21 @@ P_loss_to_50 <- Total_products - P_contains_from_50
 O_contains_from_50 <- sum(open_from_50$nr_of_orders)
 O_loss_to_50 <- Total_orders - O_contains_from_50
 
-P_Percent_loss_50 = P_loss_to_50/Total_products
-P_Percent_contains_50 = P_contains_from_50/Total_products
+P_Percent_loss_50 <- (P_loss_to_50/Total_products)*100
+P_Percent_contains_50 <- (P_contains_from_50/Total_products)*100
+
+open_from_50 <- open_from_50 %>%
+  group_by(order_dow) %>%
+  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
+
 ```
 
-```{r}
+```{r include=FALSE}
 open_from_35 <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.35) 
 
+avg_workload_35 <- mean(open_from_35$workload_products)*100
 
 P_contains_from_35 <- sum(open_from_35$nr_of_products)
 P_loss_to_35 <- Total_products - P_contains_from_35
@@ -313,14 +309,21 @@ P_loss_to_35 <- Total_products - P_contains_from_35
 O_contains_from_35 <- sum(open_from_35$nr_of_orders)
 O_loss_to_35 <- Total_orders - O_contains_from_35
 
-P_Percent_loss_35 = P_loss_to_35/Total_products
-P_Percent_contains_35 = P_contains_from_35/Total_products
+P_Percent_loss_35 <- (P_loss_to_35/Total_products)*100
+P_Percent_contains_35 <- (P_contains_from_35/Total_products)*100
+
+open_from_35 <- open_from_35 %>%
+  group_by(order_dow) %>%
+  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
 
 ```
 
 ```{r}
 open_from_25 <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.25)
+
+avg_workload_25 <- mean(open_from_25$workload_products)*100
 
 P_contains_from_25 <- sum(open_from_25$nr_of_products)
 P_loss_to_25 <- Total_products - P_contains_from_25
@@ -328,15 +331,21 @@ P_loss_to_25 <- Total_products - P_contains_from_25
 O_contains_from_25 <- sum(open_from_25$nr_of_orders)
 O_loss_to_25 <- Total_orders - O_contains_from_25
 
-P_Percent_loss_25 = P_loss_to_25/Total_products
-P_Percent_contains_25 = P_contains_from_25/Total_products
+P_Percent_loss_25 <- (P_loss_to_25/Total_products)*100
+P_Percent_contains_25 <- (P_contains_from_25/Total_products)*100
+
+open_from_25 <- open_from_25 %>%
+  group_by(order_dow) %>%
+  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
+
 ```
 
 ```{r}
 open_from_15 <- order_product_ratio %>%
-  filter(workload_products >= 0.15) %>%
-  group_by(order_dow) %>%
-  collect()
+  select(-c(order_product_ratio, workload_orders)) %>%
+  filter(workload_products >= 0.15) 
+
+avg_workload_15 <- mean(open_from_15$workload_products)*100
 
 P_contains_from_15 <- sum(open_from_15$nr_of_products)
 P_loss_to_15 <- Total_products - P_contains_from_15
@@ -344,47 +353,41 @@ P_loss_to_15 <- Total_products - P_contains_from_15
 O_contains_from_15 <- sum(open_from_15$nr_of_orders)
 O_loss_to_15 <- Total_orders - O_contains_from_15
 
-P_Percent_loss_15 = P_loss_to_15/Total_products
-P_Percent_contains_15 = P_contains_from_15/Total_products
+P_Percent_loss_15 <- (P_loss_to_15/Total_products)*100
+P_Percent_contains_15 <- (P_contains_from_15/Total_products)*100
 
 open_from_15 <- open_from_15 %>%
   group_by(order_dow) %>%
-  summarise(c(open = min(order_hour_of_day)), (close = max(order_hour_of_day)))
-
-open_time <- c(open_from_15$order_hour_of_day)
-close_time <- c(open_from_15$order_hour_of_day)
-```
-
-```{r}
-P_Percent_contains_60
-P_Percent_loss_60
-
-P_Percent_contains_50
-P_Percent_loss_50
-
-P_Percent_contains_35
-P_Percent_loss_35
-
-P_Percent_contains_25
-P_Percent_loss_25
-
-P_Percent_contains_15
-P_Percent_loss_15
+  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
 
 ```
 
+
+##Offen ab mindestens 15% Auslastung:
+ 
+Folgende Tage haben während diesem Zeitraum eine 15 prozentige Auslastung:
+
+`r open_from_15`
+ 
+In diesem Zeitraum gehen nach Datensatz `r round(P_Percent_contains_15, digits = 1)` Prozent aller Produkte über die Ladentheke.
+
+Die Auslastung beträgt pro Stunde durchschnittlich `r round(avg_workload_15, digits = 1)` Prozent.
+
+Bei diesen Öffnungszeiten werden `r round(P_Percent_loss_15, digits = 1)` Prozent der Verkauften Produkte im Datensatz nicht abgedeckt. 
+
+Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist.
 
 
 #Disconnect from the DB
-```{r}
+```{r eval=FALSE, include=FALSE}
 # close the connection (don't forget to cleanup)
 dbDisconnect(con)
 dbUnloadDriver(drv)
 ```
 
 #Remove Variables from Global Environement
-```{r}
-remove(max)
+```{r eval=FALSE, include=FALSE}
+remove(orders_per_hour_per_day_sql)
 ```
 
 
