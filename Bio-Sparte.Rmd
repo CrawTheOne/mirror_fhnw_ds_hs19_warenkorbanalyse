@@ -1,187 +1,116 @@
 ---
 title: "Bio-Sparte"
-output: html_notebook
-editor_options: 
+output:
+  html_notebook: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+editor_options:
   chunk_output_type: inline
 ---
 
 ### Libraries
-library aufrufen das wir nutzen wollen
+Library aufrufen das wir nutzen wollen und Connection
 
-```{r setup}
-#install.packages("RPostgreSQL")
-#install.packages("tidyverse")
-
-library(DBI)
-library(tidyverse)
+```{r setup, echo=FALSE, results="hide"}
 require("RPostgreSQL")
+source('DbConnection.R')
 ```
 
-### Connection
-Datanbankverbindung aufbauen
+Wir möchten graphisch das verhältnis von Bio- zu nicht Bio-Produkte aufzeichnen
 
-```{r}
-DB_HOST='86.119.36.94' #or 86.119.36.94 or server2053.cs.technik.fhnw.ch
-DB_PORT = 5432
-DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
-DB_USERNAME = 'db_user' 
-DB_PASSWORD = 'db_user_pw'
-
-con <- DBI::dbConnect(odbc::odbc(),
-                      Driver   = "PostgreSQL Unicode(x64)",
-                      Server   = DB_HOST,
-                      Database = DB_DBNAME,
-                      UID      = DB_USERNAME,
-                      PWD      = DB_PASSWORD,
-                      Port     = DB_PORT,
-											encoding = "latin1" )
-```
-
-### Grabbing the data
-Definition von tabellen auf variabeln in R um damit umzugehen
-
-```{r}
-t_products <- tbl(con, "product")
-t_products <- as.data.frame(t_products)
-
-t_aisles <- tbl(con, "aisle")
-t_aisles <- as.data.frame(t_aisles)
-
-t_departments <- tbl(con, "department")
-t_departments <- as.data.frame(t_departments)
-
-t_orders <- tbl(con, "orders")
-t_orders <- as.data.frame(t_orders)
-
-#t_orders_prior <- tbl(con, "orders_product_prior")
-#t_orders_prior <- as.data.frame("t_orders_prior")
-
-t_orders_train <- tbl(con, "orders_product_train")
-t_orders_train <- as.data.frame(t_orders_train)
-
-
-#t_products <- dbGetQuery(con,  "SELECT * From product")
-#t_aisles <- dbGetQuery(con,  "SELECT * From aisle")
-#t_departments <- dbGetQuery(con,  "SELECT * From department")
-#t_orders <- dbGetQuery(con,  "SELECT * From orders")
-#t_orders_prior <- dbGetQuery(con,  "SELECT * From orders_product_prior")
-#t_orders_train <- dbGetQuery(con,  "SELECT * From orders_product_train")
-```
-
-#### Control missing data (NA)
-Kontrolle ob es fehlende werte gibt in der tabelle t_aisles
-
-##### Aisle
-```{r}
-#RETURNS INTEGER, SLOWER
-t_aisles %>% 
-	pull(aisle) %>% 
-	is.na() %>% 
-	sum()
-
-#RETURNS LIST, FASTER
-t_aisles %>%
-  filter(is.na(aisle)) %>%
-	count()
-
-t_aisles %>%
-  filter(is.na(aisle_id)) %>%
-	count()
-
-#only works with tabellen
-t_aisles %>% 
-	mutate(aisle_id_NA = is.na(aisle_id)) %>% 
-	summarise(aisle_id_NA_sum = sum(aisle_id_NA))
-```
-
-##### Departments
-```{r}
-t_departments %>%
-  filter(is.na(department)) %>%
-	count()
-
-t_departments %>%
-  filter(is.na(department_id)) %>%
-	count()
-```
-
-##### Orders
-```{r}
-t_orders %>%
-  filter(is.na(orders_id)) %>%
-	count()
-
-t_orders %>%
-  filter(is.na(user_id)) %>%
-	count()
-
-t_orders %>%
-  filter(is.na(eval_set)) %>%
-	count()
-
-t_orders %>%
-  filter(is.na(order_number)) %>%
-	count()
-
-t_orders %>%
-  filter(is.na(order_dow)) %>%
-	count()
-
-t_orders %>%
-  filter(is.na(order_hour_of_day)) %>%
-	count()
-
-t_orders %>%
-  filter(is.na(days_since_prior_order)) %>%
-	count()
-
-missing_prior_orders <- t_orders %>% 
-	pull(days_since_prior_order) %>% 
-	is.na() %>% 
-	sum()
-
-x <- t_orders %>% 
-	summarize(n())
-#x <- tally(t_orders) #geht auch
-
-x <- as.data.frame(x)
-number_orders_tot <- as.integer(x[[1]])
-
-missing_prior_prozent <- round(100*missing_prior_orders/number_orders_tot, 10)
-```
-
-###### Kunden die zum ersten ma einkaufen
-Es fehlen `r missing_prior_orders` werte von `r number_orders_tot` für days_since_prior (`r missing_prior_prozent`% . 
-
-Es könnten first-time Kunden sein, also die Kunden die ihre erste Bestellung machen
-
-##### Products
-```{r}
-t_products %>%
-  filter(is.na(product_id))
-
-t_products %>%
-  filter(is.na(product_name))
-```
-
-Jetzt wollen wir graphisch das verhältnis von Bio zu nicht Bio aufzeichnen
-Changes Mario und Riccard:
-
-```{r}
+```{r, echo=FALSE}
 org_notorg <- t_products %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(organic) %>%
   count() %>%
+  mutate(n_produkte = as.integer(n))
+
+# Create a basic bar
+ggplot(org_notorg, aes(x = "", y = n_produkte, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n_produkte))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+### Anzahl Gekaufte Bio-Produkte in Gegensatz zu nicht Bio-Produkte
+
+```{r}
+<<<<<<< HEAD
+#Verhalt_Bio_bought <- t_products %>%
+  
+=======
+Verhalt_Bio_bought <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(c(product_id, product_name, orders_id)) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+	count(organic) %>%
   mutate(n = as.integer(n))
 
-ggplot(org_notorg) +
-  geom_col(aes(x = organic, y = n))
+# Create a basic bar
+ggplot(Verhalt_Bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Eingekaufte Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))  
+>>>>>>> master
+```
+
+### Beliebheit der Bio-Produkte in den Departments/aisles
+
+```{r}
+Beliebheit_bio_dep <- full_join(t_products, t_orders_product, "product_id") %>%
+  right_join(t_departments, "department_id") %>%
+	select(c(product_id, product_name, orders_id, aisle_id, department)) %>%
+	mutate(organic_yes = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(department) %>%
+	count(organic_yes) %>%
+  mutate(n = as.integer(n))
+
+# prod dep org 
+#groupby(dep) count organic
+
+Beliebheit_bio_dep
+
+# Create a basic bar
+ggplot(Beliebheit_bio_dep, aes(x = "", y = n, fill = department)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  #scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Eingekaufte Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))  
 ```
 
 
-
 ### Verhältnis Bio/Nicht-bio in departments & aisles
-```{r, fig.height = 7}
+
+Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments und Aisles. 
+
+```{r, fig.height = 7, echo=FALSE}
 Verhalt_dep <- full_join(t_products, t_aisles, "aisle_id") %>%
 	full_join(t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
@@ -191,16 +120,16 @@ Verhalt_dep <- full_join(t_products, t_aisles, "aisle_id") %>%
   mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
 	arrange(-anzahl_produkte)
 
-Verhalt_dep
+#Verhalt_dep
 
 ggplot(Verhalt_dep) +
   geom_col(aes(x = reorder(department, anzahl_produkte) ,y = anzahl_produkte, fill = organic))  +
   coord_flip()
 ```
 
+Man kann sehen das die Anzahl an Bio-Produkte in den Departments sehr swach ist, im gegensatz zu den "normalen"  Produkten. 
 
-
-```{r, fig.height = 18}
+```{r, fig.height = 17, echo=FALSE}
 Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
 	full_join(t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
@@ -208,30 +137,13 @@ Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
   group_by(aisle, organic) %>%
 	count(name = "anzahl_produkte") %>%
   mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
+  ungroup() %>%
 	arrange(-anzahl_produkte)
 
-Verhalt_aisle
+#Verhalt_aisle
 
 ggplot(Verhalt_aisle) +
   geom_col(aes(x = reorder(as.factor(aisle), anzahl_produkte), y = anzahl_produkte, fill = organic)) +
-  coord_flip()
-
-full_join(t_products, t_aisles, "aisle_id") %>%
-	full_join(t_departments, "department_id") %>%
-	select(-c(aisle_id, department_id, product_id)) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(aisle, organic) %>%
-	count(name = "anzahl_produkte") %>%
-  mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
-	mutate(type = as.character(organic)) %>%
-	ungroup() %>%
-	arrange(-anzahl_produkte) %>%
-	select(-organic) -> g
-
-g
-
-ggplot(g) +
-  geom_col(aes(x = reorder(as.factor(aisle), anzahl_produkte), y = anzahl_produkte, fill = type)) +
   coord_flip()
 
 #verhalt_aisle save or as csv
@@ -239,7 +151,9 @@ ggplot(g) +
 #write.csv(Verhalt_aisle,'Verhalt_aisle.csv')
 ```
 
-```{r, fig.height = 18}
+Man kann auch hier sehen das der Verhältniss zwischen Bio-Produkten und nicht Bio_Produkten niedrig ist in spezifische aisles. Es gibt sogar aisles wo es keinlerei Bio-Produkten gibt. Dafür aber gibt es andere aisles wo der Verhältnis viel grösser ist, z.b. Baby Food Formulas und Fresh Vegetables. 
+
+```{r, fig.height = 18, include=FALSE}
 Verhalt_aisle_norg <- full_join(t_products, t_aisles, "aisle_id") %>%
 	full_join(t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
@@ -281,7 +195,9 @@ ggplot(New_Verhalt_aisle) +
 
 ### Determine most bought products
 
-```{r}
+Wir möchten wissen welche Produkte am meisten eingekauft werden und ob diese Organic oder nicht sind
+
+```{r, echo=FALSE}
 most_bought_all <- full_join(t_products, t_orders_train, "product_id") %>%
 	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
@@ -298,9 +214,11 @@ ggplot(most_bought_all) +
   coord_flip()
 ```
 
-#### Determine most bought organic products
-```{r}
-most_bought_org <- full_join(t_products, t_orders_train, "product_id") %>%
+
+```{r, include=FALSE}
+# Determine most bought organic products
+
+most_bought_org <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   mutate(organic = as.integer(organic)) %>%
@@ -317,9 +235,10 @@ ggplot(most_bought_org) +
   coord_flip()
 ```
 
-#### Determine most bought non-organic products
-```{r}
-most_bought_nonorg <- full_join(t_products, t_orders_train, "product_id") %>%
+```{r, include=FALSE}
+#Most bought non-organic products
+
+most_bought_nonorg <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   mutate(organic = as.integer(organic)) %>%
@@ -340,7 +259,9 @@ ggplot(most_bought_nonorg) +
 
 ## Stammkunden analyse
 
-```{r}
+Ein ziele wäre die Stammkunden erkennen und sehen ob sie verschieden einkaufen, z.b eine höhere Anzahl an Produkten pro Bestellung kaufen. Daher haben wir der durschnitt an Bestellungen berechnet sowie die Quartilen: Ausser dem Visualizieren wir mit einen Plot die Anzahl kunden die Mehrmals bei uns eingekauft haben. 
+
+```{r, echo=FALSE}
 order_number_range_client <- t_orders %>% 
   group_by(orders_id) %>%
   summarise(nr_of_orders = last(order_number)) %>%
@@ -351,10 +272,10 @@ order_range_client <- t_orders %>%
   summarise(nr_of_orders = last(order_number))
 
 order_number_range_client
-order_range_client
+#order_range_client
 
 ggplot(data = order_number_range_client) + 
-  geom_col(mapping = aes(x = nr_of_orders, y = n), width=0.9) +
+  geom_col(mapping = aes(x = nr_of_orders, y = n), width=0.9, fill = "#FF9999") +
   xlab("nr_of_orders") + ylab("Nr of clients") +
 	coord_cartesian(xlim = c(0,50)) +
   ggtitle("Number of clients with same order count") 
@@ -366,7 +287,9 @@ mean_range_clients_size
 quantile_range_clients_size
 ```
 
-```{r}
+Wir wollen auch den Durschnitt von Bestellung von jeden Kunden Berechnen. 
+
+```{r, echo=FALSE}
 order_freq <- t_orders %>% 
   group_by(user_id) %>%
 	na.omit %>%
@@ -374,19 +297,20 @@ order_freq <- t_orders %>%
 	summarise(mean_freq = last(mean_freq)) %>%
 	mutate(mean_freq = as.integer(mean_freq)) 
 	
-order_freq
+#order_freq
 
 ggplot(data = order_freq) + 
-  geom_bar(mapping = aes(x = mean_freq), width = 0.9) +
+  geom_bar(mapping = aes(x = mean_freq), width = 0.9, fill = "#FF9999") +
   xlab("clients buy every n days") + ylab("Nr of clients") +
   ggtitle("Average frequency of days since last order")
 
-max_days_since_last_for_stamm <- 7
+#Maixmale anzahl tage zwischen einkäufe
+max_days_since_last_for_stamm <- 14
 ```
 
 Wir definieren Stammkunden die die mindestens einmal alle `r max_days_since_last_for_stamm` Tagen bei uns einkaufen (Alle `r max_days_since_last_for_stamm` Tage, im diagramm 0 bis `r max_days_since_last_for_stamm-1`)
 
-```{r}
+```{r, echo=FALSE}
 Anzahl_stammkunden <- order_freq %>%
 	filter(mean_freq <= max_days_since_last_for_stamm) %>%
 	count()
@@ -400,14 +324,14 @@ Prozent_stamm <- 100*Anzahl_stammkunden/Tot_kunden
 
 Die totale anzahl an stammkunden ist `r Anzahl_stammkunden` von `r Tot_kunden`. Dies entsprecht `r Prozent_stamm`% von  aller Kunden die je im laden waren
 
-```{r}
+```{r, echo=FALSE}
 #Create a new table with Order_id and nr_of_items per order
-items_per_order <- t_orders_train %>% 
+items_per_order <- t_orders_product %>% 
   group_by(orders_id) %>%
   summarise(nr_of_items = last(add_to_cart_order)) %>%
 	arrange(orders_id)
 
-items_per_order
+#items_per_order
 
 #count the total number of bought items
 tot_num_transactions <- items_per_order %>%
@@ -423,10 +347,10 @@ frankenstein <- left_join(order_freq, t_orders, "user_id") %>%
 	group_by(nr_of_items)
 
 #resulting table is 
-frankenstein
+#frankenstein
 
 ggplot(data = frankenstein) + 
-  geom_bar(mapping = aes(x = nr_of_items), width = 0.9) +
+  geom_bar(mapping = aes(x = nr_of_items), width = 0.9, fill = "#FF9999") +
   xlab("Number of items per client") + ylab("Nr of clients")
 
 #count the toal number of bought items for stammkunden
@@ -434,22 +358,34 @@ Num_of_transactions_stamm <- frankenstein %>%
 	select(nr_of_items) %>%
 	sum()
 
-Num_of_transactions_stamm
-tot_num_transactions
+#Num_of_transactions_stamm
+#tot_num_transactions
 
 Perzent_trans_stamm <- 100*Num_of_transactions_stamm/tot_num_transactions
-Perzent_trans_stamm
+#Perzent_trans_stamm
 ```
-
+Die Anzahl an transactionen das von Stammkunden geamcht wurden entsprechen `r Num_of_transactions_stamm` von `r tot_num_transactions`. Das entspricht `r Perzent_trans_stamm`% aller transactionen. 
 
 ## A priori Algorithmus
 
-
-
+# First Buy für Bioprodukte
 ```{r}
+t_orders_FirstBuy
+t_orders_FirstBuy %>% inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  filter(organic == TRUE) %>%
+  count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n)
+
+#Die Rangliste der Meistgekauften Bio-Produkte unterscheiden sich nur sehr gering von der Rangliste der insgesammt Gekauften Bio-Produkte und daher Vernachlässigbar
+```
+
+
+```{r, echo=FALSE, results="hide"}
 # close the connection (don't forget to cleanup)
 dbDisconnect(con)
-dbUnloadDriver(drv)
 ```
 
 

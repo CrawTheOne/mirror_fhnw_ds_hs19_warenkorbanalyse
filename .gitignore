@@ -41,8 +41,6 @@ vignettes/*.pdf
 # R package: bookdown caching files
 /*_files/
 
-### nb.html files ###
-*.nb.html
-
 ### data cache ###
 /data/
+.Rproj.user
