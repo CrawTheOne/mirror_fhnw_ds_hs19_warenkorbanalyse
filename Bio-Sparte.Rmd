@@ -46,7 +46,7 @@ ggplot(org_notorg, aes(x = "", y = n_produkte, fill = organic)) + geom_bar(stat 
 
 ### Anzahl Gekaufte Bio-Produkte in Gegensatz zu nicht Bio-Produkte
 
-```{r}
+```{r, echo=FALSE}
 proportion_bio_bought <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(c(product_id, product_name, orders_id)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
@@ -74,7 +74,7 @@ ggplot(proportion_bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(sta
 
 ### Beliebheit der Bio-Produkte in den Departments/aisles
 
-```{r}
+```{r, echo=FALSE}
 product_sold_dep_proportion <- full_join(t_products, t_orders_product, "product_id") %>%
   right_join(t_departments, "department_id") %>%
 	select(c(product_id, product_name, orders_id, department)) %>%
@@ -100,6 +100,8 @@ ggplot(product_sold_dep_proportion, aes(x = reorder(department, sold_bio_percent
 ```
 
 ```{r, fig.height = 17}
+#product_sold_aisle_proportion
+
 product_sold_aisle_proportion <- full_join(t_products, t_orders_product, "product_id") %>%
   right_join(t_aisles, "aisle_id") %>%
 	select(c(product_id, product_name, orders_id, aisle)) %>%
@@ -129,6 +131,8 @@ ggplot(product_sold_aisle_proportion, aes(x = reorder(aisle, sold_bio_percent), 
 Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments und Aisles. 
 
 ```{r, fig.height = 7, echo=FALSE}
+#proportion products per departments
+
 proportion_dep <- full_join(t_products, t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
@@ -140,17 +144,37 @@ proportion_dep <- full_join(t_products, t_departments, "department_id") %>%
   rename(prod_organic = "1", prod_notorganic = "0") %>%
   mutate(prod_organic = replace_na(prod_organic, 0)) %>%
   mutate(tot_prod_dep = prod_organic + prod_notorganic) %>%
-  mutate(prod_bio_percent = round(100*sold_organic/tot_prod_dep, digits = 2)) %>%
+  mutate(prod_bio_percent = round(100*prod_organic/tot_prod_dep, digits = 2)) %>%
   arrange(desc(prod_bio_percent))
 
 proportion_dep
 
-ggplot(proportion_dep) +
-  geom_col(aes(x = reorder(department, anzahl_produkte) ,y = anzahl_produkte, fill = organic))  +
+ggplot(proportion_dep, aes(x = reorder(department, prod_bio_percent), y = prod_bio_percent)) +
+  labs(x = "department", y = "prod_bio_percent",  title = "Prozentanzahl Bio-Produkte per Department") +
+  geom_col(fill="orange") +
+  geom_text(aes(label = paste0(prod_bio_percent, "%")), position = position_stack(vjust = 0.5)) + 
   coord_flip()
 ```
 
 Man kann sehen das die Anzahl an Bio-Produkte in den Departments sehr swach ist, im gegensatz zu den "normalen"  Produkten. 
+
+```{r, echo = FALSE}
+#Visulaziation between products available and products sales
+
+table_proddep_over_propsold <- full_join(product_sold_dep_proportion, proportion_dep, "department") %>%
+  select(department, sold_bio_percent, prod_bio_percent) %>%
+  gather(`sold_bio_percent`, `prod_bio_percent`, key = "prod_or_sold", value = "percent") %>%
+  arrange(department)
+
+table_proddep_over_propsold
+
+ggplot(table_proddep_over_propsold, aes(x = reorder(department, percent), y = percent, fill = prod_or_sold)) +
+  labs(x = "department", y = "sold_bio_prozent",  title = "Prozentanzahl gekaufte Bio-Produkte per Department") +
+  geom_col(position = 'dodge') +
+  geom_text(aes(label = paste0(percent, "%")), position = position_stack(vjust = 0.5)) + 
+  coord_flip()
+```
+
 
 ```{r, fig.height = 17, include=FALSE}
 Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
