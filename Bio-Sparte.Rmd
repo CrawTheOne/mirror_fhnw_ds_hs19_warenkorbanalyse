@@ -138,7 +138,6 @@ ggplot(Product_sold_aisle_beliebheit, aes(x = reorder(aisle, sold_bio_prozent), 
 ```
 
 
-
 ### Verhältnis Bio/Nicht-bio in departments & aisles
 
 Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments und Aisles. 
@@ -403,16 +402,49 @@ Die Anzahl an transactionen das von Stammkunden geamcht wurden entsprechen `r Nu
 
 # First Buy für Bioprodukte
 ```{r}
-t_orders_FirstBuy
-t_orders_FirstBuy %>% inner_join(t_orders_product) %>%
+t_orders_FirstBuy_most_bought_org <- t_orders_FirstBuy %>% inner_join(t_orders_product) %>%
   inner_join(t_products) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   filter(organic == TRUE) %>%
   count(product_name) %>%
   mutate(n = as.integer(n))  %>%
 	arrange(-n)
+  
+
+most_bought_org <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  mutate(organic = as.integer(organic)) %>%
+  filter(organic == 1) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n)%>%
+  mutate(n= n/20)
+  
+
+most_bought_org
+t_orders_FirstBuy_most_bought_org
 
 #Die Rangliste der Meistgekauften Bio-Produkte unterscheiden sich nur sehr gering von der Rangliste der insgesammt Gekauften Bio-Produkte und daher Vernachlässigbar
+
+
+```
+
+#Vergleich der Tabellen mit compare_df
+```{r}
+ctable_firstBuyer = compareDF::compare_df(as.data.frame(most_bought_org), as.data.frame(most_bought_nonorg), c("product_name"))
+
+print(ctable_firstBuyer$html_output)
+
+
+#ergibt einen übersichlichen Table, die n Daten können allerdings nicht ernstgenommen werden, darum veränder ich die Werte von n an die gesammte Anzahl n.
+```
+
+
+# Wieviele Prozent eines Bio-Einkaufes ist Bio
+```{r}
+
+
 ```
 
 
