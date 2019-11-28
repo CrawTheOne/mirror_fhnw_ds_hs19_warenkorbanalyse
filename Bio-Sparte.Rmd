@@ -47,7 +47,7 @@ ggplot(org_notorg, aes(x = "", y = n_produkte, fill = organic)) + geom_bar(stat 
 ### Anzahl Gekaufte Bio-Produkte in Gegensatz zu nicht Bio-Produkte
 
 ```{r}
-Verhalt_Bio_bought <- full_join(t_products, t_orders_product, "product_id") %>%
+proportion_bio_bought <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(c(product_id, product_name, orders_id)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(organic) %>%
@@ -57,7 +57,7 @@ Verhalt_Bio_bought <- full_join(t_products, t_orders_product, "product_id") %>%
 #Verhalt_Bio_bought
 
 # Create a basic bar
-ggplot(Verhalt_Bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+ggplot(proportion_bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
   # Convert to pie (polar coordinates) and add labels
   coord_polar("y", start = 0) + 
   geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
@@ -75,38 +75,32 @@ ggplot(Verhalt_Bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(stat =
 ### Beliebheit der Bio-Produkte in den Departments/aisles
 
 ```{r}
-Product_sold_dept_beliebheit <- full_join(t_products, t_orders_product, "product_id") %>%
+product_sold_dep_proportion <- full_join(t_products, t_orders_product, "product_id") %>%
   right_join(t_departments, "department_id") %>%
 	select(c(product_id, product_name, orders_id, department)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(department) %>%
 	count(organic) %>%
-  group_by(department) %>%
-  arrange(organic)  %>%
   mutate(n = as.integer(n)) %>%
-  mutate(nn = lag(n)) %>%
-  mutate(sold_organic = n, sold_notorganic = nn) %>%
-  mutate(tot_sold_dep = sum(sold_organic)) %>%
-  select(-c(n,nn, organic)) %>%
-  filter(!is.na(sold_notorganic)) %>%
-  mutate(sold_bio_prozent = round(100*sold_organic/tot_sold_dep, digits = 2)) %>%
-  arrange(desc(sold_bio_prozent))
+  collect() %>%
+  spread(key = organic, value = n) %>%
+  rename(sold_organic = "1", sold_notorganic = "0") %>%
+  mutate(sold_organic = replace_na(sold_organic, 0)) %>%
+  mutate(tot_sold_dep = sold_organic + sold_notorganic) %>%
+  mutate(sold_bio_percent = round(100*sold_organic/tot_sold_dep, digits = 2)) %>%
+  arrange(desc(sold_bio_percent))
 
-#singlton pattern
+product_sold_dep_proportion
 
-Product_sold_dept_beliebheit
-
-ggplot(Product_sold_dept_beliebheit, aes(x = reorder(department, sold_bio_prozent), y = sold_bio_prozent)) +
+ggplot(product_sold_dep_proportion, aes(x = reorder(department, sold_bio_percent), y = sold_bio_percent)) +
   labs(x = "department", y = "sold_bio_prozent",  title = "Prozentanzahl gekaufte Bio-Produkte per Department") +
   geom_col(fill="orange") +
-  geom_text(aes(label = paste0(sold_bio_prozent, "%")), position = position_stack(vjust = 0.5)) + 
+  geom_text(aes(label = paste0(sold_bio_percent, "%")), position = position_stack(vjust = 0.5)) + 
   coord_flip()
 ```
 
-### Beliebheit der Bio-Produkte in den Departments/aisles
-
-```{r}
-Product_sold_aisle_beliebheit <- full_join(t_products, t_orders_product, "product_id") %>%
+```{r, fig.height = 17}
+product_sold_aisle_proportion <- full_join(t_products, t_orders_product, "product_id") %>%
   right_join(t_aisles, "aisle_id") %>%
 	select(c(product_id, product_name, orders_id, aisle)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
@@ -114,43 +108,44 @@ Product_sold_aisle_beliebheit <- full_join(t_products, t_orders_product, "produc
 	count(organic) %>% 
   mutate(n = as.integer(n)) %>%
   collect() %>%
-  spread(key = organic, value = n) #%>%
-  #mutate(sold_organic = 1, sold_notorganic = 0) %>%
-  #mutate(tot_sold_aisle = sum(sold_organic)) %>%
-  #select(-c(0,1, organic)) %>%
-  #filter(!is.na(sold_notorganic)) %>%
-  #mutate(sold_bio_prozent = round(100*sold_organic/tot_sold_aisle, digits = 2)) %>%
-  #arrange(desc(aisle))
+  spread(key = organic, value = n) %>%
+  rename(sold_organic = "1", sold_notorganic = "0") %>%
+  mutate(sold_organic = replace_na(sold_organic, 0)) %>%
+  mutate(tot_sold_aisle = sold_organic + sold_notorganic) %>%
+  mutate(sold_bio_percent = round(100*sold_organic/tot_sold_aisle, digits = 2)) %>%
+  arrange(desc(sold_bio_percent))
 
-#singlton pattern
+product_sold_aisle_proportion
 
-Product_sold_aisle_beliebheit
-
-ggplot(Product_sold_aisle_beliebheit, aes(x = reorder(aisle, sold_bio_prozent), y = sold_bio_prozent)) +
-  labs(x = "department", y = "sold_bio_prozent",  title = "Prozentanzahl gekaufte Bio-Produkte per Department") +
-  geom_col(fill="orange") +
-  geom_text(aes(label = paste0(sold_bio_prozent, "%")), position = position_stack(vjust = 0.5)) + 
+ggplot(product_sold_aisle_proportion, aes(x = reorder(aisle, sold_bio_percent), y = sold_bio_percent)) +
+  labs(x = "department", y = "sold_bio_percent",  title = "Prozentanzahl gekaufte Bio-Produkte per Department") +
+  geom_col(position = 'fill') +
+  geom_text(aes(label = paste0(sold_bio_percent, "%")), position = position_stack(vjust = 0.5)) + 
   coord_flip()
 ```
 
-
-### Verhältnis Bio/Nicht-bio in departments & aisles
+### Verhältnis anzahl Bio/Nicht-bio Produkte in departments & aisles
 
 Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments und Aisles. 
 
 ```{r, fig.height = 7, echo=FALSE}
-Verhalt_dep <- full_join(t_products, t_aisles, "aisle_id") %>%
-	full_join(t_departments, "department_id") %>%
+proportion_dep <- full_join(t_products, t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(department, organic) %>%
 	count(name = "anzahl_produkte") %>%
   mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
-	arrange(desc(anzahl_produkte))
+  collect() %>%
+  spread(key = organic, value = anzahl_produkte) %>%
+  rename(prod_organic = "1", prod_notorganic = "0") %>%
+  mutate(prod_organic = replace_na(prod_organic, 0)) %>%
+  mutate(tot_prod_dep = prod_organic + prod_notorganic) %>%
+  mutate(prod_bio_percent = round(100*sold_organic/tot_prod_dep, digits = 2)) %>%
+  arrange(desc(prod_bio_percent))
 
-Verhalt_dep
+proportion_dep
 
-ggplot(Verhalt_dep) +
+ggplot(proportion_dep) +
   geom_col(aes(x = reorder(department, anzahl_produkte) ,y = anzahl_produkte, fill = organic))  +
   coord_flip()
 ```
