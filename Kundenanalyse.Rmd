@@ -5,6 +5,7 @@ output: html_notebook
 
 ```{r, echo=FALSE}
 library(tidyverse)
+library(RColorBrewer)
 
 DB_HOST='server2053.cs.technik.fhnw.ch'
 DB_PORT = 5432
@@ -18,7 +19,8 @@ con <- DBI::dbConnect(odbc::odbc(),
                       Database = DB_DBNAME,
                       UID      = DB_USERNAME,
                       PWD      = DB_PASSWORD,
-                      Port     = DB_PORT)
+                      Port     = DB_PORT,
+                      Encoding = 'latin1')
 
 knitr::opts_chunk$set(connection = "con")
 
@@ -31,26 +33,190 @@ t_orders_product = tbl(con, "orders_product_prior") %>%
 
 ```
 
+# Gruppierung der Kunden
+
+Wir versuchen anhand verschiedener Kriterien leicht zugängliche Gruppen von Kunden zu ermitteln.
+
+Die Fragen, die wir uns stellten lauten:
+
+* Gibt es Kunden die häufig wiederkehren? Was ist das durchschnittliche Intervall der Wiederkehrer?
+* Gibt es bestimmte Produkte, welche von Ersteinkäufern erlangt werden? Was lockt die Kunden in den Laden?
+* Gibt es Kunden, welche häufig nur kleine, aber dafür regelmässige Einkäufe tätigen?
+
+## SQL Abfragen
+
+### Allgemeine Informationen über Kunden/Bestellungen
+
+Dieses SQL wurde aus Performancegründen zusammengefasst und enthält daher schon einige Erkenntnisse aus den folgenden Auswertungen.
+
+```{sql connection=con, output.var=customer_behavior}
+SELECT
+  o.user_id,
+  COUNT(o.orders_id) AS total_nr_of_orders,
+  AVG(o.days_since_prior_order) AS avg_days_since_prior_order,
+  SUM(o.days_since_prior_order) AS timespan_for_all_orders
+FROM orders o
+GROUP BY o.user_id
+```
+
+```{r}
+customer_behavior <- customer_behavior %>%
+  mutate(total_nr_of_orders = as.integer(total_nr_of_orders))
+```
+
+
+### Anzahl der Produkte in den Einkäufen
+
+```{sql connection=con, output.var=products_by_order}
+SELECT
+    o.user_id,
+    o.orders_id,
+    COUNT(op.product_id) AS total_product_count
+FROM orders o
+JOIN (
+    SELECT *
+    FROM orders_product_prior opp
+    UNION ALL
+    SELECT *
+    FROM orders_product_train opt
+    ) AS op
+    ON op.orders_id = o.orders_id
+JOIN product p ON p.product_id = op.product_id
+GROUP BY o.user_id, o.orders_id
+```
+
+```{r}
+products_by_order <- products_by_order %>%
+  mutate(total_product_count = as.integer(total_product_count))
+```
+
+### Meistverkaufte Produkte
+```{sql connection=con, output.var=products_count_by_user}
+SELECT o.user_id, p.product_name, count(p.product_id) as count
+FROM orders o
+JOIN (
+    SELECT *
+    FROM orders_product_prior opp
+    UNION ALL
+    SELECT *
+    FROM orders_product_train opt
+    ) AS op
+    ON op.orders_id = o.orders_id
+JOIN product p ON p.product_id = op.product_id
+GROUP BY p.product_name, o.user_id
+ORDER BY count DESC 
+```
+
+```{r}
+products_count_by_user <- products_count_by_user %>%
+  mutate(count = as.integer(count))
+```
+
+
+### Allgemeine Statistik erweitern
+
+```{r}
+products_by_user_stats <- products_by_order %>%
+  group_by(user_id) %>%
+  summarise(mean_products_per_order = mean(total_product_count))
+```
+
+```{r}
+customer_behavior <-
+  customer_behavior %>%
+  inner_join(products_by_user_stats)
+```
+
+## Häufigkeit der Einkäufe
+
+```{r}
+customer_behavior %>%
+  select(total_nr_of_orders) %>%
+  summary()
+```
+
+_Die Hälfte aller Kunden haben zwischen 39 und 188 Bestellungen aufegeben._
+
+## Grösse der Warenkörbe
+
+```{r}
+customer_behavior %>%
+  select(mean_products_per_order) %>%
+  summary()
+```
+
+```{r}
+customer_behavior %>%
+  ggplot(aes(x=total_nr_of_orders)) +
+    xlab("Durchschnittliche Anzahl an Bestellungen") + 
+    ylab("Anzahl an Kunden") + 
+    ggtitle("Wieviele Bestellungen tätigen die Normalkunden?") +
+    geom_histogram(binwidth = 2, color="darkgray")
+```
+
+## Durchschnittliche Einkaufsfrequenz
+
+Wie häufig kommen Kunden im Durchschnitt in den Laden (aller wieviel Tage)?
+
+```{r}
+customer_behavior %>%
+  filter(avg_days_since_prior_order < 30) %>% #laut Beschreibung der Daten bedeutet 30 hier "30 und mehr"
+  ggplot(aes(x=avg_days_since_prior_order)) +
+    xlab("Durchschnittliche Wiederkehrzeit") + 
+    ylab("Anzahl an Kunden") + 
+    ggtitle("Aller wieviel Tage kommen Kunden im Durchschnitt wieder in den Laden?") +
+    geom_histogram(binwidth = 1, color="black", fill="gray")
+```
+
+```{r}
+customer_behavior %>%
+  filter(avg_days_since_prior_order < 30) %>%
+  select(avg_days_since_prior_order) %>%
+  summary()
+```
+
+Etwas mehr als die Hälfte aller Kunden kommen aller 9 bis 20 Tage zurück um erneut etwas zu kaufen. Im Durchschnitt aller 15 Tage.
+
+## Wie hoch ist der Anteil derer, die nur einmal einkaufen?
+
+```{r}
+customer_behavior %>%
+  filter(total_nr_of_orders == 1)
+```
+
+Es gibt keine Daten zu "Einmalkunden". Vielleicht sind diese bereits gefiltert worden.
+
+## Wie ist das Verhältnis von Anzahl der Bestellungen zu Warenkorbgrösse?
+
+```{r}
+customer_behavior %>%
+  mutate(mean_products_per_order = round(mean_products_per_order)) %>%
+  group_by(total_nr_of_orders, mean_products_per_order) %>%
+  summarise(weight = sum(mean_products_per_order)) %>%
+  ggplot(aes(x=total_nr_of_orders, y=mean_products_per_order, fill=weight)) +
+    geom_tile() +
+    scale_fill_gradientn(colors = c("blue", "lightblue", "green", "red"), values = c(0,0.1, 0.3, 1)) +
+    labs(x = "Gesamtanzahl an Einkäufen", y = "Ø Produkte pro Einkauf", fill = "Häufigkeit", title = NULL)
+```
+
+
+
 # Stammkunden herausfiltern
 
-Wir definieren Stammkunden durch folgende Attribute:
+Aufgrund der obigen Auswertungen definieren wir definieren Stammkunden Attribute:
 
 * Zeitraum über alle Einkäufe mindestens 90 Tage
-* Frequenz der Einkäufe im Durchschnitt mindestens alle 14 Tage
+* Frequenz der Einkäufe im Durchschnitt mindestens alle 15 Tage
 
 ```{sql, connection=con, output.var=patrons}
 SELECT
-  o.user_id,
-  avg(o.days_since_prior_order) as avg_days_since_prior_order,
-  sum(o.days_since_prior_order) as avg_timespan_for_all_orders,
-  count(o.orders_id) as total_nr_of_orders
+  o.user_id
 FROM orders o
 WHERE o.eval_set = 'prior'
-  AND o.days_since_prior_order > 0
 GROUP BY o.user_id
 HAVING
   sum(o.days_since_prior_order) > 90
-  AND avg(o.days_since_prior_order) <= 14
+  AND avg(o.days_since_prior_order) <= 15
 ```
 
 
@@ -71,59 +237,55 @@ no_patrons_count <- t_orders %>%
 
 slices <- c(patrons_count, no_patrons_count)
 lbls <- c("Stammkunden", "Keine Stammkunden")
-pct <- round(slices/sum(slices)*100)
-lbls <- paste(lbls, pct) # add percents to labels
+order_pct <- round(slices/sum(slices)*100)
+lbls <- paste(lbls, order_pct) # add percents to labels
 lbls <- paste(lbls,"%",sep="") # ad % to labels
 
 pie(slices, lbls, main="Verhältnis von Einkäufen von Stammkunden zu normalen Kunden")
 ```
 
-Mit unserer Definition kann man sagen, dass `r pct[1]`% aller Einkäufe von Stammkunden getätigt werden.
+Mit unserer Definition kann man sagen, dass `r order_pct[1]`% aller Einkäufe von Stammkunden getätigt werden.
 
-## Was sind die Lieblingsprodukte von Stammkunden
+## Verhältnis von Einkäufen von Stammkunden zu Nichtstammkunden
 
-```{sql, connection=con, output.var=patrons_most_bought}
-SELECT p.product_name, count(p.product_id) as count
-FROM orders o
-JOIN (
-    SELECT *
-    FROM orders_product_prior opp
-    UNION ALL
-    SELECT *
-    FROM orders_product_train opt
-    ) AS op
-    ON op.orders_id = o.orders_id
-JOIN product p ON p.product_id = op.product_id
-WHERE o.eval_set = 'prior'
-  AND o.user_id IN (SELECT
-                      o.user_id
-                    FROM orders o
-                    WHERE o.eval_set = 'prior'
-                      AND o.days_since_prior_order > 0
-                    GROUP BY o.user_id
-                    HAVING
-                      sum(o.days_since_prior_order) > 90
-                      AND avg(o.days_since_prior_order) <= 14)
-GROUP BY p.product_name
-ORDER BY count DESC 
+```{r}
+products_patron_ratio <- products_count_by_user %>%
+  left_join(patrons %>% mutate(patron = TRUE)) %>%
+  mutate(patron = replace_na(patron, FALSE)) %>%
+  group_by(product_name, patron) %>%
+  summarise(count = sum(count)) %>%
+  spread(key=patron, value = count) %>%
+  rename(no_patrons_bought = 'FALSE', patrons_bought = 'TRUE') %>%
+  mutate(no_patrons_bought = replace_na(no_patrons_bought, 0)) %>%
+  mutate(patrons_bought = replace_na(patrons_bought, 0)) %>%
+  mutate(overall_bought = no_patrons_bought + patrons_bought)
 ```
 
 ```{r}
-patrons_most_bought %>%
+slices <- c(sum(products_patron_ratio$patrons_bought), sum(products_patron_ratio$no_patrons_bought))
+lbls <- c("Stammkunden", "Keine Stammkunden")
+products_pct <- round(slices/sum(slices)*100)
+lbls <- paste(lbls, products_pct) # add percents to labels
+lbls <- paste(lbls,"%",sep="") # ad % to labels
+
+pie(slices, lbls, main="Verhältnis von gekauften Produkten von Stammkunden zu normalen Kunden")
+```
+
+Die Stammkunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich.
+
+__`r order_pct[1]`% aller Kunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich.__
+
+## Was sind die Lieblingsprodukte von Stammkunden
+
+```{r}
+products_count_by_user %>%
+  left_join((patrons %>% mutate(patron = TRUE))) %>%
+  group_by(product_name, patron) %>%
+  summarise(count = sum(count)) %>%
+  arrange(desc(count)) %>%
   top_n(30) %>%
-  mutate(count = as.integer(count)) %>%
-  ggplot(aes(x=reorder(product_name,count), y=count)) +
+  ggplot(aes(x=reorder(product_name,count), y=count, fill=patron)) +
   scale_y_continuous(name="Anzahl Einkäufe", labels = scales::comma) +
   geom_col() + 
   coord_flip()
 ```
-
-
-```{r}
-ggplot(data = patrons) + 
-  geom_col(mapping = aes(x = nr_of_orders, y = n), width=0.9, fill = "#FF9999") +
-  xlab("nr_of_orders") + ylab("Nr of clients") +
-	coord_cartesian(xlim = c(0,50)) +
-  ggtitle("Number of clients with same order count")
-```
-
