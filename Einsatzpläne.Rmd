@@ -176,7 +176,7 @@ ggplot(data = product_sales_per_week) +
 ```
 
 
-```{r}
+```{r include=FALSE}
 products_per_hour_per_day <- orders %>%
   group_by(order_dow, order_hour_of_day) %>%
   left_join(select(orders_product, orders_id, product_id),by="orders_id") %>%
@@ -194,7 +194,7 @@ max_orders <- orders_per_hour_per_day %>%
 max_o <- (max_orders$max_week)
 ```
 
-```{r}
+```{r include=FALSE}
 
 order_product_ratio <- orders_per_hour_per_day %>%
   left_join(products_per_hour_per_day, by = c("order_dow" = "order_dow", "order_hour_of_day" = "order_hour_of_day")) %>%
@@ -247,83 +247,87 @@ ggplot(data = order_product_ratio) +
   labs(fill='Workload')
 ```
 
-```{r}
+# Conclusion
+```{r include=FALSE}
 Total_products <- sum(order_product_ratio$nr_of_products)
 Total_orders <- sum(order_product_ratio$nr_of_orders)
 
 ```
 
+## Durchgehend Offen:
 ```{r include=FALSE}
-open_from_60 <- order_product_ratio %>%
+open_from_0 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
-  filter(workload_products >= 0.6)
+  filter(workload_products >= 0.0) 
 
-avg_workload_60 <- mean(open_from_60$workload_products)*100
+avg_workload_0 <- mean(open_from_0$workload_products)*100
 
-P_contains_from_60 <- sum(open_from_60$nr_of_products)
-P_loss_to_60 <- Total_products - P_contains_from_60
+P_contains_from_0 <- sum(open_from_0$nr_of_products)
+P_loss_to_0 <- Total_products - P_contains_from_0
 
-O_contains_from_60 <- sum(open_from_60$nr_of_orders)
-O_loss_to_60 <- Total_orders - O_contains_from_60
+O_contains_from_0 <- sum(open_from_0$nr_of_orders)
+O_loss_to_0 <- Total_orders - O_contains_from_0
 
-P_Percent_loss_60 <- (P_loss_to_60/Total_products)*100
-P_Percent_contains_60 <- (P_contains_from_60/Total_products)*100
+P_Percent_loss_0 <- (P_loss_to_0/Total_products)*100
+P_Percent_contains_0 <- (P_contains_from_0/Total_products)*100
 
-open_from_60 <- open_from_60 %>%
-  group_by(order_dow) %>%
-  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
-```
-
-```{r include=FALSE}
-open_from_50 <- order_product_ratio %>%
-  select(-c(order_product_ratio, workload_orders)) %>%
-  filter(workload_products >= 0.5)
-
-avg_workload_50 <- mean(open_from_50$workload_products)*100
-
-P_contains_from_50 <- sum(open_from_50$nr_of_products)
-P_loss_to_50 <- Total_products - P_contains_from_50
-
-O_contains_from_50 <- sum(open_from_50$nr_of_orders)
-O_loss_to_50 <- Total_orders - O_contains_from_50
-
-P_Percent_loss_50 <- (P_loss_to_50/Total_products)*100
-P_Percent_contains_50 <- (P_contains_from_50/Total_products)*100
-
-open_from_50 <- open_from_50 %>%
+open_from_0 <- open_from_0 %>%
   group_by(order_dow) %>%
   summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
 
 ```
 
+## Offen ab mindestens 15% Auslastung:
 ```{r include=FALSE}
-open_from_35 <- order_product_ratio %>%
+open_from_15 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
-  filter(workload_products >= 0.35) 
+  filter(workload_products >= 0.15) 
 
-avg_workload_35 <- mean(open_from_35$workload_products)*100
+avg_workload_15 <- mean(open_from_15$workload_products)*100
+timesave <- open_from_15 %>% 
+  summarise(total_hours = n()) 
+timesave_15 <- (sum(timesave$total_hours)/168)*100
 
-P_contains_from_35 <- sum(open_from_35$nr_of_products)
-P_loss_to_35 <- Total_products - P_contains_from_35
+P_contains_from_15 <- sum(open_from_15$nr_of_products)
+P_loss_to_15 <- Total_products - P_contains_from_15
 
-O_contains_from_35 <- sum(open_from_35$nr_of_orders)
-O_loss_to_35 <- Total_orders - O_contains_from_35
+O_contains_from_15 <- sum(open_from_15$nr_of_orders)
+O_loss_to_15 <- Total_orders - O_contains_from_15
 
-P_Percent_loss_35 <- (P_loss_to_35/Total_products)*100
-P_Percent_contains_35 <- (P_contains_from_35/Total_products)*100
+P_Percent_loss_15 <- (P_loss_to_15/Total_products)*100
+P_Percent_contains_15 <- (P_contains_from_15/Total_products)*100
 
-open_from_35 <- open_from_35 %>%
+open_from_15 <- open_from_15 %>%
   group_by(order_dow) %>%
   summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
 
+open_from_15
+
+
 ```
 
-```{r}
+Folgende Tage haben während diesem Zeitraum eine 15 prozentige Auslastung:
+
+`r open_from_15`
+ 
+Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in `r round(timesave_15, digits = 1)` Prozent der ursprünglichen Öffnungszeit insgesammt `r round(P_Percent_contains_15, digits = 1)` Prozent aller Produkte über die Ladentheke.
+
+Die Auslastung beträgt pro Stunde durchschnittlich `r round(avg_workload_15, digits = 1)` Prozent.
+
+Bei diesen Öffnungszeiten werden `r round(P_Percent_loss_15, digits = 1)` Prozent der Verkauften Produkte im Datensatz nicht abgedeckt. 
+
+Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist.
+
+## Offen ab mindestens 25% Auslastung:
+```{r include=FALSE}
 open_from_25 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.25)
 
 avg_workload_25 <- mean(open_from_25$workload_products)*100
+timesave <- open_from_25 %>% 
+  summarise(total_hours = n()) 
+timesave_25 <- (sum(timesave$total_hours)/168)*100
 
 P_contains_from_25 <- sum(open_from_25$nr_of_products)
 P_loss_to_25 <- Total_products - P_contains_from_25
@@ -340,40 +344,128 @@ open_from_25 <- open_from_25 %>%
 
 ```
 
-```{r}
-open_from_15 <- order_product_ratio %>%
+Folgende Tage haben während diesem Zeitraum eine 25 prozentige Auslastung:
+
+`r open_from_25`
+ 
+Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in `r round(timesave_25, digits = 1)` Prozent der ursprünglichen Öffnungszeit insgesammt `r round(P_Percent_contains_25, digits = 1)` Prozent aller Produkte über die Ladentheke.
+
+Die Auslastung beträgt pro Stunde durchschnittlich `r round(avg_workload_25, digits = 1)` Prozent.
+
+Bei diesen Öffnungszeiten werden `r round(P_Percent_loss_25, digits = 1)` Prozent der Verkauften Produkte im Datensatz nicht abgedeckt. 
+
+Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist.
+
+## Offen ab mindestens 35% Auslastung:
+```{r include=FALSE}
+open_from_35 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
-  filter(workload_products >= 0.15) 
+  filter(workload_products >= 0.35) 
 
-avg_workload_15 <- mean(open_from_15$workload_products)*100
+avg_workload_35 <- mean(open_from_35$workload_products)*100
+timesave <- open_from_35 %>% 
+  summarise(total_hours = n()) 
+timesave_35 <- (sum(timesave$total_hours)/168)*100
 
-P_contains_from_15 <- sum(open_from_15$nr_of_products)
-P_loss_to_15 <- Total_products - P_contains_from_15
+P_contains_from_35 <- sum(open_from_35$nr_of_products)
+P_loss_to_35 <- Total_products - P_contains_from_35
 
-O_contains_from_15 <- sum(open_from_15$nr_of_orders)
-O_loss_to_15 <- Total_orders - O_contains_from_15
+O_contains_from_35 <- sum(open_from_35$nr_of_orders)
+O_loss_to_35 <- Total_orders - O_contains_from_35
 
-P_Percent_loss_15 <- (P_loss_to_15/Total_products)*100
-P_Percent_contains_15 <- (P_contains_from_15/Total_products)*100
+P_Percent_loss_35 <- (P_loss_to_35/Total_products)*100
+P_Percent_contains_35 <- (P_contains_from_35/Total_products)*100
 
-open_from_15 <- open_from_15 %>%
+open_from_35 <- open_from_35 %>%
   group_by(order_dow) %>%
   summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
 
 ```
 
+Folgende Tage haben während diesem Zeitraum eine 35 prozentige Auslastung:
 
-##Offen ab mindestens 15% Auslastung:
+`r open_from_35`
  
-Folgende Tage haben während diesem Zeitraum eine 15 prozentige Auslastung:
+Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in `r round(timesave_35, digits = 1)` Prozent der ursprünglichen Öffnungszeit insgesammt `r round(P_Percent_contains_35, digits = 1)` Prozent aller Produkte über die Ladentheke.
 
-`r open_from_15`
+Die Auslastung beträgt pro Stunde durchschnittlich `r round(avg_workload_35, digits = 1)` Prozent.
+
+Bei diesen Öffnungszeiten werden `r round(P_Percent_loss_35, digits = 1)` Prozent der Verkauften Produkte im Datensatz nicht abgedeckt. 
+
+Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist.
+
+## Offen ab mindestens 50% Auslastung:
+```{r include=FALSE}
+open_from_50 <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
+  filter(workload_products >= 0.5)
+
+avg_workload_50 <- mean(open_from_50$workload_products)*100
+timesave <- open_from_50 %>% 
+  summarise(total_hours = n()) 
+timesave_50 <- (sum(timesave$total_hours)/168)*100
+
+P_contains_from_50 <- sum(open_from_50$nr_of_products)
+P_loss_to_50 <- Total_products - P_contains_from_50
+
+O_contains_from_50 <- sum(open_from_50$nr_of_orders)
+O_loss_to_50 <- Total_orders - O_contains_from_50
+
+P_Percent_loss_50 <- (P_loss_to_50/Total_products)*100
+P_Percent_contains_50 <- (P_contains_from_50/Total_products)*100
+
+open_from_50 <- open_from_50 %>%
+  group_by(order_dow) %>%
+  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
+
+```
+
+Folgende Tage haben während diesem Zeitraum eine 50 prozentige Auslastung:
+
+`r open_from_50`
  
-In diesem Zeitraum gehen nach Datensatz `r round(P_Percent_contains_15, digits = 1)` Prozent aller Produkte über die Ladentheke.
+Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in `r round(timesave_50, digits = 1)` Prozent der ursprünglichen Öffnungszeit insgesammt `r round(P_Percent_contains_50, digits = 1)` Prozent aller Produkte über die Ladentheke.
 
-Die Auslastung beträgt pro Stunde durchschnittlich `r round(avg_workload_15, digits = 1)` Prozent.
+Die Auslastung beträgt pro Stunde durchschnittlich `r round(avg_workload_50, digits = 1)` Prozent.
 
-Bei diesen Öffnungszeiten werden `r round(P_Percent_loss_15, digits = 1)` Prozent der Verkauften Produkte im Datensatz nicht abgedeckt. 
+Bei diesen Öffnungszeiten werden `r round(P_Percent_loss_50, digits = 1)` Prozent der Verkauften Produkte im Datensatz nicht abgedeckt. 
+
+Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist.
+
+## Offen ab mindestens 60% Auslastung:
+```{r include=FALSE}
+open_from_60 <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
+  filter(workload_products >= 0.6)
+
+avg_workload_60 <- mean(open_from_60$workload_products)*100
+timesave <- open_from_60 %>% 
+  summarise(total_hours = n()) 
+timesave_60 <- (sum(timesave$total_hours)/168)*100
+
+P_contains_from_60 <- sum(open_from_60$nr_of_products)
+P_loss_to_60 <- Total_products - P_contains_from_60
+
+O_contains_from_60 <- sum(open_from_60$nr_of_orders)
+O_loss_to_60 <- Total_orders - O_contains_from_60
+
+P_Percent_loss_60 <- (P_loss_to_60/Total_products)*100
+P_Percent_contains_60 <- (P_contains_from_60/Total_products)*100
+
+open_from_60 <- open_from_60 %>%
+  group_by(order_dow) %>%
+  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
+```
+
+Folgende Tage haben während diesem Zeitraum eine 60 prozentige Auslastung:
+
+`r open_from_60`
+ 
+Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in `r round(timesave_60, digits = 1)` Prozent der ursprünglichen Öffnungszeit insgesammt `r round(P_Percent_contains_60, digits = 1)` Prozent aller Produkte über die Ladentheke.
+
+Die Auslastung beträgt pro Stunde durchschnittlich `r round(avg_workload_60, digits = 1)` Prozent.
+
+Bei diesen Öffnungszeiten werden `r round(P_Percent_loss_60, digits = 1)` Prozent der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
 Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist.
 
