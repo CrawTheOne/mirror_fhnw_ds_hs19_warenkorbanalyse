@@ -111,20 +111,16 @@ Product_sold_aisle_beliebheit <- full_join(t_products, t_orders_product, "produc
 	select(c(product_id, product_name, orders_id, aisle)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(aisle) %>%
-	count(organic) %>%
-  group_by(aisle) %>%
-  arrange(aisle)  %>% #for end result replace aisle with organic
-  mutate(n = as.integer(n)) 
-#%>%
-  #mutate(nn = lag(n)) %>%
-  #mutate(sold_organic = n, sold_notorganic = nn) %>%
+	count(organic) %>% 
+  mutate(n = as.integer(n)) %>%
+  collect() %>%
+  spread(key = organic, value = n) #%>%
+  #mutate(sold_organic = 1, sold_notorganic = 0) %>%
   #mutate(tot_sold_aisle = sum(sold_organic)) %>%
-  #select(-c(n,nn, organic)) 
-
-#%>%
-#  filter(!is.na(sold_notorganic)) %>%
-#  mutate(sold_bio_prozent = round(100*sold_organic/tot_sold_aisle, digits = 2)) %>%
-#  arrange(desc(aisle))
+  #select(-c(0,1, organic)) %>%
+  #filter(!is.na(sold_notorganic)) %>%
+  #mutate(sold_bio_prozent = round(100*sold_organic/tot_sold_aisle, digits = 2)) %>%
+  #arrange(desc(aisle))
 
 #singlton pattern
 
@@ -162,7 +158,7 @@ ggplot(Verhalt_dep) +
 
 Man kann sehen das die Anzahl an Bio-Produkte in den Departments sehr swach ist, im gegensatz zu den "normalen"  Produkten. 
 
-```{r, fig.height = 17, echo=FALSE}
+```{r, fig.height = 17, include=FALSE}
 Verhalt_aisle <- full_join(t_products, t_aisles, "aisle_id") %>%
 	full_join(t_departments, "department_id") %>%
 	select(-c(aisle_id, department_id, product_id)) %>%
@@ -231,7 +227,7 @@ ggplot(New_Verhalt_aisle) +
 Wir möchten wissen welche Produkte am meisten eingekauft werden und ob diese Organic oder nicht sind
 
 ```{r, echo=FALSE}
-most_bought_all <- full_join(t_products, t_orders_train, "product_id") %>%
+most_bought_all <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(organic) %>%
