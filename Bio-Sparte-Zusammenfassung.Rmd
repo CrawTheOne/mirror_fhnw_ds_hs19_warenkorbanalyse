@@ -1,0 +1,139 @@
+---
+title: "Bio-Sparte Zusammenfassung"
+output: html_notebook
+---
+#DbConnection
+```{r setup, echo=FALSE, results="hide"}
+require("RPostgreSQL")
+source('DbConnection.R')
+```
+
+#Verhältniss Bio-Produkte zu Nicht-Bio-Produkte ------f
+```{r, echo=FALSE}
+ratio_products_org_notorg<- t_products %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+  count() %>%
+  mutate(n_produkte = as.integer(n))
+
+ratio_products_org_notorg
+
+# Create a basic bar
+ggplot(ratio_products_org_notorg, aes(x = "", y = n_produkte, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n_produkte))), position = position_stack(vjust = 0.5)) + 
+  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  labs(x = NULL, y = NULL,  title = "Anzahl Bio-/Nicht-Produkte") +
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
+```
+
+#Verhältniss Gekaufte Bio-Produkte in Gegensatz zu nicht Bio-Produkte -------f
+```{r}
+ratio_orders_org_notorg <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(c(product_id, product_name, orders_id)) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+	count(organic) %>%
+  mutate(n = as.integer(n))
+
+ratio_orders_org_notorg
+
+ggplot(ratio_orders_org_notorg, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
+  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  labs(x = NULL, y = NULL,  title = "Anzahl Eingekaufte Bio-/Nicht-Produkte") +
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))  
+```
+
+# Beliebheit der Bio-Produkte in den Departments --------f
+```{r}
+product_sold_org_byDepartment<- full_join(t_products, t_orders_product, "product_id") %>%
+  right_join(t_departments, "department_id") %>%
+	select(c(product_id, product_name, orders_id, department)) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(department) %>%
+	count(organic) %>%
+  group_by(department) %>%
+  arrange(organic)  %>%
+  mutate(n = as.integer(n)) %>%
+  mutate(nn = lag(n)) %>%
+  mutate(sold_org = n, sold_notorg = nn) %>%
+  mutate(total_sold_byDepartment = sum(sold_org)) %>%
+  select(-c(n,nn, organic)) %>%
+  filter(!is.na(sold_notorg)) %>%
+  mutate(sold_org_byPercent = round(100*sold_org/total_sold_byDepartment, digits = 2)) %>%
+  arrange(desc(sold_org_byPercent))
+
+
+product_sold_org_byDepartment
+
+ggplot(product_sold_org_byDepartment, aes(x = reorder(department, sold_org_byPercent), y = sold_org_byPercent)) +
+  labs(x = "department", y = "Anteil an verkaufter Bio-Produkte",  title = "Prozentanzahl gekaufte Bio-Produkte per Department") +
+  geom_col(fill="orange") +
+  geom_text(aes(label = paste0(sold_org_byPercent, "%")), position = position_stack(vjust = 0.5)) + 
+  coord_flip()
+```
+
+# Verhältnis Bio/Nicht-bio in aisles  xxxxxx
+```{r, fig.height = 7, echo=FALSE}
+ratio_byDepartment <- full_join(t_products, t_aisles, "aisle_id") %>%
+	full_join(t_departments, "department_id") %>%
+	select(-c(aisle_id, department_id, product_id)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(department, organic) %>%
+	count(name = "anzahl_produkte") %>%
+  mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
+	arrange(desc(anzahl_produkte))
+ratio_byDepartment
+
+ggplot(ratio_byDepartment) +
+  geom_col(aes(x = reorder(department, anzahl_produkte) ,y = anzahl_produkte, fill = organic))  +
+  coord_flip()
+```
+
+# First Buy für Bioprodukte
+```{r}
+t_orders_FirstBuy_most_bought_org <- t_orders_FirstBuy %>% inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  filter(organic == TRUE) %>%
+  count(product_name) %>%
+  mutate(n = as.integer(n)) %>%
+	arrange(-n)
+  
+
+most_bought_org <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  mutate(organic = as.integer(organic)) %>%
+  filter(organic == 1) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n)%>%
+  mutate(n= n)
+  
+
+most_bought_org
+t_orders_FirstBuy_most_bought_org
+
+#Die Rangliste der Meistgekauften Bio-Produkte unterscheiden sich nur sehr gering von der Rangliste der insgesammt Gekauften Bio-Produkte und daher Vernachlässigbar
+
+
+```
+
+#Vergleich von der Tabelle mit compare_df
+```{r}
+ctable_firstBuyer = compareDF::compare_df(as.data.frame(most_bought_org), as.data.frame(most_bought_nonorg), c("product_name"))
+
+print(ctable_firstBuyer$html_output)
+
+
+#ergibt einen übersichlichen Table, die n Daten können allerdings nicht ernstgenommen werden, darum verä
+
