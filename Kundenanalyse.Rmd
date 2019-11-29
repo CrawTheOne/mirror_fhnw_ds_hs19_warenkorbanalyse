@@ -7,29 +7,10 @@ output: html_notebook
 library(tidyverse)
 library(RColorBrewer)
 
-DB_HOST='server2053.cs.technik.fhnw.ch'
-DB_PORT = 5432
-DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
-DB_USERNAME = 'db_user' 
-DB_PASSWORD = 'db_user_pw'
-
-con <- DBI::dbConnect(odbc::odbc(),
-                      Driver   = "PostgreSQL Unicode(x64)",
-                      Server   = DB_HOST,
-                      Database = DB_DBNAME,
-                      UID      = DB_USERNAME,
-                      PWD      = DB_PASSWORD,
-                      Port     = DB_PORT,
-                      Encoding = 'latin1')
-
-knitr::opts_chunk$set(connection = "con")
-
-t_products <- tbl(con, "product")
-t_aisles <- tbl(con, "aisle")
-t_departments <- tbl(con, "department")
-t_orders <- tbl(con, "orders")
-t_orders_product = tbl(con, "orders_product_prior") %>%
-  union_all(tbl(con, "orders_product_train"))
+customer_behavior <- readRDS('./data/customer_behavior.rds')
+products_count_by_user <- readRDS('./data/products_count_by_user.rds')
+orders <- readRDS('./data/orders.rds')
+patrons <- readRDS('./data/patrons.rds')
 
 ```
 
@@ -43,89 +24,6 @@ Die Fragen, die wir uns stellten lauten:
 * Gibt es bestimmte Produkte, welche von Ersteinkäufern erlangt werden? Was lockt die Kunden in den Laden?
 * Gibt es Kunden, welche häufig nur kleine, aber dafür regelmässige Einkäufe tätigen?
 
-## SQL Abfragen
-
-### Allgemeine Informationen über Kunden/Bestellungen
-
-Dieses SQL wurde aus Performancegründen zusammengefasst und enthält daher schon einige Erkenntnisse aus den folgenden Auswertungen.
-
-```{sql connection=con, output.var=customer_behavior}
-SELECT
-  o.user_id,
-  COUNT(o.orders_id) AS total_nr_of_orders,
-  AVG(o.days_since_prior_order) AS avg_days_since_prior_order,
-  SUM(o.days_since_prior_order) AS timespan_for_all_orders
-FROM orders o
-GROUP BY o.user_id
-```
-
-```{r}
-customer_behavior <- customer_behavior %>%
-  mutate(total_nr_of_orders = as.integer(total_nr_of_orders))
-```
-
-
-### Anzahl der Produkte in den Einkäufen
-
-```{sql connection=con, output.var=products_by_order}
-SELECT
-    o.user_id,
-    o.orders_id,
-    COUNT(op.product_id) AS total_product_count
-FROM orders o
-JOIN (
-    SELECT *
-    FROM orders_product_prior opp
-    UNION ALL
-    SELECT *
-    FROM orders_product_train opt
-    ) AS op
-    ON op.orders_id = o.orders_id
-JOIN product p ON p.product_id = op.product_id
-GROUP BY o.user_id, o.orders_id
-```
-
-```{r}
-products_by_order <- products_by_order %>%
-  mutate(total_product_count = as.integer(total_product_count))
-```
-
-### Meistverkaufte Produkte
-```{sql connection=con, output.var=products_count_by_user}
-SELECT o.user_id, p.product_name, count(p.product_id) as count
-FROM orders o
-JOIN (
-    SELECT *
-    FROM orders_product_prior opp
-    UNION ALL
-    SELECT *
-    FROM orders_product_train opt
-    ) AS op
-    ON op.orders_id = o.orders_id
-JOIN product p ON p.product_id = op.product_id
-GROUP BY p.product_name, o.user_id
-ORDER BY count DESC 
-```
-
-```{r}
-products_count_by_user <- products_count_by_user %>%
-  mutate(count = as.integer(count))
-```
-
-
-### Allgemeine Statistik erweitern
-
-```{r}
-products_by_user_stats <- products_by_order %>%
-  group_by(user_id) %>%
-  summarise(mean_products_per_order = mean(total_product_count))
-```
-
-```{r}
-customer_behavior <-
-  customer_behavior %>%
-  inner_join(products_by_user_stats)
-```
 
 ## Häufigkeit der Einkäufe
 
@@ -199,26 +97,12 @@ customer_behavior %>%
     labs(x = "Gesamtanzahl an Einkäufen", y = "Ø Produkte pro Einkauf", fill = "Häufigkeit", title = NULL)
 ```
 
-
-
 # Stammkunden herausfiltern
 
 Aufgrund der obigen Auswertungen definieren wir definieren Stammkunden Attribute:
 
 * Zeitraum über alle Einkäufe mindestens 90 Tage
 * Frequenz der Einkäufe im Durchschnitt mindestens alle 15 Tage
-
-```{sql, connection=con, output.var=patrons}
-SELECT
-  o.user_id
-FROM orders o
-WHERE o.eval_set = 'prior'
-GROUP BY o.user_id
-HAVING
-  sum(o.days_since_prior_order) > 90
-  AND avg(o.days_since_prior_order) <= 15
-```
-
 
 ## Verhältnis von Stammkunden zu allen Kunden
 
@@ -228,7 +112,7 @@ patrons_count <- patrons %>%
   pull(n) %>%
   as.numeric()
 
-no_patrons_count <- t_orders %>%
+no_patrons_count <- orders %>%
   select(user_id) %>%
   distinct() %>%
   count() %>%
@@ -258,7 +142,8 @@ products_patron_ratio <- products_count_by_user %>%
   rename(no_patrons_bought = 'FALSE', patrons_bought = 'TRUE') %>%
   mutate(no_patrons_bought = replace_na(no_patrons_bought, 0)) %>%
   mutate(patrons_bought = replace_na(patrons_bought, 0)) %>%
-  mutate(overall_bought = no_patrons_bought + patrons_bought)
+  mutate(overall_bought = no_patrons_bought + patrons_bought) %>%
+  as_tibble()
 ```
 
 ```{r}
@@ -268,24 +153,44 @@ products_pct <- round(slices/sum(slices)*100)
 lbls <- paste(lbls, products_pct) # add percents to labels
 lbls <- paste(lbls,"%",sep="") # ad % to labels
 
-pie(slices, lbls, main="Verhältnis von gekauften Produkten von Stammkunden zu normalen Kunden")
+pie(slices, lbls, main="Verhältnis gekaufte Produkte")
 ```
 
 Die Stammkunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich.
 
 __`r order_pct[1]`% aller Kunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich.__
 
-## Was sind die Lieblingsprodukte von Stammkunden
+## Wie ist die Verteilung der Topprodukte zu Stammkunden und nicht Stammkunden
 
 ```{r}
-products_count_by_user %>%
-  left_join((patrons %>% mutate(patron = TRUE))) %>%
-  group_by(product_name, patron) %>%
-  summarise(count = sum(count)) %>%
-  arrange(desc(count)) %>%
+products_patron_ratio %>%
+  arrange(desc(overall_bought)) %>%
   top_n(30) %>%
-  ggplot(aes(x=reorder(product_name,count), y=count, fill=patron)) +
-  scale_y_continuous(name="Anzahl Einkäufe", labels = scales::comma) +
-  geom_col() + 
-  coord_flip()
+  gather(`patrons_bought`, `no_patrons_bought`, key="class", value="count") %>%
+  ggplot(aes(x=reorder(product_name,count), y=count, fill=class)) +
+    geom_col(position="fill") + 
+    coord_flip()
 ```
+
+Es gibt leichte Unterschiede im Kaufverhalten von Stammkunden und Nicht-Stammkunden. Diese sind aber tendenziell vernachlässigbar.
+
+# Neukunden auswerten
+
+## Warenkorbgrösse von Neukunden
+
+```{r}
+orders %>%
+  filter(is.na(days_since_prior_order)) %>%
+  group_by(user_id) %>%
+  summarise(count = n()) %>%
+  select(count) %>%
+  summary()
+```
+
+
+
+
+# Zusammenfassung
+
+- `r order_pct[1]`% aller Kunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich
+- Stammkunden kaufen i.d.R. nicht andere Produkte als andere Kunden

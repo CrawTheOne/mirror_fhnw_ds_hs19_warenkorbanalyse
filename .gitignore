@@ -43,4 +43,5 @@ vignettes/*.pdf
 
 ### data cache ###
 /data/
+/__pycache__/
 .Rproj.user
