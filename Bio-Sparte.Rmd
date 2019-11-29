@@ -12,7 +12,7 @@ editor_options:
 ### Libraries
 Library aufrufen das wir nutzen wollen und Connection
 
-```{r setup, echo=FALSE, results="hide"}
+```{r setup, include = FALSE}
 require("RPostgreSQL")
 source('DbConnection.R')
 ```
@@ -47,7 +47,7 @@ ggplot(org_notorg, aes(x = "", y = n_produkte, fill = organic)) + geom_bar(stat 
 ### Anzahl Gekaufte Bio-Produkte in Gegensatz zu nicht Bio-Produkte
 
 ```{r, echo=FALSE}
-proportion_bio_bought <- full_join(t_products, t_orders_product, "product_id") %>%
+proportion_bio_sold <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(c(product_id, product_name, orders_id)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(organic) %>%
@@ -57,14 +57,14 @@ proportion_bio_bought <- full_join(t_products, t_orders_product, "product_id") %
 #Verhalt_Bio_bought
 
 # Create a basic bar
-ggplot(proportion_bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+ggplot(proportion_bio_sold, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
   # Convert to pie (polar coordinates) and add labels
   coord_polar("y", start = 0) + 
   geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
   # Add color scale (hex colors)
   scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
   # Remove labels and add title
-  labs(x = NULL, y = NULL,  title = "Anzahl Eingekaufte Bio-/Nicht-Produkte") +
+  labs(x = NULL, y = NULL,  title = "Anzahl Verkäufte Bio-/Nicht-Produkte") +
   # Tidy up the theme
   theme_classic() + theme(axis.line = element_blank(),
           axis.text = element_blank(),
@@ -72,7 +72,7 @@ ggplot(proportion_bio_bought, aes(x = "", y = n, fill = organic)) + geom_bar(sta
           plot.title = element_text(hjust = 0.5, color = "#666666"))  
 ```
 
-### Beliebheit der Bio-Produkte in den Departments/aisles
+### Beliebheit der Bio-Produkte in den Departments
 
 ```{r, echo=FALSE}
 product_sold_dep_proportion <- full_join(t_products, t_orders_product, "product_id") %>%
@@ -90,7 +90,7 @@ product_sold_dep_proportion <- full_join(t_products, t_orders_product, "product_
   mutate(sold_bio_percent = round(100*sold_organic/tot_sold_dep, digits = 2)) %>%
   arrange(desc(sold_bio_percent))
 
-product_sold_dep_proportion
+#product_sold_dep_proportion
 
 ggplot(product_sold_dep_proportion, aes(x = reorder(department, sold_bio_percent), y = sold_bio_percent)) +
   labs(x = "department", y = "sold_bio_prozent",  title = "Prozentanzahl gekaufte Bio-Produkte per Department") +
@@ -99,7 +99,7 @@ ggplot(product_sold_dep_proportion, aes(x = reorder(department, sold_bio_percent
   coord_flip()
 ```
 
-```{r, fig.height = 17}
+```{r, fig.height = 17, include = FALSE}
 #product_sold_aisle_proportion
 
 product_sold_aisle_proportion <- full_join(t_products, t_orders_product, "product_id") %>%
@@ -128,7 +128,7 @@ ggplot(product_sold_aisle_proportion, aes(x = reorder(aisle, sold_bio_percent), 
 
 ### Verhältnis anzahl Bio/Nicht-bio Produkte in departments & aisles
 
-Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments und Aisles. 
+Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments.  
 
 ```{r, fig.height = 7, echo=FALSE}
 #proportion products per departments
@@ -147,7 +147,7 @@ proportion_dep <- full_join(t_products, t_departments, "department_id") %>%
   mutate(prod_bio_percent = round(100*prod_organic/tot_prod_dep, digits = 2)) %>%
   arrange(desc(prod_bio_percent))
 
-proportion_dep
+#proportion_dep
 
 ggplot(proportion_dep, aes(x = reorder(department, prod_bio_percent), y = prod_bio_percent)) +
   labs(x = "department", y = "prod_bio_percent",  title = "Prozentanzahl Bio-Produkte per Department") +
@@ -158,7 +158,9 @@ ggplot(proportion_dep, aes(x = reorder(department, prod_bio_percent), y = prod_b
 
 Man kann sehen das die Anzahl an Bio-Produkte in den Departments sehr swach ist, im gegensatz zu den "normalen"  Produkten. 
 
-```{r, echo = FALSE}
+Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments in relation zu die Produktauswahl. 
+
+```{r, , fig.height = 9, echo=FALSE}
 #Visulaziation between products available and products sales
 
 table_proddep_over_propsold <- full_join(product_sold_dep_proportion, proportion_dep, "department") %>%
@@ -166,12 +168,12 @@ table_proddep_over_propsold <- full_join(product_sold_dep_proportion, proportion
   gather(`sold_bio_percent`, `prod_bio_percent`, key = "prod_or_sold", value = "percent") %>%
   arrange(department)
 
-table_proddep_over_propsold
+#table_proddep_over_propsold
 
 ggplot(table_proddep_over_propsold, aes(x = reorder(department, percent), y = percent, fill = prod_or_sold)) +
-  labs(x = "department", y = "sold_bio_prozent",  title = "Prozentanzahl gekaufte Bio-Produkte per Department") +
-  geom_col(position = 'dodge') +
-  geom_text(aes(label = paste0(percent, "%")), position = position_stack(vjust = 0.5)) + 
+  labs(x = "department", y = "bio_prozent",  title = "Prozentanzahl gekaufte Bio-Produkte per Department") +
+  geom_col(position = "dodge") +
+  #geom_text(aes(label = paste0(percent, "%")), position = position_stack(vjust = 0.5)) + 
   coord_flip()
 ```
 
