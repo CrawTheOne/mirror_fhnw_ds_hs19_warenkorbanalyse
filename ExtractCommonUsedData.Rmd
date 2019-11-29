@@ -45,6 +45,15 @@ JOIN aisle a on p.aisle_id = a.aisle_id
 JOIN department d on p.department_id = d.department_id
 ```
 
+Direkt speichern und wieder aus dem RAM löschen
+
+```{r}
+saveRDS(as_tibble(products), './data/products.rds')
+products <- NULL
+gc()
+```
+
+
 ## Alle Warenkörbe
 
 ```{sql connection=con, output.var=orders}
@@ -66,6 +75,12 @@ JOIN
     SELECT *
     FROM orders_product_train opt) AS op
         ON op.orders_id = o.orders_id
+```
+
+```{r}
+saveRDS(as_tibble(orders), './data/orders.rds')
+orders <- NULL
+gc()
 ```
 
 ## Generelle Statistiken über das Kaufverhalten der Kunden
@@ -164,9 +179,6 @@ customer_behavior <-
 
 # Objekte speichern
 ```{r}
-saveRDS(as_tibble(products), './data/products.rds')
-saveRDS(as_tibble(orders), './data/orders.rds')
-saveRDS(customer_behavior, './data/customer_behavior.rds')
 saveRDS(products_by_order, './data/products_by_order.rds')
 saveRDS(products_count_by_user, './data/products_count_by_user.rds')
 saveRDS(patrons, './data/patrons.rds')
