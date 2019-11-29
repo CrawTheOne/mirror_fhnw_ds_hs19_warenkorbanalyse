@@ -114,7 +114,7 @@ products_by_order <- products_by_order %>%
 
 ## Meistverkaufte Produkte 
 ```{sql connection=con, output.var=products_count_by_user} 
-SELECT o.user_id, p.product_name, count(p.product_id) as count 
+SELECT o.user_id, p.product_id, count(op.*) as count 
 FROM orders o 
 JOIN ( 
     SELECT * 
@@ -125,7 +125,7 @@ JOIN (
     ) AS op 
     ON op.orders_id = o.orders_id 
 JOIN product p ON p.product_id = op.product_id 
-GROUP BY p.product_name, o.user_id 
+GROUP BY p.product_id, o.user_id 
 ORDER BY count DESC  
 ``` 
  

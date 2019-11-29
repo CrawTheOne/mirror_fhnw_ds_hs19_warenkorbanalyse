@@ -10,6 +10,7 @@ library(RColorBrewer)
 customer_behavior <- readRDS('./data/customer_behavior.rds')
 products_count_by_user <- readRDS('./data/products_count_by_user.rds')
 orders <- readRDS('./data/orders.rds')
+products <- readRDS('./data/products.rds')
 patrons <- readRDS('./data/patrons.rds')
 
 ```
@@ -46,9 +47,9 @@ customer_behavior %>%
 ```{r}
 customer_behavior %>%
   ggplot(aes(x=total_nr_of_orders)) +
-    xlab("Durchschnittliche Anzahl an Bestellungen") + 
-    ylab("Anzahl an Kunden") + 
-    ggtitle("Wieviele Bestellungen tätigen die Normalkunden?") +
+    xlab("Average order count") + 
+    ylab("Customer count") + 
+    ggtitle("How many orders are done by 'normal' users?") +
     geom_histogram(binwidth = 2, color="darkgray")
 ```
 
@@ -60,9 +61,9 @@ Wie häufig kommen Kunden im Durchschnitt in den Laden (aller wieviel Tage)?
 customer_behavior %>%
   filter(avg_days_since_prior_order < 30) %>% #laut Beschreibung der Daten bedeutet 30 hier "30 und mehr"
   ggplot(aes(x=avg_days_since_prior_order)) +
-    xlab("Durchschnittliche Wiederkehrzeit") + 
-    ylab("Anzahl an Kunden") + 
-    ggtitle("Aller wieviel Tage kommen Kunden im Durchschnitt wieder in den Laden?") +
+    xlab("Average days") + 
+    ylab("Customer count") + 
+    ggtitle("Average days of coming back to the store") +
     geom_histogram(binwidth = 1, color="black", fill="gray")
 ```
 
@@ -94,7 +95,7 @@ customer_behavior %>%
   ggplot(aes(x=total_nr_of_orders, y=mean_products_per_order, fill=weight)) +
     geom_tile() +
     scale_fill_gradientn(colors = c("blue", "lightblue", "green", "red"), values = c(0,0.1, 0.3, 1)) +
-    labs(x = "Gesamtanzahl an Einkäufen", y = "Ø Produkte pro Einkauf", fill = "Häufigkeit", title = NULL)
+    labs(x = "Total number of orders", y = "Ø products per orderf", fill = "frequency", title = NULL)
 ```
 
 # Stammkunden herausfiltern
@@ -120,12 +121,12 @@ no_patrons_count <- orders %>%
   as.numeric() - patrons_count
 
 slices <- c(patrons_count, no_patrons_count)
-lbls <- c("Stammkunden", "Keine Stammkunden")
+lbls <- c("Patrons", "No Patrons")
 order_pct <- round(slices/sum(slices)*100)
 lbls <- paste(lbls, order_pct) # add percents to labels
 lbls <- paste(lbls,"%",sep="") # ad % to labels
 
-pie(slices, lbls, main="Verhältnis von Einkäufen von Stammkunden zu normalen Kunden")
+pie(slices, lbls, main="Total count of orders")
 ```
 
 Mit unserer Definition kann man sagen, dass `r order_pct[1]`% aller Einkäufe von Stammkunden getätigt werden.
@@ -134,6 +135,7 @@ Mit unserer Definition kann man sagen, dass `r order_pct[1]`% aller Einkäufe vo
 
 ```{r}
 products_patron_ratio <- products_count_by_user %>%
+  inner_join(products) %>%
   left_join(patrons %>% mutate(patron = TRUE)) %>%
   mutate(patron = replace_na(patron, FALSE)) %>%
   group_by(product_name, patron) %>%
@@ -148,12 +150,12 @@ products_patron_ratio <- products_count_by_user %>%
 
 ```{r}
 slices <- c(sum(products_patron_ratio$patrons_bought), sum(products_patron_ratio$no_patrons_bought))
-lbls <- c("Stammkunden", "Keine Stammkunden")
+lbls <- c("Patrons", "No Patrons")
 products_pct <- round(slices/sum(slices)*100)
 lbls <- paste(lbls, products_pct) # add percents to labels
 lbls <- paste(lbls,"%",sep="") # ad % to labels
 
-pie(slices, lbls, main="Verhältnis gekaufte Produkte")
+pie(slices, lbls, main="Total bought products")
 ```
 
 Die Stammkunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich.
