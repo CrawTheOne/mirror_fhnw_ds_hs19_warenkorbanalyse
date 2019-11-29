@@ -13,28 +13,8 @@ library(arulesViz)
 
 library(tidyverse)
 
-DB_HOST='server2053.cs.technik.fhnw.ch'
-DB_PORT = 5432
-DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
-DB_USERNAME = 'db_user' 
-DB_PASSWORD = 'db_user_pw'
-
-con <- DBI::dbConnect(odbc::odbc(),
-                      Driver   = "PostgreSQL Unicode(x64)",
-                      Server   = DB_HOST,
-                      Database = DB_DBNAME,
-                      UID      = DB_USERNAME,
-                      PWD      = DB_PASSWORD,
-                      Port     = DB_PORT)
-
-knitr::opts_chunk$set(connection = "con")
-
-t_products <- tbl(con, "product")
-t_aisles <- tbl(con, "aisle")
-t_departments <- tbl(con, "department")
-t_orders <- tbl(con, "orders")
-t_orders_product = tbl(con, "orders_product_prior") %>%
-  union_all(tbl(con, "orders_product_train"))
+orders <- readRDS('./data/orders.rds')
+products <- readRDS('./data/products.rds')
 ```
 
 
@@ -45,8 +25,10 @@ Wir können mit Market Basket Analysis herausfinden, welche Elemente häufig zus
 ## Schritt 1 - DataSet dem UseCase ausrichten
 
 ```{r}
-orders_products <- t_orders_product %>%
-  left_join(t_products, "product_id") %>%
+orders_to_products <- orders %>%
+  inner_join(products)
+
+orders_products <- orders_to_products %>%
   select(c(orders_id, product_name))
 ```
 
@@ -91,25 +73,9 @@ support_threshold
 
 Für die Warenkorbanalyse benötigen wir die Transaktionen als Key und kommasepariert alle Produkte, welche zu dieser Transaktion gehören. Dies erreichen wir mit folgendem SQL Query:
 
-```{sql,concection=con,output.var=order_to_product}
-SELECT o.orders_id, p.product_name
-FROM orders o
-JOIN (
-    SELECT *
-    FROM orders_product_prior opp
-    UNION ALL
-    SELECT *
-    FROM orders_product_train opt
-    ) AS op
-    ON op.orders_id = o.orders_id
-JOIN product p ON p.product_id = op.product_id
-WHERE o.eval_set = 'prior'
-```
-
-
 
 ```{r}
-baskets <- order_to_product %>% 
+baskets <- orders_to_products %>% 
   group_by(orders_id) %>%
   summarise(items = as.vector(list(product_name)))
 ```
@@ -140,6 +106,39 @@ rules_tib <-
   tibble( lhs = labels( lhs(rules) ), 
           rhs = labels( rhs(rules) ), 
           lift = (quality(rules) %>% pull(lift))) %>%
+  arrange(-lift)
+rules_tib
+```
+
+```{r}
+baskets_department <- orders_to_products %>% 
+  select(orders_id, department) %>%
+  distinct() %>%
+  group_by(orders_id) %>%
+  summarise(items = as.vector(list(department)))
+
+transactions_department <- as(baskets_department$items, "transactions")
+```
+
+```{r}
+arules::itemFrequencyPlot(transactions_department,
+   topN=30,
+   col=brewer.pal(8,'Pastel1'),
+   main='Relative Item Frequency Plot',
+   type="relative",
+   ylab="Item Frequency (Relative)") 
+```
+
+```{r}
+rules_department <- apriori(transactions_department, parameter = list(supp = 0.1, conf = 0.2, target="rules"))
+rules_department <- rules[!is.redundant(rules_department)]
+```
+
+```{r}
+rules_tib <- 
+  tibble( lhs = labels( lhs(rules_department) ), 
+          rhs = labels( rhs(rules_department) ), 
+          lift = (quality(rules_department) %>% pull(lift))) %>%
   arrange(-lift)
 rules_tib
 ```
