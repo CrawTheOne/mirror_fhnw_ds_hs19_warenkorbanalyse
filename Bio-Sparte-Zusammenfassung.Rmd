@@ -8,7 +8,7 @@ require("RPostgreSQL")
 source('DbConnection.R')
 ```
 
-#Verhältniss Bio-Produkte zu Nicht-Bio-Produkte ------f
+#Verhältniss Bio-Produkten zu Nicht-Bio-Produkte ------f
 ```{r, echo=FALSE}
 ratio_products_org_notorg<- t_products %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
@@ -28,6 +28,9 @@ ggplot(ratio_products_org_notorg, aes(x = "", y = n_produkte, fill = organic)) +
           axis.text = element_blank(),
           axis.ticks = element_blank(),
           plot.title = element_text(hjust = 0.5, color = "#666666"))
+
+
+
 ```
 
 #Verhältniss Gekaufte Bio-Produkte in Gegensatz zu nicht Bio-Produkte -------f
@@ -50,6 +53,37 @@ ggplot(ratio_orders_org_notorg, aes(x = "", y = n, fill = organic)) + geom_bar(s
           axis.text = element_blank(),
           axis.ticks = element_blank(),
           plot.title = element_text(hjust = 0.5, color = "#666666"))  
+```
+
+### Verhältniss gekaufter Bio-Produkte in Gegensatz zu nicht Bio-Produkte
+```{r, echo=FALSE}
+ratio_sold_ord_notorg <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(c(product_id, product_name, orders_id)) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+	count(organic) %>%
+  mutate(n = as.integer(n))
+
+#Verhalt_Bio_bought
+
+# Create a basic bar
+ggplot(ratio_sold_ord_notorg, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Verkäufte Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
+
+
+#Herausfinden der exaketn % Zahlen für eine klare Aussage
+
 ```
 
 # Beliebheit der Bio-Produkte in den Departments --------f
@@ -100,14 +134,34 @@ ggplot(ratio_byDepartment) +
 
 # First Buy für Bioprodukte
 ```{r}
-t_orders_FirstBuy_most_bought_org <- t_orders_FirstBuy %>% inner_join(t_orders_product) %>%
+#Wie verhält sich der letzte Eikauf? t_orders_lastBuy filtert alle Produkte herraus, die sich als letztes in den Warenkrob gelegt wurden.
+
+t_orders_lastBuy<- t_orders %>% 
+  group_by(orders_id) %>% 
+  arrange(desc(add_to_cart_order)) %>%
   inner_join(t_products) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  filter(organic == TRUE) %>%
-  count(product_name) %>%
-  mutate(n = as.integer(n)) %>%
-	arrange(-n)
-  
+  collect()%>% 
+  slice(1) %>% 
+  ungroup()
+
+t_orders_lastBuy
+
+#Barplot über das Verhalten des Last Buy
+#in den Gängen
+ggplot(data = t_orders_lastBuy) + 
+  geom_bar(mapping = aes(x = aisle_id), width = 0.9, fill = "#FF9999") +
+  xlab("aisle id") + ylab("Anzahl Einkäufe")
+
+#in den Abteilungen 
+ggplot(data = t_orders_lastBuy) + 
+  geom_bar(mapping = aes(x = department_id), width = 0.9, fill = "#FF9999") +
+  xlab("department id") + ylab("Anzahl Einkäufe")
+
+#ist der letzte Einkauf Bio oder nicht
+ggplot(data = t_orders_lastBuy) + 
+  geom_bar(mapping = aes(x = organic), width = 0.5, fill = "#FF9999") +
+  xlab("Bio oder nicht Bio") + ylab("Anzahl eingekaufte Produkte")
 
 most_bought_org <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
