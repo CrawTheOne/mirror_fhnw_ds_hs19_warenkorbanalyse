@@ -49,9 +49,24 @@ customer_behavior %>%
 ```{r}
 customer_behavior %>%
   ggplot(aes(x=total_nr_of_orders)) +
-    xlab("Average order count") + 
+    xlab("Products bought") + 
     ylab("Customer count") + 
     ggtitle("How many orders are done by 'normal' users?") +
+    geom_histogram(binwidth = 2, color="darkgray")
+```
+
+```{r}
+customer_behavior %>%
+  select(total_product_count) %>%
+  summary()
+```
+
+```{r}
+customer_behavior %>%
+  ggplot(aes(x=total_product_count)) +
+    xlab("Products bought") + 
+    ylab("Customer count") + 
+    ggtitle("How many products are bought by 'normal' users?") +
     geom_histogram(binwidth = 2, color="darkgray")
 ```
 
@@ -195,6 +210,8 @@ Die durchschnittliche Warenkorbgrösse bei Neukunden ist sehr ähnlich, wie bei 
 
 # Kaufverhalten von Bio Produkten
 
+## Durchschnittliche Anzahl an Bioprodukten im Warenkorb
+
 ```{r}
 customer_behavior %>%
   mutate(mean_bio_products_per_order = round(mean_bio_products_per_order)) %>%
@@ -206,19 +223,41 @@ customer_behavior %>%
     labs(x = "Total number of orders", y = "Ø bio products per orderf", fill = "frequency", title = NULL)
 ```
 
+## Verhältnis von Bioprodukten
+
 ```{r}
 customer_behavior %>%
-  mutate(fraction_mean_bio = round(fraction_mean_bio, digits = 1)) %>%
-  group_by(total_nr_of_orders, fraction_mean_bio) %>%
-  summarise(weight = sum(fraction_mean_bio)) %>%
-  ggplot(aes(x=total_nr_of_orders, y=fraction_mean_bio, fill=weight)) +
-    geom_tile() +
-    scale_fill_gradientn(colors = c("blue", "lightblue", "green", "red"), values = c(0,0.1, 0.3, 1)) +
-    labs(x = "Total number of orders", y = "Ø ratio of bio products", fill = "frequency", title = NULL)
+  filter(total_nr_of_orders < 100) %>%
+  ggplot(aes(x=total_nr_of_orders, y=fraction_mean_bio)) +
+    geom_point(alpha = 0.01) +
+    geom_smooth() +
+    labs(x = "Total number of orders", y = "Ratio of bio products", title = NULL)
 ```
 
+
+
+```{r}
+customer_behavior %>%
+  filter(total_product_count < 300) %>%
+  ggplot(aes(x=total_product_count, y=fraction_mean_bio)) +
+    geom_point(alpha = 0.01) +
+    geom_smooth() +
+    labs(x = "total products bought", y = "Ratio of bio products", title = NULL)
+```
+
+```{r}
+customer_behavior %>%
+  ggplot(aes(x=timespan_for_all_orders, y=fraction_mean_bio)) +
+    geom_point(alpha = 0.01) +
+    geom_smooth() +
+    labs(x = "Customer since .. in days", y = "Ratio of bio products", title = NULL)
+```
+
+In allen drei Graphen kann man sehen, dass der Bioanteil bei grösserer "Nutzung" des Stores ansteigt.
 
 # Zusammenfassung
 
 - `r order_pct[1]`% aller Kunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich
 - Stammkunden kaufen i.d.R. nicht andere Produkte als andere Kunden
+- Je länger ein Kunde im Store einkauft bzw. desto mehr oder häufiger er kauft, desto mehr Bioprodukte werden gekauft
+- allgemein kann man sagen, dass es einen Trend für Bioprodukte gibt

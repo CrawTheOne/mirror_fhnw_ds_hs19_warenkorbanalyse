@@ -165,10 +165,12 @@ products_by_user_stats <- products_by_order %>%
     median_products_per_order = median(total_product_count),
     min_products_per_order = min(total_product_count),
     max_products_per_order = max(total_product_count),
+    total_product_count = sum(total_product_count),
     mean_bio_products_per_order = mean(total_bio_count), 
     median_bio_products_per_order = median(total_bio_count),
     min_bio_products_per_order = min(total_bio_count),
-    max_bio_products_per_order = max(total_bio_count)) %>%
+    max_bio_products_per_order = max(total_bio_count),
+    total_bio_product_count = sum(total_bio_count)) %>%
   mutate(
     fraction_mean_bio = mean_bio_products_per_order/mean_products_per_order,
     fraction_median_bio = median_bio_products_per_order/median_products_per_order)
