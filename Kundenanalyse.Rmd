@@ -24,6 +24,8 @@ Die Fragen, die wir uns stellten lauten:
 * Gibt es Kunden die häufig wiederkehren? Was ist das durchschnittliche Intervall der Wiederkehrer?
 * Gibt es bestimmte Produkte, welche von Ersteinkäufern erlangt werden? Was lockt die Kunden in den Laden?
 * Gibt es Kunden, welche häufig nur kleine, aber dafür regelmässige Einkäufe tätigen?
+* Gibt es Kunden, welche Bio kaufen und welche gar kein Bio kaufen?
+* Wie verhält sich die Länge der Kundschaft zum Anteil von gekauften Bio Produkten?
 
 
 ## Häufigkeit der Einkäufe
@@ -189,7 +191,31 @@ orders %>%
   summary()
 ```
 
+Die durchschnittliche Warenkorbgrösse bei Neukunden ist sehr ähnlich, wie bei der Gesamtkundschaft.
 
+# Kaufverhalten von Bio Produkten
+
+```{r}
+customer_behavior %>%
+  mutate(mean_bio_products_per_order = round(mean_bio_products_per_order)) %>%
+  group_by(total_nr_of_orders, mean_bio_products_per_order) %>%
+  summarise(weight = sum(mean_bio_products_per_order)) %>%
+  ggplot(aes(x=total_nr_of_orders, y=mean_bio_products_per_order, fill=weight)) +
+    geom_tile() +
+    scale_fill_gradientn(colors = c("blue", "lightblue", "green", "red"), values = c(0,0.1, 0.3, 1)) +
+    labs(x = "Total number of orders", y = "Ø bio products per orderf", fill = "frequency", title = NULL)
+```
+
+```{r}
+customer_behavior %>%
+  mutate(fraction_mean_bio = round(fraction_mean_bio, digits = 1)) %>%
+  group_by(total_nr_of_orders, fraction_mean_bio) %>%
+  summarise(weight = sum(fraction_mean_bio)) %>%
+  ggplot(aes(x=total_nr_of_orders, y=fraction_mean_bio, fill=weight)) +
+    geom_tile() +
+    scale_fill_gradientn(colors = c("blue", "lightblue", "green", "red"), values = c(0,0.1, 0.3, 1)) +
+    labs(x = "Total number of orders", y = "Ø ratio of bio products", fill = "frequency", title = NULL)
+```
 
 
 # Zusammenfassung

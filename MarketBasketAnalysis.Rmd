@@ -97,16 +97,17 @@ arules::itemFrequencyPlot(transactions,
 
 
 ```{r}
-rules <- apriori(transactions, parameter = list(supp = 0.0025, conf = 0.2, target="rules"))
+rules <- apriori(transactions, parameter = list(supp = 0.0025, conf = 0.1, target="rules"))
 rules <- rules[!is.redundant(rules)]
 ```
 
 ```{r}
 rules_tib <- 
   tibble( lhs = labels( lhs(rules) ), 
-          rhs = labels( rhs(rules) ), 
+          rhs = labels( rhs(rules) ),
+          confidence = (quality(rules) %>% pull(confidence)),
           lift = (quality(rules) %>% pull(lift))) %>%
-  arrange(-lift)
+  arrange(-confidence)
 rules_tib
 ```
 
@@ -137,8 +138,9 @@ rules_department <- rules[!is.redundant(rules_department)]
 ```{r}
 rules_tib <- 
   tibble( lhs = labels( lhs(rules_department) ), 
-          rhs = labels( rhs(rules_department) ), 
+          rhs = labels( rhs(rules_department) ),
+          confidence = (quality(rules_department) %>% pull(confidence)),
           lift = (quality(rules_department) %>% pull(lift))) %>%
-  arrange(-lift)
+  arrange(-confidence)
 rules_tib
 ```
