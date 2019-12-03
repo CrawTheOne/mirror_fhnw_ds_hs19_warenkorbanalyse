@@ -45,3 +45,5 @@ vignettes/*.pdf
 /data/
 /__pycache__/
 .Rproj.user
+
+.RDataTmp
