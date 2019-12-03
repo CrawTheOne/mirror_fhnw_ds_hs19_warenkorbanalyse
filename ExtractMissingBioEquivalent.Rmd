@@ -1,0 +1,53 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r setup, include = FALSE}
+require("RPostgreSQL")
+library("openxlsx")
+source('DbConnection.R')
+```
+
+```{r, include=FALSE}
+#Most bought non-organic products
+
+most_bought_nonorg <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  mutate(organic = as.integer(organic)) %>%
+  filter(organic == 0) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n) %>%
+	head(100) %>%
+  as_tibble()
+
+most_bought_nonorg
+
+org_products <- t_products %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  filter(organic == 1) %>%
+  select(product_id, product_name) %>%
+  as_tibble()
+
+org_products
+
+grepl(as.character(most_bought_nonorg$product_name), org_products$product_name, ignore.case = TRUE)
+
+pmatch(most_bought_nonorg$product_name, org_products$product_name)
+
+#Encoding(org_products$product_name) <- "latin1"
+#write.xlsx(most_bought_nonorg, "./data/most_bought_nonorg.xlsx")
+#write.xlsx(org_products, "./data/t_products.xlsx")
+
+#manually moved t_products to most_bought_nonorg.xlsx, eliminated t_products.xlsx
+
+#working in excel to compare
+#basically working stuff in excel
+
+```
+
+
+

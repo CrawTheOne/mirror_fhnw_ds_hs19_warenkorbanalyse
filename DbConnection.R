@@ -13,9 +13,11 @@ con <- DBI::dbConnect(odbc::odbc(),
                       Database = DB_DBNAME,
                       UID      = DB_USERNAME,
                       PWD      = DB_PASSWORD,
-                      Port     = DB_PORT)
+                      Port     = DB_PORT,
+                      Encoding = "latin1")
 
 t_products <- tbl(con, "product")
+#t_products <- readRDS('./data/products.rds')
 t_aisles <- tbl(con, "aisle")
 t_departments <- tbl(con, "department")
 t_orders <- tbl(con, "orders")
@@ -59,4 +61,4 @@ t_departments_Other <- t_departments %>%
   filter(department == "other")
 
 
-show(t_aisles_Clean)
+#show(t_aisles_Clean)

@@ -126,9 +126,15 @@ ggplot(product_sold_aisle_proportion, aes(x = reorder(aisle, sold_bio_percent), 
   coord_flip()
 ```
 
+<<<<<<< Updated upstream
 ### Verhältnis anzahl Bio/Nicht-bio Produkte in departments & aisles
 
 Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments.  
+=======
+### Verhältnis Bio/Nicht-bio in departments & aisles
+
+Wir möchten auch Visualizieren was die Verhältnisse sind, zwischen die Offerte an Bio-produkte in den verschiedene Departments und Aisles. 
+>>>>>>> Stashed changes
 
 ```{r, fig.height = 7, echo=FALSE}
 #proportion products per departments
@@ -295,7 +301,8 @@ most_bought_nonorg <- full_join(t_products, t_orders_product, "product_id") %>%
 	count(product_name) %>%
   mutate(n = as.integer(n))  %>%
 	arrange(-n) %>%
-	head(30)
+	head(30) %>%
+  as_tibble()
 
 most_bought_nonorg
 
@@ -424,7 +431,7 @@ t_orders_FirstBuy_most_bought_org <- t_orders_FirstBuy %>% inner_join(t_orders_p
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   filter(organic == TRUE) %>%
   count(product_name) %>%
-  mutate(n = as.integer(n))  %>%
+  mutate(n = as.integer(n)) %>%
 	arrange(-n)
   
 
@@ -458,17 +465,91 @@ print(ctable_firstBuyer$html_output)
 ```
 
 
-# Wieviele Prozent eines Bio-Einkaufes ist Bio
+# wichtige Produkte die ein Bio-Äquivalent besitzen
 ```{r}
 
 
 ```
 
 
+
+
+#Untersuchung des LAst-Buy
 ```{r, echo=FALSE, results="hide"}
-# close the connection (don't forget to cleanup)
-dbDisconnect(con)
+#Wie verhält sich der letzte Eikauf? t_orders_lastBuy filtert alle Produkte herraus, die sich als letztes in den Warenkrob gelegt wurden.
+
+t_orders_lastBuy<- t_orders %>% 
+  group_by(orders_id) %>% 
+  arrange(desc(add_to_cart_order)) %>%
+  inner_join(t_products) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  collect()%>% 
+  slice(1) %>% 
+  ungroup()
+
+t_orders_lastBuy
+
+#Barplot über das Verhalten des Last Buy
+#in den Gängen
+ggplot(data = t_orders_lastBuy) + 
+  geom_bar(mapping = aes(x = aisle_id), width = 0.9, fill = "#FF9999") +
+  xlab("aisle id") + ylab("Anzahl Einkäufe")
+
+#in den Abteilungen 
+ggplot(data = t_orders_lastBuy) + 
+  geom_bar(mapping = aes(x = department_id), width = 0.9, fill = "#FF9999") +
+  xlab("department id") + ylab("Anzahl Einkäufe")
+
+#ist der letzte Einkauf Bio oder nicht
+ggplot(data = t_orders_lastBuy) + 
+  geom_bar(mapping = aes(x = organic), width = 0.5, fill = "#FF9999") +
+  xlab("Bio oder nicht Bio") + ylab("Anzahl eingekaufte Produkte")
+
 ```
 
+```{r}
+#Gesucht sich 100 Kunden mit den höchstne Kunden einkäufen, -> es gibt mehr als 100 Kunden die 100 Produkte im Warenkorb hatten
 
+the100 <- t_orders %>%
+  group_by(user_id) %>%
+  count() %>%
+  arrange(desc(n))%>%
+  head(100) %>%
+  select(user_id)
+
+the100
+t_orders
+  
+t_orders %>%
+  inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = department_id), width = 0.9, fill = "#FF9999") +
+  xlab("department id") + ylab("Anzahl Einkäufe")
+
+t_orders %>%
+  inner_join(the100) %>%
+  inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  filter(add_to_cart_order == 1) %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = department_id), width = 0.9, fill = "#FF9999") +
+  xlab("department id") + ylab("Anzahl Einkäufe")
+
+#t_orders_lastBuy<- t_orders_product %>% 
+  #group_by(orders_id) %>% 
+  #arrange(desc(add_to_cart_order)) %>%
+  #inner_join(t_products) %>%
+  #mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  #collect()%>% 
+  #slice(1) %>% 
+  #ungroup()
+
+t_departments
+```
+
+```{r}
+ratio_products_org_notorg
+
+```
 
