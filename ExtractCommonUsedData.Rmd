@@ -183,6 +183,7 @@ customer_behavior <-
 
 # Objekte speichern
 ```{r}
+dir.create('./data', showWarnings = FALSE)
 saveRDS(as_tibble(products), './data/products.rds')
 saveRDS(as_tibble(orders), './data/orders.rds')
 saveRDS(customer_behavior, './data/customer_behavior.rds')
