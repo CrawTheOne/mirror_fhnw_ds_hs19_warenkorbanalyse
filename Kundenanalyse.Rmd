@@ -5,6 +5,8 @@ output: html_notebook
 
 ```{r, echo=FALSE}
 library(tidyverse)
+library(arules)
+library(arulesViz)
 library(RColorBrewer)
 
 customer_behavior <- readRDS('./data/customer_behavior.rds')
@@ -254,6 +256,40 @@ customer_behavior %>%
 ```
 
 In allen drei Graphen kann man sehen, dass der Bioanteil bei grösserer "Nutzung" des Stores ansteigt.
+
+## Welche Bioprodukte werden gern zusammen gekauft
+
+```{r}
+bio_baskets <- orders %>% 
+  inner_join(products) %>%
+  filter(is_organic == TRUE) %>%
+  group_by(orders_id) %>%
+  summarise(items = as.vector(list(product_name)))
+
+transactions <- as(bio_baskets$items, "transactions")
+
+arules::itemFrequencyPlot(transactions,
+   topN=30,
+   col=brewer.pal(8,'Pastel1'),
+   main='Relative Item Frequency Plot',
+   type="relative",
+   ylab="Item Frequency (Relative)") 
+```
+
+```{r}
+rules <- apriori(transactions, parameter = list(supp = 0.0025, conf = 0.2, target="rules"))
+rules <- rules[!is.redundant(rules)]
+rules_tib <- 
+  tibble( lhs = labels( lhs(rules) ), 
+          rhs = labels( rhs(rules) ),
+          support = (quality(rules) %>% pull(support)),
+          confidence = (quality(rules) %>% pull(confidence)),
+          lift = (quality(rules) %>% pull(lift)),
+          count = (quality(rules) %>% pull(count))) %>%
+  arrange(-support)
+rules_tib
+```
+
 
 # Zusammenfassung
 

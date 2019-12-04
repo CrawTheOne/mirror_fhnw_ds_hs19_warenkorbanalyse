@@ -15,24 +15,9 @@ library(tidyverse)
 
 orders <- readRDS('./data/orders.rds')
 products <- readRDS('./data/products.rds')
-departments <- readRDS('./data/departments.rds')
 
 orders_to_products <- orders %>%
   inner_join(products)
-```
-
-# Wie oft wechseln Kunden den Bereich?
-```{r}
-max_add_to_cart_order <- orders_to_products %>%
-  group_by(user_id, orders_id, department_id) %>%
-  summarise(max_add_to_cart_order = median(add_to_cart_order))
-
-max_add_to_cart_order %>%
-  group_by(department_id) %>%
-  summarize(median = median(max_add_to_cart_order)) %>%
-  arrange(median) %>%
-  inner_join(departments)
-  
 ```
 
 
@@ -65,7 +50,7 @@ total_products_bought <- orders_products %>%
 Daraus können wir den Support pro Produkt berechnen und danach sortieren. Damit haben wir die Reihenfolge der meistverkauften Produkte incl. des Anteils.
 
 ```{r}
-t_support <- orders_products %>%
+support <- orders_products %>%
   group_by(product_name) %>%
   summarise(n = n()) %>%
   mutate(support = as.numeric(n)/total_products_bought) %>%
@@ -75,12 +60,12 @@ t_support <- orders_products %>%
 Als Threshold für den Apriori-Algorithmus können wir nun den Median des Supports bestimmen.
 
 ```{r}
-t_support
+support
 ```
 
 
 ```{r}
-support_threshold <- t_support %>%
+support_threshold <- support %>%
   summarise(median = median(support)) %>%
   pull(median)
 
@@ -88,7 +73,7 @@ support_threshold
 ```
 
 
-Für die Warenkorbanalyse benötigen wir die Transaktionen als Key und kommasepariert alle Produkte, welche zu dieser Transaktion gehören. Dies erreichen wir mit folgendem SQL Query:
+Für die Warenkorbanalyse benötigen wir die Transaktionen als Key und kommasepariert alle Produkte, welche zu dieser Transaktion gehören. Dies erreichen wir mit Query:
 
 
 ```{r}
@@ -114,7 +99,7 @@ arules::itemFrequencyPlot(transactions,
 
 
 ```{r}
-rules <- apriori(transactions, parameter = list(supp = 0.0025, conf = 0.1, target="rules"))
+rules <- apriori(transactions, parameter = list(supp = 0.0025, conf = 0.5, target="rules"))
 rules <- rules[!is.redundant(rules)]
 ```
 
@@ -122,9 +107,11 @@ rules <- rules[!is.redundant(rules)]
 rules_tib <- 
   tibble( lhs = labels( lhs(rules) ), 
           rhs = labels( rhs(rules) ),
+          support = (quality(rules) %>% pull(support)),
           confidence = (quality(rules) %>% pull(confidence)),
-          lift = (quality(rules) %>% pull(lift))) %>%
-  arrange(-confidence)
+          lift = (quality(rules) %>% pull(lift)),
+          count = (quality(rules) %>% pull(count))) %>%
+  arrange(-lift)
 rules_tib
 ```
 
@@ -148,16 +135,32 @@ arules::itemFrequencyPlot(transactions_department,
 ```
 
 ```{r}
-rules_department <- apriori(transactions_department, parameter = list(supp = 0.1, conf = 0.2, target="rules"))
-rules_department <- rules[!is.redundant(rules_department)]
+orders_to_departments <- orders_to_products %>%
+  select(orders_id, department) 
+
+total_orders <- orders_to_departments %>%
+  count()
+
+orders_to_departments %>%
+  group_by(department) %>%
+  summarise(n = n()) %>%
+  mutate(support = as.numeric(n)/total_products_bought) %>%
+  arrange(desc(support))
+  
+department_support
 ```
 
+
 ```{r}
+rules_department <- apriori(transactions_department, parameter = list(supp = 0.3, conf = 0.5, target="rules"))
+rules_department <- rules_department[!is.redundant(rules_department)]
 rules_tib <- 
   tibble( lhs = labels( lhs(rules_department) ), 
           rhs = labels( rhs(rules_department) ),
           confidence = (quality(rules_department) %>% pull(confidence)),
           lift = (quality(rules_department) %>% pull(lift))) %>%
-  arrange(-confidence)
+  arrange(-lift)
 rules_tib
 ```
+
+
