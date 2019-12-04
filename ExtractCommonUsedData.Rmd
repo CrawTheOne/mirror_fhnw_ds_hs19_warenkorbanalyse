@@ -45,7 +45,11 @@ JOIN aisle a on p.aisle_id = a.aisle_id
 JOIN department d on p.department_id = d.department_id
 ```
 
-Direkt speichern und wieder aus dem RAM löschen
+## Alle Departments
+```{sql connection=con, output.var=departments}
+SELECT * FROM department
+```
+
 
 ## Alle Warenkörbe
 
@@ -188,6 +192,7 @@ customer_behavior <-
 dir.create('./data', showWarnings = FALSE)
 saveRDS(as_tibble(products), './data/products.rds')
 saveRDS(as_tibble(orders), './data/orders.rds')
+saveRDS(as_tibble(departments), './data/departments.rds')
 saveRDS(customer_behavior, './data/customer_behavior.rds')
 saveRDS(products_by_order, './data/products_by_order.rds')
 saveRDS(products_count_by_user, './data/products_count_by_user.rds')

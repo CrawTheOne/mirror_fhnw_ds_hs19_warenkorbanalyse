@@ -15,6 +15,24 @@ library(tidyverse)
 
 orders <- readRDS('./data/orders.rds')
 products <- readRDS('./data/products.rds')
+departments <- readRDS('./data/departments.rds')
+
+orders_to_products <- orders %>%
+  inner_join(products)
+```
+
+# Wie oft wechseln Kunden den Bereich?
+```{r}
+max_add_to_cart_order <- orders_to_products %>%
+  group_by(user_id, orders_id, department_id) %>%
+  summarise(max_add_to_cart_order = median(add_to_cart_order))
+
+max_add_to_cart_order %>%
+  group_by(department_id) %>%
+  summarize(median = median(max_add_to_cart_order)) %>%
+  arrange(median) %>%
+  inner_join(departments)
+  
 ```
 
 
@@ -25,8 +43,7 @@ Wir können mit Market Basket Analysis herausfinden, welche Elemente häufig zus
 ## Schritt 1 - DataSet dem UseCase ausrichten
 
 ```{r}
-orders_to_products <- orders %>%
-  inner_join(products)
+
 
 orders_products <- orders_to_products %>%
   select(c(orders_id, product_name))
