@@ -136,7 +136,8 @@ ggplot(ratio_byDepartment) +
 ```{r}
 #Wie verhält sich der letzte Eikauf? t_orders_lastBuy filtert alle Produkte herraus, die sich als letztes in den Warenkrob gelegt wurden.
 
-t_orders_lastBuy<- t_orders %>% 
+t_orders_lastBuy<- t_orders %>%
+  inner_join(t_orders_product)
   group_by(orders_id) %>% 
   arrange(desc(add_to_cart_order)) %>%
   inner_join(t_products) %>%
