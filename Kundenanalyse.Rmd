@@ -5,6 +5,8 @@ output: html_notebook
 
 ```{r, echo=FALSE}
 library(tidyverse)
+library(arules)
+library(arulesViz)
 library(RColorBrewer)
 
 customer_behavior <- readRDS('./data/customer_behavior.rds')
@@ -24,6 +26,8 @@ Die Fragen, die wir uns stellten lauten:
 * Gibt es Kunden die häufig wiederkehren? Was ist das durchschnittliche Intervall der Wiederkehrer?
 * Gibt es bestimmte Produkte, welche von Ersteinkäufern erlangt werden? Was lockt die Kunden in den Laden?
 * Gibt es Kunden, welche häufig nur kleine, aber dafür regelmässige Einkäufe tätigen?
+* Gibt es Kunden, welche Bio kaufen und welche gar kein Bio kaufen?
+* Wie verhält sich die Länge der Kundschaft zum Anteil von gekauften Bio Produkten?
 
 
 ## Häufigkeit der Einkäufe
@@ -47,9 +51,24 @@ customer_behavior %>%
 ```{r}
 customer_behavior %>%
   ggplot(aes(x=total_nr_of_orders)) +
-    xlab("Average order count") + 
+    xlab("Products bought") + 
     ylab("Customer count") + 
     ggtitle("How many orders are done by 'normal' users?") +
+    geom_histogram(binwidth = 2, color="darkgray")
+```
+
+```{r}
+customer_behavior %>%
+  select(total_product_count) %>%
+  summary()
+```
+
+```{r}
+customer_behavior %>%
+  ggplot(aes(x=total_product_count)) +
+    xlab("Products bought") + 
+    ylab("Customer count") + 
+    ggtitle("How many products are bought by 'normal' users?") +
     geom_histogram(binwidth = 2, color="darkgray")
 ```
 
@@ -189,10 +208,92 @@ orders %>%
   summary()
 ```
 
+Die durchschnittliche Warenkorbgrösse bei Neukunden ist sehr ähnlich, wie bei der Gesamtkundschaft.
 
+# Kaufverhalten von Bio Produkten
+
+## Durchschnittliche Anzahl an Bioprodukten im Warenkorb
+
+```{r}
+customer_behavior %>%
+  mutate(mean_bio_products_per_order = round(mean_bio_products_per_order)) %>%
+  group_by(total_nr_of_orders, mean_bio_products_per_order) %>%
+  summarise(weight = sum(mean_bio_products_per_order)) %>%
+  ggplot(aes(x=total_nr_of_orders, y=mean_bio_products_per_order, fill=weight)) +
+    geom_tile() +
+    scale_fill_gradientn(colors = c("blue", "lightblue", "green", "red"), values = c(0,0.1, 0.3, 1)) +
+    labs(x = "Total number of orders", y = "Ø bio products per orderf", fill = "frequency", title = NULL)
+```
+
+## Verhältnis von Bioprodukten
+
+```{r}
+customer_behavior %>%
+  filter(total_nr_of_orders < 100) %>%
+  ggplot(aes(x=total_nr_of_orders, y=fraction_mean_bio)) +
+    geom_point(alpha = 0.01) +
+    geom_smooth() +
+    labs(x = "Total number of orders", y = "Ratio of bio products", title = NULL)
+```
+
+
+
+```{r}
+customer_behavior %>%
+  filter(total_product_count < 300) %>%
+  ggplot(aes(x=total_product_count, y=fraction_mean_bio)) +
+    geom_point(alpha = 0.01) +
+    geom_smooth() +
+    labs(x = "total products bought", y = "Ratio of bio products", title = NULL)
+```
+
+```{r}
+customer_behavior %>%
+  ggplot(aes(x=timespan_for_all_orders, y=fraction_mean_bio)) +
+    geom_point(alpha = 0.01) +
+    geom_smooth() +
+    labs(x = "Customer since .. in days", y = "Ratio of bio products", title = NULL)
+```
+
+In allen drei Graphen kann man sehen, dass der Bioanteil bei grösserer "Nutzung" des Stores ansteigt.
+
+## Welche Bioprodukte werden gern zusammen gekauft
+
+```{r}
+bio_baskets <- orders %>% 
+  inner_join(products) %>%
+  filter(is_organic == TRUE) %>%
+  group_by(orders_id) %>%
+  summarise(items = as.vector(list(product_name)))
+
+transactions <- as(bio_baskets$items, "transactions")
+
+arules::itemFrequencyPlot(transactions,
+   topN=30,
+   col=brewer.pal(8,'Pastel1'),
+   main='Relative Item Frequency Plot',
+   type="relative",
+   ylab="Item Frequency (Relative)") 
+```
+
+```{r}
+rules <- apriori(transactions, parameter = list(supp = 0.0025, conf = 0.2, target="rules"))
+rules <- rules[!is.redundant(rules)]
+rules_tib <- 
+  tibble( lhs = labels( lhs(rules) ), 
+          rhs = labels( rhs(rules) ),
+          support = (quality(rules) %>% pull(support)),
+          confidence = (quality(rules) %>% pull(confidence)),
+          lift = (quality(rules) %>% pull(lift)),
+          count = (quality(rules) %>% pull(count))) %>%
+  arrange(-support)
+rules_tib
+```
 
 
 # Zusammenfassung
 
 - `r order_pct[1]`% aller Kunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich
 - Stammkunden kaufen i.d.R. nicht andere Produkte als andere Kunden
+- Je länger ein Kunde im Store einkauft bzw. desto mehr oder häufiger er kauft, desto mehr Bioprodukte werden gekauft
+- allgemein kann man sagen, dass es einen Trend für Bioprodukte gibt

@@ -7,17 +7,18 @@ output: html_document
 ### Setup script
 
 ```{r}
-source('DbConnection.R')
+library(tidyverse)
+
+products <- readRDS('./data/products.rds')
+products <- readRDS('./data/products.rds')
+departments <- readRDS('./data/departments.rds')
+
+orders_to_products <- orders %>%
+  inner_join(products)
 ```
 
 
 Namen der Gänge und Departments sind in eigenen Tabellen gespeichert und nur über die Produkte verknüpft. Zur Auswertung kann man diese Tabellen zusammenführen und die entsprechenden Ids entfernen.
-
-```{r}
-products <- left_join(t_products, t_aisles, "aisle_id") %>%
-  left_join(t_departments, "department_id") %>%
-  select(-c(aisle_id, department_id))
-```
 
 Das neue Product Tibble sieht nun so aus:
 
@@ -42,12 +43,6 @@ products %>%
 ```
 
 _Alle Produkte sind einer Abteilung zugeordnet._
-
-
-#### Frage an Stakeholder
-  1. Es gibt sowohl Gänge mit dem Namen "Missing", als auch Abteilungen mit dem Namen "Missing". Was können Ursachen dafür sein?
-  2. Sind die Gänge nach "Standardweg durch den Laden" sortiert?
-
 
 Aisles per Department
 
@@ -89,6 +84,44 @@ aisle_in_departments %>%
 
 _Gänge sind immer nur einer Abteilung zugewiesen?_
 
-## Hypothese
+# Aktuelles Story Layout Design
 
-Es kann ausgewertet werden, welche Produktgruppen 
+Anhand der Reihenfolge, wann etwas in den Warenkorb gelegt wurde, kann man eine wahrscheinliche Version des aktuellen Store Layout Designs herausfinden.
+
+Dazu werden nur Warenkörbe mit mehr als 10 Items beachtet und es wird ein relativer Wert (zwischen 0 und 1) berechnet, welcher angibt, wie früh oder spät aus diesem Department in den Warenkorb gelegt wurde. Je kleiner der Wert im Durchschnitt ist, desto früher muss dieses Department im Story Layout angeordnet sein.
+
+```{r}
+max_add_to_cart_order <- orders_to_products %>%
+  group_by(user_id, orders_id) %>%
+  summarise(max_add_to_cart_order = max(add_to_cart_order))
+
+# take only those with a minium number of products
+department_oder <- max_add_to_cart_order %>%
+  filter(max_add_to_cart_order > 10) %>%
+  inner_join(orders_to_products) %>%
+  mutate(add_to_cart_rel = add_to_cart_order / max_add_to_cart_order) %>%
+  group_by(department_id) %>%
+  summarise(mean = mean(add_to_cart_rel)) %>%
+  arrange(mean) %>%
+  inner_join(departments) %>%
+  select(department_id, department) %>%
+  mutate(order = row_number())
+
+# add some statistics - number of products
+department_oder <- department_oder %>%
+  left_join(
+    products %>%
+      group_by(department_id) %>%
+      summarise(product_count = n())
+  ) %>%
+  left_join(
+    products %>%
+      select(department_id, aisle_id) %>%
+      distinct() %>%
+      group_by(department_id) %>%
+      summarise(aisle_count = n())
+  ) %>%
+  mutate(avg_product_per_aisle = product_count /aisle_count)
+
+
+```
