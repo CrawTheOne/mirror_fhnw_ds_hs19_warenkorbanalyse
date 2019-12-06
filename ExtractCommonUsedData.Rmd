@@ -158,6 +158,30 @@ HAVING
   AND avg(o.days_since_prior_order) <= 15
 ```
 
+```{sql, connection=con, output.var=orders_per_hour_per_day}
+SELECT o.order_dow, o.order_hour_of_day, count(o.*) as total_order_count 
+FROM orders o 
+GROUP BY o.order_dow, o.order_hour_of_day
+
+``` 
+
+## Stündlich verkaufte Anzahl Produkte
+```{sql, connection=con, output.var=products_per_hour_per_day}
+SELECT o.order_dow, o.order_hour_of_day, count(op.*) as total_product_count 
+FROM orders o 
+JOIN ( 
+    SELECT * 
+    FROM orders_product_prior opp 
+    UNION ALL 
+    SELECT * 
+    FROM orders_product_train opt 
+    ) AS op 
+    ON o.orders_id = op.orders_id 
+GROUP BY o.order_dow, o.order_hour_of_day
+
+``` 
+
+
 # Objekte erweitern/transformieren
 
 ## Statistiken gekaufte Produkte pro User
@@ -184,6 +208,9 @@ customer_behavior <-
   inner_join(products_by_user_stats)
 ```
 
+
+
+
 ## Statistiken gekaufte Bioprodukte pro User
 
 
@@ -197,5 +224,8 @@ saveRDS(customer_behavior, './data/customer_behavior.rds')
 saveRDS(products_by_order, './data/products_by_order.rds')
 saveRDS(products_count_by_user, './data/products_count_by_user.rds')
 saveRDS(patrons, './data/patrons.rds')
+saveRDS(products_per_hour_per_day, './data/products_per_hour_per_day.rds')
+saveRDS(orders_per_hour_per_day, './data/orders_per_hour_per_day.rds')
+
 ```
 
