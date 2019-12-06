@@ -26,10 +26,15 @@ most_bought_nonorg <- full_join(t_products, t_orders_product, "product_id") %>%
 
 most_bought_nonorg
 
-org_products <- t_products %>%
+org_products <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  mutate(organic = as.integer(organic)) %>%
   filter(organic == 1) %>%
-  select(product_id, product_name) %>%
+  count(product_name, product_id) %>%
+  mutate(n = as.integer(n)) %>%
+  select(product_id, product_name, n) %>%
+  arrange(product_id) %>%
   as_tibble()
 
 org_products
@@ -38,9 +43,9 @@ grepl(as.character(most_bought_nonorg$product_name), org_products$product_name, 
 
 pmatch(most_bought_nonorg$product_name, org_products$product_name)
 
-#Encoding(org_products$product_name) <- "latin1"
+Encoding(org_products$product_name) <- "latin1"
 #write.xlsx(most_bought_nonorg, "./data/most_bought_nonorg.xlsx")
-#write.xlsx(org_products, "./data/t_products.xlsx")
+write.xlsx(org_products, "./data/t_products.xlsx")
 
 #manually moved t_products to most_bought_nonorg.xlsx, eliminated t_products.xlsx
 
