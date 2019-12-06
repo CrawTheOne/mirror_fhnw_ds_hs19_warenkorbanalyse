@@ -2,14 +2,19 @@
 title: "Bio-Sparte Zusammenfassung"
 output: html_notebook
 ---
-#DbConnection
+### DbConnection
 ```{r setup, echo=FALSE, results="hide"}
 require("RPostgreSQL")
 source('DbConnection.R')
 ```
+# Bio-Sparte
 
-#Verhältniss Bio-Produkten zu Nicht-Bio-Produkte ------f
+## Annahme 1 : Um heruaszufinden was für ein Laden, im Bezug auf Bio, der untersuchte Supermarkt ist haben wir zuerst mal untersucht wie es mit den Bio-Produkten aussieht
+
+### Frage 1: Was ist die aktuelle Situation des Ladens zu Bio-Produkten im Laden?
 ```{r, echo=FALSE}
+
+#Um herauszufinden wie viele Bio-Produkte es im Sortiment gibt haben wir eine zusätzliche Spalte erstellt, die true oder false ausgibt was organic im Namen hat und was nicht.
 ratio_products_org_notorg<- t_products %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(organic) %>%
@@ -18,7 +23,7 @@ ratio_products_org_notorg<- t_products %>%
 
 ratio_products_org_notorg
 
-# Create a basic bar
+# Barplot
 ggplot(ratio_products_org_notorg, aes(x = "", y = n_produkte, fill = organic)) + geom_bar(stat = "identity", width = 1) +
   coord_polar("y", start = 0) + 
   geom_text(aes(label = paste0(round(n_produkte))), position = position_stack(vjust = 0.5)) + 
@@ -30,11 +35,26 @@ ggplot(ratio_products_org_notorg, aes(x = "", y = n_produkte, fill = organic)) +
           plot.title = element_text(hjust = 0.5, color = "#666666"))
 
 
+#Um die Prozente heruszulesen wurde die Tabelle mit spread() umgekehrt, so kann mann direkt den Wert herauslesen
+ratio_products_org_notorg_Z<- t_products %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+  summarise(count = n()) %>%
+  collect()%>%
+  spread(key = organic, value = count)%>%
+  rename(notorganic = `0`, organic = `1`) %>%
+  mutate(all_Prod = organic + notorganic)%>%
+  mutate(freq_orgProd = organic/all_Prod *100)
+
+OrgProd <- ratio_products_org_notorg_Z$freq_orgProd
+
+OrgProd
 
 ```
+### Antwort 1 : Der Anteil an Bio-Produkten im Sortiment ist `r OrgProd`%
 
-#Verhältniss Gekaufte Bio-Produkte in Gegensatz zu nicht Bio-Produkte -------f
-```{r}
+### Frage 1.1 : Wie viele Bio-Produkte werden im Vergleich zu nicht- Bio Produkten eingekauft?
+```{r,echo=FALSE}
 ratio_orders_org_notorg <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(c(product_id, product_name, orders_id)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
@@ -53,40 +73,27 @@ ggplot(ratio_orders_org_notorg, aes(x = "", y = n, fill = organic)) + geom_bar(s
           axis.text = element_blank(),
           axis.ticks = element_blank(),
           plot.title = element_text(hjust = 0.5, color = "#666666"))  
+
+#Um die Prozente heruszulesen wurde die Tabelle mit spread() umgekehrt, so kann mann direkt den Wert herauslesen
+ratio_orders_org_notorg_Z<- ratio_orders_org_notorg %>%
+  collect() %>%
+  spread(key = organic, value = n) %>%
+  rename(notorganic = `0`, organic = `1`) %>%
+  mutate(all_Prod = organic + notorganic) %>%
+  mutate(freq_orgProd = organic/all_Prod *100)
+
+ratio_orders_org_notorg_Z  
+  
+OrgSold <- ratio_orders_org_notorg_Z$freq_orgProd
+OrgSold
 ```
+### Antwort 1.1 : Der Anteil an eingekauften Bio-Produkten beträgt `r OrgSold` %
 
-### Verhältniss gekaufter Bio-Produkte in Gegensatz zu nicht Bio-Produkte
-```{r, echo=FALSE}
-ratio_sold_ord_notorg <- full_join(t_products, t_orders_product, "product_id") %>%
-	select(c(product_id, product_name, orders_id)) %>%
-	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic) %>%
-	count(organic) %>%
-  mutate(n = as.integer(n))
+## Auswertung 1 : Der untersuchte Supermarkt hat einen Bio-Anteil an eingekauften Produkten von 31% was ein grosser Unterschied zu den c.a 10% Bio-Produkten im Angebot ist. Wir stellen fest, dass es hier ein Verbesserung gemacht werden kann. Wir wollen die Nachfrage erhöhen indem wir das Angebot erhöhen. Doch wo genau sollen mehr Bio-Produkte eingesetzt werden ?
 
-#Verhalt_Bio_bought
+Frage 1.3 : Wie ist die Beliebtheit der Bio-Produkte in den einzelnen Departments ?
 
-# Create a basic bar
-ggplot(ratio_sold_ord_notorg, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
-  # Convert to pie (polar coordinates) and add labels
-  coord_polar("y", start = 0) + 
-  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
-  # Add color scale (hex colors)
-  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
-  # Remove labels and add title
-  labs(x = NULL, y = NULL,  title = "Anzahl Verkäufte Bio-/Nicht-Produkte") +
-  # Tidy up the theme
-  theme_classic() + theme(axis.line = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank(),
-          plot.title = element_text(hjust = 0.5, color = "#666666"))
-
-
-#Herausfinden der exaketn % Zahlen für eine klare Aussage
-
-```
-
-# Beliebheit der Bio-Produkte in den Departments --------f
+## Beliebheit der Bio-Produkte in den Departments 
 ```{r}
 product_sold_org_byDepartment<- full_join(t_products, t_orders_product, "product_id") %>%
   right_join(t_departments, "department_id") %>%
@@ -114,30 +121,292 @@ ggplot(product_sold_org_byDepartment, aes(x = reorder(department, sold_org_byPer
   geom_text(aes(label = paste0(sold_org_byPercent, "%")), position = position_stack(vjust = 0.5)) + 
   coord_flip()
 ```
+### Antwort 1.3 : Die Beliebtheit der Bio-Produkte in den einzelnen depatments unterscheidet sich sehr stark. Der Anteil an gekauften Bio-Produkten zu Nicht-Bio-Produkten ist demensprechend sehr divers.
 
-# Verhältnis Bio/Nicht-bio in aisles  xxxxxx
-```{r, fig.height = 7, echo=FALSE}
-ratio_byDepartment <- full_join(t_products, t_aisles, "aisle_id") %>%
-	full_join(t_departments, "department_id") %>%
-	select(-c(aisle_id, department_id, product_id)) %>%
+### Frage 1.4 : Welches sind die top 5 departments, in welchen das Verhältniss an gekaufen Bio Produkten zu vohandenen Bio-Produkten am grössten ist.
+```{r}
+ratio_products_org_notorg_per_departments <- t_departments%>%
+  inner_join(t_products) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(department, organic) %>%
-	count(name = "anzahl_produkte") %>%
-  mutate(anzahl_produkte = as.integer(anzahl_produkte)) %>%
-	arrange(desc(anzahl_produkte))
-ratio_byDepartment
+  group_by(department,organic) %>%
+  summarise(count = n()) %>%
+  arrange(department) %>%
+  collect()%>%
+  spread(key = organic, value = count) %>%
+  rename(notorganic = `0`, organic = `1`) %>%
+  mutate(all_products = notorganic + organic, freqProd = organic/all_products *100) %>%
+  arrange(desc(freqProd))
 
-ggplot(ratio_byDepartment) +
-  geom_col(aes(x = reorder(department, anzahl_produkte) ,y = anzahl_produkte, fill = organic))  +
-  coord_flip()
+ratio_orders_org_notorg_per_departments <-  t_orders_product %>%
+  inner_join(t_orders) %>%
+  inner_join(t_products) %>%
+  inner_join(t_departments) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(department,organic) %>%
+  summarise(count = n()) %>%
+  arrange(department) %>%
+  collect()%>%
+  spread(key = organic, value = count) %>%
+  rename(notorganic = `0`, organic = `1`) %>%
+  mutate(all_products = notorganic + organic, freqBought = organic/all_products *100) %>%
+  arrange(desc(freqBought))
+
+  improvement_departments_top5 <- ratio_orders_org_notorg_per_departments %>%
+  select(department,freqBought) %>%
+  left_join(ratio_products_org_notorg_per_departments) %>%
+  select(department,freqBought,freqProd) %>%
+  mutate(diff = freqBought-freqProd) %>%
+  arrange(desc(diff)) %>%
+  head(5)
+
+ratio_products_org_notorg_per_departments
+ratio_orders_org_notorg_per_departments
+improvement_departments_top5
 ```
 
-# First Buy für Bioprodukte
+### Antwort 1.4 : Es sind die Departments : `r improvement_departments_top5$department`
+
+### Frage 1.5 : Was sind die meist gekauften Bio-Produkte in diesen departments?
+```{r}
+#1 : canned goods- departement :15
+most_bought_canned_goods <- t_orders %>%
+  inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  filter(department_id == 15) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic)%>%
+  select(c("organic", "product_name"))%>%
+  count(n = product_name)%>%
+  arrange(desc(nn))
+
+top10orgProdInCannedGoods <-filter(most_bought_canned_goods, organic == TRUE) %>%
+  head(10)
+
+#2 : missing- departement :21
+most_bought_missing <- t_orders %>%
+  inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  filter(department_id == 21) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic)%>%
+  select(c("organic", "product_name"))%>%
+  count(n = product_name)%>%
+  arrange(desc(nn))
+  
+top10orgProdInMissing <- filter(most_bought_missing, organic == TRUE) %>%
+  head(10)
+
+#3 : produce- departement :4
+most_bought_produce <- t_orders %>%
+  inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  filter(department_id == 4) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic)%>%
+  select(c("organic", "product_name"))%>%
+  count(n = product_name)%>%
+  arrange(desc(nn))
+  
+top10orgProdInProduce <- filter(most_bought_produce, organic == TRUE) %>%
+  head(10)
+
+#4 : babies- departement :18
+most_bought_babies <- t_orders %>%
+  inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  filter(department_id == 18) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic)%>%
+  select(c("organic", "product_name"))%>%
+  count(n = product_name)%>%
+  arrange(desc(nn))
+  
+top10orgProdInBabies <- filter(most_bought_babies, organic == TRUE) %>%
+  head(10)
+
+
+#5 : dairy eggs- departement :16
+most_bought_dairy_eggs <- t_orders %>%
+  inner_join(t_orders_product) %>%
+  inner_join(t_products) %>%
+  filter(department_id == 16) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic)%>%
+  select(c("organic", "product_name"))%>%
+  count(n = product_name)%>%
+  arrange(desc(nn))
+  
+most_bought_dairy_eggs
+
+top10orgProdInDairyEggs <- filter(most_bought_dairy_eggs, organic == TRUE) %>%
+  head(10)
+
+top10orgProdInCannedGoods
+top10orgProdInMissing
+top10orgProdInProduce 
+top10orgProdInBabies
+top10orgProdInDairyEggs
+
+```
+### Antwort 1.5 : Es sind `r top10orgProdInCannedGoods` `r top10orgProdInMissing` `r top10orgProdInProduce` `r top10orgProdInBabies` `r top10orgProdInDairyEggs`
+
+## Auswertung 1.2: Es gibt eine eindeutige Diskrepanz der gekauften Bio-Produkte und der Bio-Produkten im Sortiment. Diese Diskrepanz unterscheidet sich von Department zu Department. Um eine klare Aussage zu treffen, wo man diese Diskrepanz am besten angeht haben wir uns für die top 5 Departments entschieden, wo sie am grössten ist.
+---------------------------------------------------------------------------------------------------
+###################################################################################################
+---------------------------------------------------------------------------------------------------
+
+## Annahme 2 : Es ist wichtig die beliebten Bio-Produkte zu bewerben, weil die allgemein viel gekauft werde und auch sehr beliebt sind. Wir wollen kain Cross-Selling betreiben, indem wir die Bio-Produkte irgendwie neben andere häuffig gekaufte stellen, sondern Bio-Produkte sollten in der Regel genau nebenden equivalenten Nicht-Bio-Produten stehen. 
+
+### Frage 2.1 : Was sind die meist verkauften Produkte? Und wie viele davon sind Bio? 
+```{r, echo=FALSE}
+most_bought_all <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n)) %>%
+	arrange(-n) %>%
+	head(30)
+
+most_bought_all
+
+ggplot(most_bought_all) +
+  geom_col(aes(x = reorder(product_name, n), y = n, fill = organic)) +
+  coord_flip()
+```
+### Antwort 2.1: Es sind : `r head(most_bought_all$product_name)`
+
+### Frage 2.2 : Was sind die meist verkauften Bio-Produkte? 
+```{r}
+# Determine most bought organic products
+
+most_bought_org <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  mutate(organic = as.integer(organic)) %>%
+  filter(organic == 1) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n) %>%
+	head(100)
+
+most_bought_org
+
+ggplot(most_bought_org) +
+  geom_col(aes(x = reorder(product_name, n), y = n)) +
+  coord_flip()
+
+```
+### Antwort 2.2: Es sind : `r head(most_bought_org$product_name)`
+
+### Frage ### Frage 2.3 : Was sind die meist verkauften Nicht-Bio-Produkte? 
+````{r, include=FALSE}
+#Most bought non-organic products
+
+most_bought_nonorg <- full_join(t_products, t_orders_product, "product_id") %>%
+	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  mutate(organic = as.integer(organic)) %>%
+  filter(organic == 0) %>%
+	count(product_name) %>%
+  mutate(n = as.integer(n))  %>%
+	arrange(-n) %>%
+	head(100) %>%
+  as_tibble()
+
+most_bought_nonorg
+
+ggplot(most_bought_nonorg) +
+  geom_col(aes(x = reorder(product_name, n), y = n)) +
+  coord_flip()
+```
+### Antwort 2.3: Es sind : `r head(most_bought_nonorg$product_name)`
+
+### Frage 2.4 : Für welche der meistgekauften Nicht-Bio-Produkte gibt es ein Bio-Äquivalent.
+```{r}
+
+```
+### Antwort 2.4
+
+---------------------------------------------------------------------------------------------------
+###################################################################################################
+---------------------------------------------------------------------------------------------------
+
+## Annahme 3 : Rezepte für department : other;
+Wir gehen davon aus, dass das department: other ein flexibles depatment ist. In jedem Supermarkt gibt es neben fest gelegten departments auch departments die flexibel sind. Diese werden häuffig zu Promotionszwecke verwendet. wir stellen uns vor in diesem department Werbung für Bio zu machen.
+
+### Frage 3.1 : Wie viele Produkte im department : other sind bio?
+```{r}
+ratio_org_byOther <- t_products %>%
+  inner_join(t_departments_Other) %>%
+  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+  group_by(organic) %>%
+  summarise(count = n()) %>%
+  collect()%>%
+  spread(key = organic, value = count) %>%
+  rename(notorganic = `0`, organic = `1`) %>%
+  mutate(all_products = notorganic + organic, freqProd = organic/all_products *100)
+
+ratio_org_byOther 
+```
+## Antwort 3.1 : Es gibt nur  6.8 % Bio-Produkte im Department: Other. 
+```{r}
+most_bought_org
+```
+
+## Auswertung 3
+Wir haben aus den meist gekauften Bio-Prdukten 2 Rezepte zusammengestellt. Es gibt sehr viel Gemüse und Früchte in dieser Rangliste,darum haben wir uns für die Power-Müsli und den Salat entschieden. Diese können individuell zusammengestellt werden und decken einen grossen Anteil der meist gekauften Bio-Produkte ab.
+
+
+### Power-Müsli
+- Bag of Organic Bananas		
+- Organic Strawberries	
+- Organic Whole Milk			
+- Organic Raspberries
+- Organic Blueberries
+- Organic Fuji Apple
+- Apple Honeycrisp Organic		
+- Organic Half & Half	(Milch und cream für kaffee)
+- Organic Large Extra Fancy Fuji Apple	
+- Organic Gala Apples	
+- Organic Avocado
+- Organic Unsweetened Almond Milk
+- Organic Navel Orange
+- Organic Reduced Fat 2% Milk
+
+### Salat
+- Organic Baby Spinach
+- Organic Hass Avocado
+- Organic Yellow Onion
+- Organic Garlic
+- Organic Zucchini
+- Organic Lemon
+- Organic Grape Tomatoes
+- Organic Cucumber
+- Organic Baby Carrots
+- Organic Baby Arugula
+- Organic Cilantro
+- Organic Small Bunch Celery
+- Organic Red Onion
+- Organic Tomato Cluster
+
+---------------------------------------------------------------------------------------------------
+###################################################################################################
+---------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------
+###################################################################################################
+---------------------------------------------------------------------------------------------------
+
+## Annhame 4 : Wir gehen davon aus, das der sogenannte Last-Buy eine guter Einstigspunkt für potenziellen Bio-Kunden sein kann. Denn der Lasst-Buy ist in der Regel kein rationaler Einkauf sonder ein sehr impulsiver Einkauf.
+
+### Frage 4.1 : Wie verhält sich der Bio-Anteil der Einkäufe für den jeweiligen letzten getätigten Einkauf?
 ```{r}
 #Wie verhält sich der letzte Eikauf? t_orders_lastBuy filtert alle Produkte herraus, die sich als letztes in den Warenkrob gelegt wurden.
 
 t_orders_lastBuy<- t_orders %>%
-  inner_join(t_orders_product)
+  inner_join(t_orders_product) %>%
   group_by(orders_id) %>% 
   arrange(desc(add_to_cart_order)) %>%
   inner_join(t_products) %>%
@@ -148,33 +417,14 @@ t_orders_lastBuy<- t_orders %>%
 
 t_orders_lastBuy
 
-#Barplot über das Verhalten des Last Buy
-#in den Gängen
-ggplot(data = t_orders_lastBuy) + 
-  geom_bar(mapping = aes(x = aisle_id), width = 0.9, fill = "#FF9999") +
-  xlab("aisle id") + ylab("Anzahl Einkäufe")
-
-#in den Abteilungen 
-ggplot(data = t_orders_lastBuy) + 
-  geom_bar(mapping = aes(x = department_id), width = 0.9, fill = "#FF9999") +
-  xlab("department id") + ylab("Anzahl Einkäufe")
+t_orders
 
 #ist der letzte Einkauf Bio oder nicht
 ggplot(data = t_orders_lastBuy) + 
   geom_bar(mapping = aes(x = organic), width = 0.5, fill = "#FF9999") +
   xlab("Bio oder nicht Bio") + ylab("Anzahl eingekaufte Produkte")
 
-most_bought_org <- full_join(t_products, t_orders_product, "product_id") %>%
-	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  mutate(organic = as.integer(organic)) %>%
-  filter(organic == 1) %>%
-	count(product_name) %>%
-  mutate(n = as.integer(n))  %>%
-	arrange(-n)%>%
-  mutate(n= n)
   
-
 most_bought_org
 t_orders_FirstBuy_most_bought_org
 
@@ -182,13 +432,5 @@ t_orders_FirstBuy_most_bought_org
 
 
 ```
-
-#Vergleich von der Tabelle mit compare_df
-```{r}
-ctable_firstBuyer = compareDF::compare_df(as.data.frame(most_bought_org), as.data.frame(most_bought_nonorg), c("product_name"))
-
-print(ctable_firstBuyer$html_output)
-
-
-#ergibt einen übersichlichen Table, die n Daten können allerdings nicht ernstgenommen werden, darum verä
+### Antwort 4.1 : Das Verhältniss ist unterscheidet sich nicht signifikant von dem Duchschnitt
 

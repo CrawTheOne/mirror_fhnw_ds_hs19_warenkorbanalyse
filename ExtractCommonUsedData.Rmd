@@ -45,9 +45,12 @@ JOIN aisle a on p.aisle_id = a.aisle_id
 JOIN department d on p.department_id = d.department_id
 ```
 
-## Alle Departments
-```{sql connection=con, output.var=departments}
-SELECT * FROM department
+Direkt speichern und wieder aus dem RAM löschen
+
+```{r}
+saveRDS(as_tibble(products), './data/products.rds')
+products <- NULL
+gc()
 ```
 
 
@@ -74,6 +77,12 @@ JOIN
         ON op.orders_id = o.orders_id
 ```
 
+```{r}
+saveRDS(as_tibble(orders), './data/orders.rds')
+orders <- NULL
+gc()
+```
+
 ## Generelle Statistiken über das Kaufverhalten der Kunden
 
 ```{sql connection=con, output.var=customer_behavior}
@@ -98,11 +107,7 @@ customer_behavior <- customer_behavior %>%
 SELECT
     o.user_id,
     o.orders_id,
-    COUNT(op.product_id) AS total_product_count,
-    SUM(case when
-           lower(p.product_name) LIKE '%organic%'
-           OR lower(p.product_name) LIKE '%bio %'
-        then 1 else 0 end ) AS total_bio_count
+    COUNT(op.product_id) AS total_product_count
 FROM orders o
 JOIN (
     SELECT *
@@ -119,7 +124,6 @@ GROUP BY o.user_id, o.orders_id
 ```{r}
 products_by_order <- products_by_order %>%
   mutate(total_product_count = as.integer(total_product_count)) %>%
-  mutate(total_bio_count = as.integer(total_bio_count)) %>%
   as_tibble()
 ```
 
@@ -183,8 +187,6 @@ GROUP BY o.order_dow, o.order_hour_of_day
 
 
 # Objekte erweitern/transformieren
-
-## Statistiken gekaufte Produkte pro User
 ```{r}
 products_by_user_stats <- products_by_order %>%
   group_by(user_id) %>%
@@ -192,35 +194,15 @@ products_by_user_stats <- products_by_order %>%
     mean_products_per_order = mean(total_product_count), 
     median_products_per_order = median(total_product_count),
     min_products_per_order = min(total_product_count),
-    max_products_per_order = max(total_product_count),
-    total_product_count = sum(total_product_count),
-    mean_bio_products_per_order = mean(total_bio_count), 
-    median_bio_products_per_order = median(total_bio_count),
-    min_bio_products_per_order = min(total_bio_count),
-    max_bio_products_per_order = max(total_bio_count),
-    total_bio_product_count = sum(total_bio_count)) %>%
-  mutate(
-    fraction_mean_bio = mean_bio_products_per_order/mean_products_per_order,
-    fraction_median_bio = median_bio_products_per_order/median_products_per_order)
+    max_products_per_order = max(total_product_count))
 
 customer_behavior <-
   customer_behavior %>%
   inner_join(products_by_user_stats)
 ```
 
-
-
-
-## Statistiken gekaufte Bioprodukte pro User
-
-
 # Objekte speichern
 ```{r}
-dir.create('./data', showWarnings = FALSE)
-saveRDS(as_tibble(products), './data/products.rds')
-saveRDS(as_tibble(orders), './data/orders.rds')
-saveRDS(as_tibble(departments), './data/departments.rds')
-saveRDS(customer_behavior, './data/customer_behavior.rds')
 saveRDS(products_by_order, './data/products_by_order.rds')
 saveRDS(products_count_by_user, './data/products_count_by_user.rds')
 saveRDS(patrons, './data/patrons.rds')
