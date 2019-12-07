@@ -8,8 +8,8 @@ output:
 editor_options: 
   chunk_output_type: inline
 ---
-#Install packages if necessary
-```{r}
+
+```{r include=FALSE}
 # activate install if needed
 #install.packages("RPostgreSQL")
 #install.packages("tidyverse")
@@ -18,82 +18,44 @@ editor_options:
 ```
 
 #install libraries
+
 ```{r include=FALSE}
 require("RPostgreSQL")
-library(DBI)
 library(tidyverse)
 library(dplyr)
 library(RColorBrewer)
 ```
 
-#Create a connection to the Database
-```{r include=FALSE}
-# define the database connection string
-DB_HOST='server2053.cs.technik.fhnw.ch'
-DB_PORT = 5432
-DB_DBNAME =  'warenkorb_db' # or'bank_db' 
-DB_USERNAME = 'db_user'
-DB_PASSWORD = 'db_user_pw'
-
-con <- DBI::dbConnect(
-  odbc::odbc(),
-  Driver   = "PostgreSQL Unicode(x64)",
-  Server   = DB_HOST,
-  Database = DB_DBNAME,
-  UID      = DB_USERNAME,
-  PWD      = DB_PASSWORD,
-  Port     = DB_PORT)
 
 
-# load the PostgreSQL driver
-drv <- dbDriver("PostgreSQL")
-# connect to the database
-con <- dbConnect(drv, dbname = DB_DBNAME,
-                 host = DB_HOST, port = DB_PORT,
-                 user = DB_USERNAME, password = DB_PASSWORD)
+```{r}
+items_per_order <- readRDS('./data/products_by_order.rds')
+orders <- readRDS('./data/orders.rds')
+orders_per_hour_per_day <- readRDS('./data/orders_per_hour_per_day.rds')
+products_per_hour_per_day <- readRDS('./data/products_per_hour_per_day.rds')
 ```
 
-```{r include=FALSE}
-orders <- tbl(con,  "orders")
-orders_product_prior <- tbl(con,  "orders_product_prior")
-orders_product_train <- tbl(con,  "orders_product_train")
-orders_product = tbl(con, "orders_product_prior") %>%
-  union_all(tbl(con, "orders_product_train"))
-```
-
-#Plots (ggplot2)
-## Orders over 24 hours
-
-Als erstes wäre es interessant zu sehen, wie die Verteilung aller Bestellungen über den Zeitraum von 24 Stunden aussieht, da davon auszugehen ist, dass die Anzahl der Bestellungen pro Uhrzeit variieren. 
 
 
+Als erstes wäre es interessant zu sehen, wie die Verteilung aller Bestellungen über den Zeitraum von 24 Stunden aussieht, da davon auszugehen ist, dass die Anzahl der Bestellungen pro Uhrzeit variieren. Das folgende Diagramm zeigt die Verteilung aller Bestellungen aus dem Datensatz über 24 Stunden verteilt.
 
 ```{r echo=FALSE}
-orders_per_hour_per_day <- orders %>%
-  group_by(order_dow, order_hour_of_day) %>%
-  summarise(nr_of_orders = as.numeric(n())) %>%
-  collect()
-
-  
 ggplot(data = orders_per_hour_per_day) + 
-  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders/7)) + 
+  geom_col(mapping = aes(x = order_hour_of_day, y = as.numeric(total_order_count))) + 
   ggtitle("Total Nr of orders per hour") +
   xlab("Order hour") + ylab("Nr of orders")
-
-
 ```  
-Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag eingehen. Ab 6 Uhr ist ein Starker Anstieg der eingehenden Produkte bemerkbar............
-
+Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag eingehen. Ab Stunde 5 ist ein Starker Anstieg der eingehenden Produkte bemerkbar bis ca. Stunde 10. Von Stunde 17 bis 24 reduzieren sich die Bestellungen wieder 
 
 
 ## Orders over 7 days
 
-Es lässt sich ausserdem die Behauptung aufstellen, dass nicht alle Tage gleich viele Personen einkaufen. Tendenziell sollten am Wochenende mehr Personen einkaufen, als unter der Woche.
+Es lässt sich ausserdem die Behauptung aufstellen, dass nicht alle Tage gleich viele Personen einkaufen. Tendenziell sollten am Wochenende mehr Personen einkaufen, als unter der Woche. Das folgende Diagramm zeigt alle Bestellungen aus dem Datensatz auf alle Wochendage verteilt.
 
 ```{r echo=FALSE}
 
 ggplot(data = orders_per_hour_per_day) + 
-  geom_col(mapping = aes(x = order_dow, y = nr_of_orders, fill = as.factor(order_dow))) +
+  geom_col(mapping = aes(x = order_dow, y = as.numeric(total_order_count), fill = as.factor(order_dow))) +
   ggtitle("Total Nr of orders per Day ") +
   xlab("Order day") + ylab("Nr of orders") +
   labs(fill='Weekday') +
@@ -101,58 +63,38 @@ ggplot(data = orders_per_hour_per_day) +
   
 ```
 
-Aus dem Diagramm ist zu erkennen, dass an Tag 0 und 1 ca. 1/4 mehr Bestellungen getätigt wurden, als bei den Tagen 2 bis 6.
-
-```{r include=FALSE}
-ggplot(data = orders) + 
-  geom_boxplot(mapping = aes(x = order_dow, y = order_hour_of_day, group = order_dow, fill = as.factor(order_dow))) + 
-  scale_fill_brewer(palette="Spectral") +
-  labs(fill='Weekday') +
-  ggtitle("Boxplot avg distribution of orders over the days over one week ")
-```
+In den Daten gibt es das Attribut order_dow mit den Werten 0 bis 6. Aus dem Diagramm ist zu erkennen, dass an Tag 0 und 1 sichtbar mehr Bestellungen getätigt wurden, als bei den Tagen 2 bis 6. Es lässt sich deshalb vermuten, dass Tag 0 und 1 am Wochenende ist. Leider können wir aus dem Datensatz jedoch nicht eindeutig herauslesen, welche Nummer welchem Wochentag zuzuordnen ist.
 
 
-
-##Orders over 24 hours and 7 days
 ```{r eval=FALSE, include=FALSE}
+##Orders over 24 hours and 7 days
 ggplot(data = orders_per_hour_per_day) + 
-  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_orders, fill = as.factor(order_dow))) + 
+  geom_col(mapping = aes(x = order_hour_of_day, y = total_order_count, fill = as.factor(order_dow))) + 
   facet_wrap(~ order_dow,  nrow = 3) +
   labs(fill='Weekday') +
-  scale_fill_brewer(palette="Spectral")
+  scale_fill_brewer(palette="Spectral") +
+  xlab("Order hour") + ylab("Nr of orders")
 ```
 
 
-##Nr of items per order
-Ziel: Untersuchung der Bestellgrössen.
+##Untersuchung der Bestellgrössen.
 
-```{r echo=FALSE}
-#Create a new table with Order_id and nr_of_items per order
-items_per_order <- orders_product %>% 
-  group_by(orders_id) %>%
-  summarise(nr_of_items = as.numeric(max(add_to_cart_order))) 
-
-product_sales_per_week <- orders %>%
-  group_by(orders_id) %>%
-  left_join(select(items_per_order, orders_id, nr_of_items),by="orders_id")
-
-items_per_order <- items_per_order %>% 
-  collect()
+```{r}
+mean_order_size <- mean(items_per_order$total_product_count)
+median_order_size <- median(items_per_order$total_product_count)
+quantile_order_size <- quantile(items_per_order$total_product_count)
 
 ggplot(data = items_per_order) + 
-  geom_bar(mapping = aes(x = nr_of_items), width=0.9) +
+  geom_bar(mapping = aes(x = total_product_count), width=0.9) +
   xlab("Products per order") + ylab("Nr of orders") +
   coord_cartesian(xlim=c(0,75)) +
   ggtitle("Average Nr of products per order") 
 
-mean_order_size <- mean(items_per_order$nr_of_items)
-median_order_size <- median(items_per_order$nr_of_items)
-quantile_order_size <- quantile(items_per_order$nr_of_items)
-percentages_order_size <- quantile(items_per_order$nr_of_items, c(.10, .20, .30, .40, .50, .60, .70, .80, .90)) 
 ```
+
 Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
 
-Das arithmetische Mittel über alle Bestellungen liegt bei 10.107 verschiedenen Produkten pro Bestellung.
+Das arithmetische Mittel über alle Bestellungen liegt bei `r round((mean_order_size), digits = 2)` verschiedenen Produkten pro Bestellung.
 
 Das Median über alle Bestellungen liegt bei `r median_order_size` verschiedenen Produkten pro Bestellung. Die hälfte aller Bestellungen enthällt entsprechend `r median_order_size` oder Weniger Produkte.
 
@@ -164,51 +106,35 @@ Fazit: Aus der oberen Grafik ist zu sehen, dass es sich eher um kleinere Bestell
 
 
 
-
-##Items over 24 hours and 7 days
-```{r eval=FALSE, include=FALSE}
-ggplot(data = product_sales_per_week) + 
-  geom_col(mapping = aes(x = order_hour_of_day, y = nr_of_items, fill = as.factor(order_dow))) +
-  facet_wrap(~ order_dow,  nrow = 3) +
-  labs(fill='Weekday') +
-  xlab("Hour of Day") + ylab("Nr of Items") +
-  scale_fill_brewer(palette="Spectral")
-```
-
-
 ```{r include=FALSE}
-products_per_hour_per_day <- orders %>%
-  group_by(order_dow, order_hour_of_day) %>%
-  left_join(select(orders_product, orders_id, product_id),by="orders_id") %>%
-  summarise(nr_of_products = n()) %>%
-  collect()
-
 max_products <- products_per_hour_per_day %>%
-  summarise(max_day = max(nr_of_products)) %>%
+  summarise(max_day = max(total_product_count)) %>%
   summarise(max_week = max(max_day)) 
 max_p <- (max_products$max_week)
 
 max_orders <- orders_per_hour_per_day %>%
-  summarise(max_day = max(nr_of_orders)) %>%
+  summarise(max_day = max(total_order_count)) %>%
   summarise(max_week = max(max_day)) 
 max_o <- (max_orders$max_week)
 
 mean_products <- products_per_hour_per_day %>%
-  summarise(mean_day = mean(nr_of_products)) %>%
+  summarise(mean_day = mean(total_product_count)) %>%
   summarise(mean_week = mean(mean_day)) 
 mean_p <- (mean_products$mean_week)
 
 mean_orders <- orders_per_hour_per_day %>%
-  summarise(mean_day = mean(nr_of_orders)) %>%
+  summarise(mean_day = mean(total_order_count)) %>%
   summarise(mean_week = mean(mean_day)) 
 mean_o <- (mean_orders$mean_week)
+
 ```
+
 
 ```{r include=FALSE}
 
 order_product_ratio <- orders_per_hour_per_day %>%
   left_join(products_per_hour_per_day, by = c("order_dow" = "order_dow", "order_hour_of_day" = "order_hour_of_day")) %>%
-  mutate(order_product_ratio  = nr_of_products/nr_of_orders, workload_orders = nr_of_orders/max_o, workload_products = nr_of_products/max_p, mean_workload_orders = nr_of_orders/mean_o, mean_workload_products = nr_of_products/mean_p)
+  mutate(order_product_ratio  = total_product_count/total_order_count, workload_orders = total_order_count/max_o, workload_products = total_product_count/max_p, mean_workload_orders = total_order_count/mean_o, mean_workload_products = total_product_count/mean_p)
 
 ```
 
@@ -216,13 +142,14 @@ order_product_ratio <- orders_per_hour_per_day %>%
 Aussage: Die grösse der einzelnen Bestellungen beeinflusst direkt den Arbeitsaufwand pro Bestellung
 Ziel: Durchschnittliche Bestellgrössen pro Stunde pro Tag. 
 
-
 ```{r echo=FALSE}
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = order_product_ratio, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio of products per order")  +
+  xlab("Order hour") + ylab("Average order size") +
   labs(color='Weekday') +
-  scale_color_brewer(palette="Spectral")
+  scale_color_brewer(palette="Spectral") 
+  
 ```
 
 Aus dem folgenden Diagramm ist ersichtlich, dass die Bestellgrösse am Wochentagag 0 um 8:00 Uhr mit durchschnittlich 11.48 verschiedenen items am grössten ist.
@@ -230,54 +157,73 @@ Aus dem folgenden Diagramm ist ersichtlich, dass die Bestellgrösse am Wochentag
 Interessant ist, dass die Bestellgrössen über alle Wochentage von 20:00 bis 23:00 im Schnitt um 2 bis 2.5 items pro Bestellung ansteigen. Eine mögliche Erklärung wäre: Da bei instacart online Bestellungen mit home deliveries möglich sind, ein Teil abends nach der Arbeit so den einkauf erledigt.
 
 
+
+## Auslastung
+
+Im folgenden Diagramm sehen wir die stündliche auslastung auf Bestellebene. Der Wert 1.00 steht für die Stunde mit den meisten Bestellungen. 
+
 ```{r echo=FALSE}
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_orders, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio orders")  +
+  xlab("Order hour") + ylab("Relative nr of orders in %") +
   labs(color='Weekday') +
   scale_color_brewer(palette="Spectral")
 ```
 
+Im folgenden Diagramm sehen wir die stündliche auslastung auf Produkteebene. Der Wert 1.00 steht für die Stunde mit den meisten Produkte, welche über die Ladentheke gehen und wird aus der Anzahl Bestellungen/Stunde mal durchschnittliche Bestellgrösse/Stunde errechnet. 
 
 ```{r echo=FALSE}
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_products, color=as.factor(order_dow), group = order_dow), size = 1) +
-  ggtitle("Average workload")  +
+  ggtitle("Average ratio products")  +
+  xlab("Order hour") + ylab("Relative nr of Products in %") +
   labs(color='Weekday') +
   scale_color_brewer(palette="Spectral")
 ```
 
+Da wir keine Angaben zu Produktpreisen oder der Anzahl gleicher Produkte pro wahrenkorb zur Verfügung haben, kömmt die Auslastung auf Produktebene der reellen Auslastung am nächsten.
+
 ```{r echo=TRUE}
 ggplot(data = order_product_ratio) + 
   geom_raster(mapping = aes(x = order_hour_of_day, y = order_dow, fill = workload_products)) +
-  ggtitle("Average workload as heatmap")+
+  ggtitle("Average nr of products per hour as heatmap")+
+  xlab("Order hour") + ylab("Order day") +
   scale_fill_gradientn(colours=c("#000000","#0000FF","#00FF00","#FFFF00","#FF0000","#990000")) +
   labs(fill='Workload')
 ```
 
+Wenn wir jetzt annehmen, es lohnt sich erst ab einer gewissen Auslastung zu öffnen, dann können wir nun verschiedene Schwellenwerte untersuchen.
+
 # Conclusion
 ```{r include=FALSE}
-Total_products <- sum(order_product_ratio$nr_of_products)
-Total_orders <- sum(order_product_ratio$nr_of_orders)
-
+Total_products <- sum(order_product_ratio$total_product_count)
+Total_orders <- sum(order_product_ratio$total_order_count)
 ```
 
-## Durchgehend Offen:
+
 ```{r include=FALSE}
+# Durchgehend Offen:
 open_from_0 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.0) 
 
 avg_workload_0 <- mean(open_from_0$workload_products)*100
+timesave0 <- open_from_0 %>% 
+  summarise(total_hours = n()) 
+timesave_0 <- (sum(timesave0$total_hours)/168)*100
 
-P_contains_from_0 <- sum(open_from_0$nr_of_products)
+P_contains_from_0 <- sum(open_from_0$total_product_count)
 P_loss_to_0 <- Total_products - P_contains_from_0
 
-O_contains_from_0 <- sum(open_from_0$nr_of_orders)
+O_contains_from_0 <- sum(open_from_0$total_order_count)
 O_loss_to_0 <- Total_orders - O_contains_from_0
 
 P_Percent_loss_0 <- (P_loss_to_0/Total_products)*100
 P_Percent_contains_0 <- (P_contains_from_0/Total_products)*100
+
+O_Percent_loss_0 <- (O_loss_to_0/Total_orders)*100
+O_Percent_contains_0 <- (O_contains_from_0/Total_orders)*100
 
 open_from_0 <- open_from_0 %>%
   group_by(order_dow) %>%
@@ -285,25 +231,37 @@ open_from_0 <- open_from_0 %>%
 
 ```
 
-## Offen ab mindestens 15% Auslastung:
+
+
+### Offen ab mindestens 15% Auslastung:
+
 ```{r include=FALSE}
 open_from_15 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.15) 
 
-avg_workload_15 <- mean(open_from_15$workload_products)*100
-timesave <- open_from_15 %>% 
-  summarise(total_hours = n()) 
-timesave_15 <- (sum(timesave$total_hours)/168)*100
+final_open_hours <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
+  filter(workload_products >= 0.15 ) %>%
+  filter(workload_products >= 0.17 | order_dow < 2) 
 
-P_contains_from_15 <- sum(open_from_15$nr_of_products)
+avg_workload_15 <- mean(open_from_15$workload_products)*100
+timesave15 <- open_from_15 %>% 
+  summarise(total_hours = n()) 
+timesave_15 <- (sum(timesave15$total_hours)/168)*100
+
+P_contains_from_15 <- sum(open_from_15$total_product_count)
 P_loss_to_15 <- Total_products - P_contains_from_15
 
-O_contains_from_15 <- sum(open_from_15$nr_of_orders)
+O_contains_from_15 <- sum(open_from_15$total_order_count)
 O_loss_to_15 <- Total_orders - O_contains_from_15
 
 P_Percent_loss_15 <- (P_loss_to_15/Total_products)*100
 P_Percent_contains_15 <- (P_contains_from_15/Total_products)*100
+
+O_Percent_loss_15 <- (O_loss_to_15/Total_orders)*100
+O_Percent_contains_15 <- (O_contains_from_15/Total_orders)*100
+
 
 
 workplan_15 <-  ggplot(data=open_from_15, aes(x=order_dow, y=order_hour_of_day, label=round(workload_products*100))) + 
@@ -322,9 +280,6 @@ workplan_15 <-  ggplot(data=open_from_15, aes(x=order_dow, y=order_hour_of_day, 
 open_from_15 <- open_from_15 %>%
   group_by(order_dow) %>%
   summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
-
-open_from_15
-
 
 ```
 
@@ -346,25 +301,32 @@ Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_15, digits = 1)` Pro
 
 
 
-## Offen ab mindestens 25% Auslastung:
+
+
+### Offen ab mindestens 25% Auslastung:
+
 ```{r include=FALSE}
 open_from_25 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.25)
 
 avg_workload_25 <- mean(open_from_25$workload_products)*100
-timesave <- open_from_25 %>% 
+timesave25 <- open_from_25 %>% 
   summarise(total_hours = n()) 
-timesave_25 <- (sum(timesave$total_hours)/168)*100
+timesave_25 <- (sum(timesave25$total_hours)/168)*100
 
-P_contains_from_25 <- sum(open_from_25$nr_of_products)
+P_contains_from_25 <- sum(open_from_25$total_product_count)
 P_loss_to_25 <- Total_products - P_contains_from_25
 
-O_contains_from_25 <- sum(open_from_25$nr_of_orders)
+O_contains_from_25 <- sum(open_from_25$total_order_count)
 O_loss_to_25 <- Total_orders - O_contains_from_25
 
 P_Percent_loss_25 <- (P_loss_to_25/Total_products)*100
 P_Percent_contains_25 <- (P_contains_from_25/Total_products)*100
+
+O_Percent_loss_25 <- (O_loss_to_25/Total_orders)*100
+O_Percent_contains_25 <- (O_contains_from_25/Total_orders)*100
+
 
 
 workplan_25 <-  ggplot(data=open_from_25, aes(x=order_dow, y=order_hour_of_day, label=round(workload_products*100))) + 
@@ -404,25 +366,32 @@ Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_25, digits = 1)` Pro
 
 
 
-## Offen ab mindestens 35% Auslastung:
+
+
+### Offen ab mindestens 35% Auslastung:
+
 ```{r include=FALSE}
 open_from_35 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.35) 
 
 avg_workload_35 <- mean(open_from_35$workload_products)*100
-timesave <- open_from_35 %>% 
+timesave35 <- open_from_35 %>% 
   summarise(total_hours = n()) 
-timesave_35 <- (sum(timesave$total_hours)/168)*100
+timesave_35 <- (sum(timesave35$total_hours)/168)*100
 
-P_contains_from_35 <- sum(open_from_35$nr_of_products)
+P_contains_from_35 <- sum(open_from_35$total_product_count)
 P_loss_to_35 <- Total_products - P_contains_from_35
 
-O_contains_from_35 <- sum(open_from_35$nr_of_orders)
+O_contains_from_35 <- sum(open_from_35$total_order_count)
 O_loss_to_35 <- Total_orders - O_contains_from_35
 
 P_Percent_loss_35 <- (P_loss_to_35/Total_products)*100
 P_Percent_contains_35 <- (P_contains_from_35/Total_products)*100
+
+O_Percent_loss_35 <- (O_loss_to_35/Total_orders)*100
+O_Percent_contains_35 <- (O_contains_from_35/Total_orders)*100
+
 
 
 workplan_35 <-  ggplot(data=open_from_35, aes(x=order_dow, y=order_hour_of_day, label=round(workload_products*100))) + 
@@ -462,25 +431,31 @@ Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_35, digits = 1)` Pro
 
 
 
-## Offen ab mindestens 50% Auslastung:
+
+
+### Offen ab mindestens 50% Auslastung:
+
 ```{r include=FALSE}
 open_from_50 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.5)
 
 avg_workload_50 <- mean(open_from_50$workload_products)*100
-timesave <- open_from_50 %>% 
+timesave50 <- open_from_50 %>% 
   summarise(total_hours = n()) 
-timesave_50 <- (sum(timesave$total_hours)/168)*100
+timesave_50 <- (sum(timesave50$total_hours)/168)*100
 
-P_contains_from_50 <- sum(open_from_50$nr_of_products)
+P_contains_from_50 <- sum(open_from_50$total_product_count)
 P_loss_to_50 <- Total_products - P_contains_from_50
 
-O_contains_from_50 <- sum(open_from_50$nr_of_orders)
+O_contains_from_50 <- sum(open_from_50$total_order_count)
 O_loss_to_50 <- Total_orders - O_contains_from_50
 
 P_Percent_loss_50 <- (P_loss_to_50/Total_products)*100
 P_Percent_contains_50 <- (P_contains_from_50/Total_products)*100
+
+O_Percent_loss_50 <- (O_loss_to_50/Total_orders)*100
+O_Percent_contains_50 <- (O_contains_from_50/Total_orders)*100
 
 
 workplan_50 <-  ggplot(data=open_from_50, aes(x=order_dow, y=order_hour_of_day, label=round(workload_products*100))) + 
@@ -519,25 +494,32 @@ Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_50, digits = 1)` Pro
 
 
 
-## Offen ab mindestens 60% Auslastung:
+
+
+### Offen ab mindestens 60% Auslastung:
+
 ```{r include=FALSE}
 open_from_60 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.6)
 
 avg_workload_60 <- mean(open_from_60$workload_products)*100
-timesave <- open_from_60 %>% 
+timesave60 <- open_from_60 %>% 
   summarise(total_hours = n()) 
-timesave_60 <- (sum(timesave$total_hours)/168)*100
+timesave_60 <- (sum(timesave60$total_hours)/168)*100
 
-P_contains_from_60 <- sum(open_from_60$nr_of_products)
+P_contains_from_60 <- sum(open_from_60$total_product_count)
 P_loss_to_60 <- Total_products - P_contains_from_60
 
-O_contains_from_60 <- sum(open_from_60$nr_of_orders)
+O_contains_from_60 <- sum(open_from_60$total_order_count)
 O_loss_to_60 <- Total_orders - O_contains_from_60
 
 P_Percent_loss_60 <- (P_loss_to_60/Total_products)*100
 P_Percent_contains_60 <- (P_contains_from_60/Total_products)*100
+
+O_Percent_loss_60 <- (O_loss_to_60/Total_orders)*100
+O_Percent_contains_60 <- (O_contains_from_60/Total_orders)*100
+
 
 workplan_60 <-  ggplot(data=open_from_60, aes(x=order_dow, y=order_hour_of_day, label=round(workload_products*100))) + 
     geom_raster(mapping = aes(x = order_dow, y = order_hour_of_day, fill = workload_products)) +
@@ -565,67 +547,144 @@ Folgende Tage haben während diesem Zeitraum eine 60 prozentige Auslastung:
 ```{r echo=FALSE, , warning=FALSE}
 workplan_60
 ```
+
 Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in **`r round(timesave_60, digits = 1)` Prozent** der ursprünglichen Öffnungszeit insgesammt **`r round(P_Percent_contains_60, digits = 1)` Prozent** aller Produkte über die Ladentheke.
 
 Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_60, digits = 1)` Prozent** (Gemessen an der Stunde mit der grössten Auslastung = 100%.), was einer Erhöhung von durchschnittlich **`r round((avg_workload_60/avg_workload_0), digits = 1)*100-100` Prozent** pro Stunde entspricht.
 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_60, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
+```{r include=FALSE}
+open_from_75 <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
+  filter(workload_products >= 0.75) 
+
+avg_workload_75 <- mean(open_from_75$workload_products)*100
+timesave75 <- open_from_75 %>% 
+  summarise(total_hours = n()) 
+timesave_75 <- (sum(timesave75$total_hours)/168)*100
+
+P_contains_from_75 <- sum(open_from_75$total_product_count)
+P_loss_to_75 <- Total_products - P_contains_from_75
+P_Percent_loss_75 <- (P_loss_to_75/Total_products)*100
+P_Percent_contains_75 <- (P_contains_from_75/Total_products)*100
+
+O_contains_from_75 <- sum(open_from_75$total_order_count)
+O_loss_to_75 <- Total_orders - O_contains_from_75
+O_Percent_loss_75 <- (O_loss_to_75/Total_orders)*100
+O_Percent_contains_75 <- (O_contains_from_75/Total_orders)*100
+```
+
+```{r include=FALSE}
+open_from_99 <- order_product_ratio %>%
+  select(-c(order_product_ratio, workload_orders)) %>%
+  filter(workload_products >= 0.99) 
+
+avg_workload_99 <- mean(open_from_99$workload_products)*100
+timesave99 <- open_from_99 %>% 
+  summarise(total_hours = n()) 
+timesave_99 <- (sum(timesave99$total_hours)/168)*100
+
+P_contains_from_99 <- sum(open_from_99$total_product_count)
+P_loss_to_99 <- Total_products - P_contains_from_99
+P_Percent_loss_99 <- (P_loss_to_99/Total_products)*100
+P_Percent_contains_99 <- (P_contains_from_99/Total_products)*100
+
+O_contains_from_99 <- sum(open_from_99$total_order_count)
+O_loss_to_99 <- Total_orders - O_contains_from_99
+O_Percent_loss_99 <- (O_loss_to_99/Total_orders)*100
+O_Percent_contains_99 <- (O_contains_from_99/Total_orders)*100
+
+```
+
+```{r}
+ggplot() + 
+  geom_line(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(P_Percent_contains_0, P_Percent_contains_15, P_Percent_contains_25, P_Percent_contains_35, P_Percent_contains_50, P_Percent_contains_60, P_Percent_contains_75, P_Percent_contains_99)),color="#FF000099", size = 1) +
+  geom_line(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(O_Percent_contains_0, O_Percent_contains_15, O_Percent_contains_25, O_Percent_contains_35, O_Percent_contains_50, O_Percent_contains_60, O_Percent_contains_75, O_Percent_contains_99)), color="#33AA3399", size = 1) +
+  geom_line(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(timesave_0, timesave_15, timesave_25, timesave_35, timesave_50, timesave_60, timesave_75, timesave_99)), color="#00000099", size = 1) +
+  ggtitle("Relations")  +
+  xlab("Open From XY %") + ylab("Relative Percentage") +
+  labs(color='Weekday') +
+  geom_text(aes(40, 85, label="Orders"), color="#33AA3399") +
+  geom_text(aes(30, 95, label="Products"), color="#FF000099") +
+  geom_text(aes(40, 35, label="Open Times"), color="#00000099") 
+
+```
+
+Dieser Graf zeigt das verhältniss zwischen den einzelnen Öffnungsschwellenwerte und dem Delta aus Öffnungsdauer und Produktverkäufen zum dauergeöffneten Betrieb. Aus dem Diagramm ist erkennbar, dass eine Öffnungsschwelle von 15% die grösste Zeitersparrnis im Verhältnis zu den verkauften Produkten mit sich führt.
+
+```{r eval=FALSE, include=FALSE}
+ggplot() + 
+    geom_col(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(O_Percent_contains_0-timesave_0, O_Percent_contains_15-timesave_15, O_Percent_contains_25-timesave_25, O_Percent_contains_35-timesave_35, O_Percent_contains_50-timesave_50, O_Percent_contains_60-timesave_60, O_Percent_contains_75-timesave_75, O_Percent_contains_99-timesave_99)),color="#000000FF", fill="#33AA3399", width=2) +
+  ggtitle("Delta between Orders and Open times")  +
+  xlab("Opening treshhold in %") + ylab("Delta between Open time and Orders sold in%") +
+  geom_segment(aes(x = 0, y = 0, xend = c(0, 15, 25, 35, 50, 60, 75, 99), yend = c(O_Percent_contains_0-timesave_0, O_Percent_contains_15-timesave_15, O_Percent_contains_25-timesave_25, O_Percent_contains_35-timesave_35, O_Percent_contains_50-timesave_50, O_Percent_contains_60-timesave_60, O_Percent_contains_75-timesave_75, O_Percent_contains_99-timesave_99)))
+
+ggplot() + 
+    geom_col(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(P_Percent_contains_0-timesave_0, P_Percent_contains_15-timesave_15, P_Percent_contains_25-timesave_25, P_Percent_contains_35-timesave_35, P_Percent_contains_50-timesave_50, P_Percent_contains_60-timesave_60, P_Percent_contains_75-timesave_75, P_Percent_contains_99-timesave_99)),color="#000000FF", fill="#FF000055", width=2) +
+  ggtitle("Delta between Products and Open times")  +
+  xlab("Opening treshhold in %") + ylab("Delta between Open time and Products sold in%")  +
+  geom_segment(aes(x = 0, y = 0, xend = c(0, 15, 25, 35, 50, 60, 75, 99), yend = c(P_Percent_contains_0-timesave_0, P_Percent_contains_15-timesave_15, P_Percent_contains_25-timesave_25, P_Percent_contains_35-timesave_35, P_Percent_contains_50-timesave_50, P_Percent_contains_60-timesave_60, P_Percent_contains_75-timesave_75, P_Percent_contains_99-timesave_99)))
+```
+
+Wir sehen, dass durch eine Anhebung der Grenze als Öffnungskriterium auf nur 15% Auslastung, bereits eine massive Ersparnis an Öffnungszeit und endsprechend auch Betriebskosten haben. 
 
 
-* Zusammenfassung
+## Unsere Empfehlung
 
-**Immer offen**
+Damit die Ladenöffnungszeiten einigermassen konstannt sind, empfehlen wir an Tag 4 und 6 je noch eine Stunde früher zu schliessen. Daturch ergeben sich folgende Öffnungszeiten:
 
-Öffnungszeiten:           100 Prozent von 24/7  
-Abgedeckte Produkte:      `r round(P_Percent_contains_0, digits = 1)` Prozent  
-Nicht Abgedeckt:          `r round(P_Percent_loss_0, digits = 1)` Prozent  
-Ø Auslastung:             `r round(avg_workload_0, digits = 1)` Prozent  
-Ø Steigerung Auslastung   `r round((avg_workload_0/avg_workload_0), digits = 1)*100-100` Prozent verglichen mit 24/7  
 
-**15+ Prozent**
+```{r}
+avg_workload <- mean(final_open_hours$workload_products)*100
 
-Öffnungszeiten:           `r round(timesave_15, digits = 1)` Prozent von 24/7  
-Abgedeckte Produkte:      `r round(P_Percent_contains_15, digits = 1)` Prozent  
-Nicht Abgedeckt:          `r round(P_Percent_loss_15, digits = 1)` Prozent  
-Ø Auslastung:             `r round(avg_workload_15, digits = 1)` Prozent  
-Ø Steigerung Auslastung   `r round((avg_workload_15/avg_workload_0), digits = 1)*100-100` Prozent verglichen mit 24/7  
+timesave <- final_open_hours %>% 
+  summarise(total_hours = n()) 
+timesave_final <- (sum(timesave$total_hours)/168)*100
 
-**25+ Prozent**
+P_contains_from_final <- sum(final_open_hours$total_product_count)
+P_loss_to_final <- Total_products - P_contains_from_final
 
-Öffnungszeiten:           `r round(timesave_25, digits = 1)` Prozent von 24/7  
-Abgedeckte Produkte:      `r round(P_Percent_contains_25, digits = 1)` Prozent  
-Nicht Abgedeckt:          `r round(P_Percent_loss_25, digits = 1)` Prozent  
-Ø Auslastung:             `r round(avg_workload_25, digits = 1)` Prozent  
-Ø Steigerung Auslastung   `r round((avg_workload_25/avg_workload_0), digits = 1)*100-100` Prozent verglichen mit 24/7  
+P_Percent_loss_final <- (P_loss_to_final/Total_products)*100
+P_Percent_contains_final <- (P_contains_from_final/Total_products)*100
 
-**35+ Prozent**
+shiftplan <-  ggplot(data=final_open_hours, aes(x=order_dow, y=order_hour_of_day, label=round(workload_products*100, digits = -1))) + 
+    geom_raster(mapping = aes(x = order_dow, y = order_hour_of_day, fill = round(workload_products*100, digits = -1))) +
+    geom_text() + 
+    coord_cartesian(xlim=c(-0.2,6.2), ylim=c(0.5,22.5)) +
+    theme(panel.grid.minor = element_line(colour="black", size=0.1), panel.grid.major = element_blank(), panel.ontop = TRUE, panel.background = element_blank(), legend.position = "none") +
+    scale_x_continuous(minor_breaks = seq(-0.50 , 6.6, 1), breaks = seq(0,6, 1)) +
+    scale_y_continuous(minor_breaks = seq(-0.53 , 23.5, 1), breaks = seq(0,23, 1)) +
+    ggtitle("Final shift") +
+    scale_fill_gradientn(colours=c("#1E90FF", "#7FFF00", "#7FFF00", "#FFFF00", "#FFFF00", "#FFA54F", "#FFA54F", "#FF4040", "#FF4040")) +
+    xlab("Weekday") + ylab("Hour") 
 
-Öffnungszeiten:           `r round(timesave_35, digits = 1)` Prozent von 24/7  
-Abgedeckte Produkte:      `r round(P_Percent_contains_35, digits = 1)` Prozent  
-Nicht Abgedeckt:          `r round(P_Percent_loss_35, digits = 1)` Prozent  
-Ø Auslastung:             `r round(avg_workload_35, digits = 1)` Prozent  
-Ø Steigerung Auslastung   `r round((avg_workload_60/avg_workload_35), digits = 1)*100-100` Prozent verglichen mit 24/7  
+final_open_hours <- final_open_hours %>%
+  group_by(order_dow) %>%
+  summarise(open <- min(order_hour_of_day), close <- max(order_hour_of_day)) 
 
-**50+ Prozent**
+```
 
-Öffnungszeiten:           `r round(timesave_50, digits = 1)` Prozent von 24/7  
-Abgedeckte Produkte:      `r round(P_Percent_contains_50, digits = 1)` Prozent  
-Nicht Abgedeckt:          `r round(P_Percent_loss_50, digits = 1)` Prozent  
-Ø Auslastung:             `r round(avg_workload_50, digits = 1)` Prozent  
-Ø Steigerung Auslastung   `r round((avg_workload_50/avg_workload_0), digits = 1)*100-100` Prozent verglichen mit 24/7  
 
-**60+ Prozent**
 
-Öffnungszeiten:           `r round(timesave_60, digits = 1)` Prozent von 24/7  
-Abgedeckte Produkte:      `r round(P_Percent_contains_60, digits = 1)` Prozent  
-Nicht Abgedeckt:          `r round(P_Percent_loss_60, digits = 1)` Prozent  
-Ø Auslastung:             `r round(avg_workload_60, digits = 1)` Prozent  
-Ø Steigerung Auslastung   `r round((avg_workload_60/avg_workload_0), digits = 1)*100-100` Prozent verglichen mit 24/7  
 
-Wir sehen, dass durch eine Anhebung der Grenze als Öffnungskriterium auf nur 15% Auslastung, bereits eine massive Ersparnis an Öffnungszeit und endsprechend auch Betriebskosten haben.
+`r final_open_hours`
 
-Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist. Wir empfehlen deshalb maximal die 50+ Prozent Variante.
+```{r echo=FALSE}
+shiftplan
+```
+
+
+
+
+Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in **`r round(timesave_final, digits = 1)` Prozent** der ursprünglichen Öffnungszeit insgesammt **`r round(P_Percent_contains_final, digits = 1)` Prozent** aller Produkte über die Ladentheke.
+
+Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload, digits = 1)` Prozent** (Gemessen an der Stunde mit der grössten Auslastung = 100%.), was einer Erhöhung von durchschnittlich **`r round((avg_workload/avg_workload_0), digits = 1)*100-100` Prozent** pro Stunde entspricht.
+
+Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_final, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
+
+
+Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist.
 
 Da sich viele kleinere Bestellungen im Datensatz finden, erachten wir es als eine gute Möglichkeit den Bezahlvorgang an den Kassen durch self-pay möglichkeiten zu ergänzen. Dadurch sollte sich einerseits ein möglicher Anstieg der Auslastung, durch die Verschiebung der Bestellungen aus den nicht abgedeckten Zeiten, kompensieren lassen und je nach dem sogar Kassenpersonal für andere Arbeiten freigeben.
 
