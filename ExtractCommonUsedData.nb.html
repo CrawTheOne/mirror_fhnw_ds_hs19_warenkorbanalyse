@@ -7,6 +7,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
 
@@ -1483,7 +1484,7 @@ window.initializeCodeFolding = function(show) {
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
-    if (show)
+    if (show || $(this)[0].classList.contains('fold-show'))
       div.addClass('in');
     var id = 'rcode-643E0F36' + currentIndex++;
     div.attr('id', id);
@@ -1613,7 +1614,6 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
@@ -1711,28 +1711,10 @@ summary {
 }
 </style>
 
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-
-$(document).ready(function () {
-  $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
-  });
-});
-</script>
-
 <!-- code folding -->
 <style type="text/css">
 .code-folding-btn { margin-bottom: 4px; }
 </style>
-<script>
-$(document).ready(function () {
-  window.initializeSourceEmbed("ExtractCommonUsedData.Rmd");
-  window.initializeCodeFolding("show" === "show");
-});
-</script>
 
 
 
@@ -1777,21 +1759,21 @@ $(document).ready(function () {
 <h2>Alle Produkte</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1RcbiAgICAgICBwLnByb2R1Y3RfaWQsXG4gICAgICAgcC5wcm9kdWN0X25hbWUsXG4gICAgICAgKGNhc2Ugd2hlblxuICAgICAgICAgICBsb3dlcihwLnByb2R1Y3RfbmFtZSkgTElLRSAnJW9yZ2FuaWMlJ1xuICAgICAgICAgICBPUiBsb3dlcihwLnByb2R1Y3RfbmFtZSkgTElLRSAnJWJpbyAlJ1xuICAgICAgICB0aGVuIDEgZWxzZSAwIGVuZCkgYXMgaXNfb3JnYW5pYyxcbiAgICAgICBhLmFpc2xlX2lkLFxuICAgICAgIGEuYWlzbGUsXG4gICAgICAgZC5kZXBhcnRtZW50X2lkLFxuICAgICAgIGQuZGVwYXJ0bWVudFxuRlJPTSBwcm9kdWN0IHBcbkpPSU4gYWlzbGUgYSBvbiBwLmFpc2xlX2lkID0gYS5haXNsZV9pZFxuSk9JTiBkZXBhcnRtZW50IGQgb24gcC5kZXBhcnRtZW50X2lkID0gZC5kZXBhcnRtZW50X2lkXG5gYGAifQ== -->
-<pre class="sql"><code>SELECT
-       p.product_id,
-       p.product_name,
-       (case when
-           lower(p.product_name) LIKE '%organic%'
-           OR lower(p.product_name) LIKE '%bio %'
-        then 1 else 0 end) as is_organic,
-       a.aisle_id,
-       a.aisle,
-       d.department_id,
-       d.department
-FROM product p
-JOIN aisle a on p.aisle_id = a.aisle_id
-JOIN department d on p.department_id = d.department_id</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1QgXG4gICAgICAgcC5wcm9kdWN0X2lkLCBcbiAgICAgICBwLnByb2R1Y3RfbmFtZSwgXG4gICAgICAgKGNhc2Ugd2hlbiBcbiAgICAgICAgICAgbG93ZXIocC5wcm9kdWN0X25hbWUpIExJS0UgJyVvcmdhbmljJScgXG4gICAgICAgICAgIE9SIGxvd2VyKHAucHJvZHVjdF9uYW1lKSBMSUtFICclYmlvICUnIFxuICAgICAgICB0aGVuIDEgZWxzZSAwIGVuZCkgYXMgaXNfb3JnYW5pYywgXG4gICAgICAgYS5haXNsZV9pZCwgXG4gICAgICAgYS5haXNsZSwgXG4gICAgICAgZC5kZXBhcnRtZW50X2lkLCBcbiAgICAgICBkLmRlcGFydG1lbnQgXG5GUk9NIHByb2R1Y3QgcCBcbkpPSU4gYWlzbGUgYSBvbiBwLmFpc2xlX2lkID0gYS5haXNsZV9pZCBcbkpPSU4gZGVwYXJ0bWVudCBkIG9uIHAuZGVwYXJ0bWVudF9pZCA9IGQuZGVwYXJ0bWVudF9pZCBcbmBgYCJ9 -->
+<pre class="sql"><code>SELECT 
+       p.product_id, 
+       p.product_name, 
+       (case when 
+           lower(p.product_name) LIKE &#39;%organic%&#39; 
+           OR lower(p.product_name) LIKE &#39;%bio %&#39; 
+        then 1 else 0 end) as is_organic, 
+       a.aisle_id, 
+       a.aisle, 
+       d.department_id, 
+       d.department 
+FROM product p 
+JOIN aisle a on p.aisle_id = a.aisle_id 
+JOIN department d on p.department_id = d.department_id </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1800,8 +1782,8 @@ JOIN department d on p.department_id = d.department_id</code></pre>
 <h2>Alle Departments</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1QgKiBGUk9NIGRlcGFydG1lbnRcbmBgYCJ9 -->
-<pre class="sql"><code>SELECT * FROM department</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1QgKiBGUk9NIGRlcGFydG1lbnQgXG5gYGAifQ== -->
+<pre class="sql"><code>SELECT * FROM department </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1810,25 +1792,25 @@ JOIN department d on p.department_id = d.department_id</code></pre>
 <h2>Alle Warenkörbe</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1QgXG4gICAgICAgby5vcmRlcnNfaWQsIFxuICAgICAgIG8udXNlcl9pZCwgXG4gICAgICAgby5vcmRlcl9udW1iZXIsIFxuICAgICAgIG8ub3JkZXJfZG93LCBcbiAgICAgICBvLm9yZGVyX2hvdXJfb2ZfZGF5LCBcbiAgICAgICBvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIsXG4gICAgICAgb3AucHJvZHVjdF9pZCxcbiAgICAgICBvcC5hZGRfdG9fY2FydF9vcmRlcixcbiAgICAgICBvcC5yZW9yZGVyZWRcbkZST00gb3JkZXJzIG9cbkpPSU5cbiAgICAoU0VMRUNUICpcbiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3ByaW9yIG9wcFxuICAgIFVOSU9OIEFMTFxuICAgIFNFTEVDVCAqXG4gICAgRlJPTSBvcmRlcnNfcHJvZHVjdF90cmFpbiBvcHQpIEFTIG9wXG4gICAgICAgIE9OIG9wLm9yZGVyc19pZCA9IG8ub3JkZXJzX2lkXG5gYGAifQ== -->
-<pre class="sql"><code>SELECT 
-       o.orders_id, 
-       o.user_id, 
-       o.order_number, 
-       o.order_dow, 
-       o.order_hour_of_day, 
-       o.days_since_prior_order,
-       op.product_id,
-       op.add_to_cart_order,
-       op.reordered
-FROM orders o
-JOIN
-    (SELECT *
-    FROM orders_product_prior opp
-    UNION ALL
-    SELECT *
-    FROM orders_product_train opt) AS op
-        ON op.orders_id = o.orders_id</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1QgIFxuICAgICAgIG8ub3JkZXJzX2lkLCAgXG4gICAgICAgby51c2VyX2lkLCAgXG4gICAgICAgby5vcmRlcl9udW1iZXIsICBcbiAgICAgICBvLm9yZGVyX2RvdywgIFxuICAgICAgIG8ub3JkZXJfaG91cl9vZl9kYXksICBcbiAgICAgICBvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIsIFxuICAgICAgIG9wLnByb2R1Y3RfaWQsIFxuICAgICAgIG9wLmFkZF90b19jYXJ0X29yZGVyLCBcbiAgICAgICBvcC5yZW9yZGVyZWQgXG5GUk9NIG9yZGVycyBvIFxuSk9JTiBcbiAgICAoU0VMRUNUICogXG4gICAgRlJPTSBvcmRlcnNfcHJvZHVjdF9wcmlvciBvcHAgXG4gICAgVU5JT04gQUxMIFxuICAgIFNFTEVDVCAqIFxuICAgIEZST00gb3JkZXJzX3Byb2R1Y3RfdHJhaW4gb3B0KSBBUyBvcCBcbiAgICAgICAgT04gb3Aub3JkZXJzX2lkID0gby5vcmRlcnNfaWQgXG5gYGAifQ== -->
+<pre class="sql"><code>SELECT  
+       o.orders_id,  
+       o.user_id,  
+       o.order_number,  
+       o.order_dow,  
+       o.order_hour_of_day,  
+       o.days_since_prior_order, 
+       op.product_id, 
+       op.add_to_cart_order, 
+       op.reordered 
+FROM orders o 
+JOIN 
+    (SELECT * 
+    FROM orders_product_prior opp 
+    UNION ALL 
+    SELECT * 
+    FROM orders_product_train opt) AS op 
+        ON op.orders_id = o.orders_id </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1837,23 +1819,23 @@ JOIN
 <h2>Generelle Statistiken über das Kaufverhalten der Kunden</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1RcbiAgby51c2VyX2lkLFxuICBDT1VOVChvLm9yZGVyc19pZCkgQVMgdG90YWxfbnJfb2Zfb3JkZXJzLFxuICBBVkcoby5kYXlzX3NpbmNlX3ByaW9yX29yZGVyKSBBUyBhdmdfZGF5c19zaW5jZV9wcmlvcl9vcmRlcixcbiAgU1VNKG8uZGF5c19zaW5jZV9wcmlvcl9vcmRlcikgQVMgdGltZXNwYW5fZm9yX2FsbF9vcmRlcnNcbkZST00gb3JkZXJzIG9cbkdST1VQIEJZIG8udXNlcl9pZFxuYGBgIn0= -->
-<pre class="sql"><code>SELECT
-  o.user_id,
-  COUNT(o.orders_id) AS total_nr_of_orders,
-  AVG(o.days_since_prior_order) AS avg_days_since_prior_order,
-  SUM(o.days_since_prior_order) AS timespan_for_all_orders
-FROM orders o
-GROUP BY o.user_id</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1QgXG4gIG8udXNlcl9pZCwgXG4gIENPVU5UKG8ub3JkZXJzX2lkKSBBUyB0b3RhbF9ucl9vZl9vcmRlcnMsIFxuICBBVkcoby5kYXlzX3NpbmNlX3ByaW9yX29yZGVyKSBBUyBhdmdfZGF5c19zaW5jZV9wcmlvcl9vcmRlciwgXG4gIFNVTShvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIpIEFTIHRpbWVzcGFuX2Zvcl9hbGxfb3JkZXJzIFxuRlJPTSBvcmRlcnMgbyBcbkdST1VQIEJZIG8udXNlcl9pZCBcbmBgYCJ9 -->
+<pre class="sql"><code>SELECT 
+  o.user_id, 
+  COUNT(o.orders_id) AS total_nr_of_orders, 
+  AVG(o.days_since_prior_order) AS avg_days_since_prior_order, 
+  SUM(o.days_since_prior_order) AS timespan_for_all_orders 
+FROM orders o 
+GROUP BY o.user_id </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY3VzdG9tZXJfYmVoYXZpb3IgPC0gY3VzdG9tZXJfYmVoYXZpb3IgJT4lXG4gIG11dGF0ZSh0b3RhbF9ucl9vZl9vcmRlcnMgPSBhcy5pbnRlZ2VyKHRvdGFsX25yX29mX29yZGVycykpICU+JVxuICBhc190aWJibGUoKVxuYGBgIn0= -->
-<pre class="r"><code>customer_behavior &lt;- customer_behavior %&gt;%
-  mutate(total_nr_of_orders = as.integer(total_nr_of_orders)) %&gt;%
-  as_tibble()</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY3VzdG9tZXJfYmVoYXZpb3IgPC0gY3VzdG9tZXJfYmVoYXZpb3IgJT4lIFxuICBtdXRhdGUodG90YWxfbnJfb2Zfb3JkZXJzID0gYXMuaW50ZWdlcih0b3RhbF9ucl9vZl9vcmRlcnMpKSAlPiUgXG4gIGFzX3RpYmJsZSgpIFxuYGBgIn0= -->
+<pre class="r"><code>customer_behavior &lt;- customer_behavior %&gt;% 
+  mutate(total_nr_of_orders = as.integer(total_nr_of_orders)) %&gt;% 
+  as_tibble() </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1862,46 +1844,15 @@ GROUP BY o.user_id</code></pre>
 <h2>Anzahl der Produkte in den Einkäufen</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1RcbiAgICBvLnVzZXJfaWQsXG4gICAgby5vcmRlcnNfaWQsXG4gICAgQ09VTlQob3AucHJvZHVjdF9pZCkgQVMgdG90YWxfcHJvZHVjdF9jb3VudCxcbiAgICBTVU0oY2FzZSB3aGVuXG4gICAgICAgICAgIGxvd2VyKHAucHJvZHVjdF9uYW1lKSBMSUtFICclb3JnYW5pYyUnXG4gICAgICAgICAgIE9SIGxvd2VyKHAucHJvZHVjdF9uYW1lKSBMSUtFICclYmlvICUnXG4gICAgICAgIHRoZW4gMSBlbHNlIDAgZW5kICkgQVMgdG90YWxfYmlvX2NvdW50XG5GUk9NIG9yZGVycyBvXG5KT0lOIChcbiAgICBTRUxFQ1QgKlxuICAgIEZST00gb3JkZXJzX3Byb2R1Y3RfcHJpb3Igb3BwXG4gICAgVU5JT04gQUxMXG4gICAgU0VMRUNUICpcbiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3RyYWluIG9wdFxuICAgICkgQVMgb3BcbiAgICBPTiBvcC5vcmRlcnNfaWQgPSBvLm9yZGVyc19pZFxuSk9JTiBwcm9kdWN0IHAgT04gcC5wcm9kdWN0X2lkID0gb3AucHJvZHVjdF9pZFxuR1JPVVAgQlkgby51c2VyX2lkLCBvLm9yZGVyc19pZFxuYGBgIn0= -->
-<pre class="sql"><code>SELECT
-    o.user_id,
-    o.orders_id,
-    COUNT(op.product_id) AS total_product_count,
-    SUM(case when
-           lower(p.product_name) LIKE '%organic%'
-           OR lower(p.product_name) LIKE '%bio %'
-        then 1 else 0 end ) AS total_bio_count
-FROM orders o
-JOIN (
-    SELECT *
-    FROM orders_product_prior opp
-    UNION ALL
-    SELECT *
-    FROM orders_product_train opt
-    ) AS op
-    ON op.orders_id = o.orders_id
-JOIN product p ON p.product_id = op.product_id
-GROUP BY o.user_id, o.orders_id</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJvZHVjdHNfYnlfb3JkZXIgPC0gcHJvZHVjdHNfYnlfb3JkZXIgJT4lXG4gIG11dGF0ZSh0b3RhbF9wcm9kdWN0X2NvdW50ID0gYXMuaW50ZWdlcih0b3RhbF9wcm9kdWN0X2NvdW50KSkgJT4lXG4gIG11dGF0ZSh0b3RhbF9iaW9fY291bnQgPSBhcy5pbnRlZ2VyKHRvdGFsX2Jpb19jb3VudCkpICU+JVxuICBhc190aWJibGUoKVxuYGBgIn0= -->
-<pre class="r"><code>products_by_order &lt;- products_by_order %&gt;%
-  mutate(total_product_count = as.integer(total_product_count)) %&gt;%
-  mutate(total_bio_count = as.integer(total_bio_count)) %&gt;%
-  as_tibble()</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="meistverkaufte-produkte" class="section level2">
-<h2>Meistverkaufte Produkte</h2>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1Qgby51c2VyX2lkLCBwLnByb2R1Y3RfaWQsIGNvdW50KG9wLiopIGFzIGNvdW50IFxuRlJPTSBvcmRlcnMgbyBcbkpPSU4gKCBcbiAgICBTRUxFQ1QgKiBcbiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3ByaW9yIG9wcCBcbiAgICBVTklPTiBBTEwgXG4gICAgU0VMRUNUICogXG4gICAgRlJPTSBvcmRlcnNfcHJvZHVjdF90cmFpbiBvcHQgXG4gICAgKSBBUyBvcCBcbiAgICBPTiBvcC5vcmRlcnNfaWQgPSBvLm9yZGVyc19pZCBcbkpPSU4gcHJvZHVjdCBwIE9OIHAucHJvZHVjdF9pZCA9IG9wLnByb2R1Y3RfaWQgXG5HUk9VUCBCWSBwLnByb2R1Y3RfaWQsIG8udXNlcl9pZCBcbk9SREVSIEJZIGNvdW50IERFU0MgIFxuYGBgIn0= -->
-<pre class="sql"><code>SELECT o.user_id, p.product_id, count(op.*) as count 
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1QgXG4gICAgby51c2VyX2lkLCBcbiAgICBvLm9yZGVyc19pZCwgXG4gICAgQ09VTlQob3AucHJvZHVjdF9pZCkgQVMgdG90YWxfcHJvZHVjdF9jb3VudCwgXG4gICAgU1VNKGNhc2Ugd2hlbiBcbiAgICAgICAgICAgbG93ZXIocC5wcm9kdWN0X25hbWUpIExJS0UgJyVvcmdhbmljJScgXG4gICAgICAgICAgIE9SIGxvd2VyKHAucHJvZHVjdF9uYW1lKSBMSUtFICclYmlvICUnIFxuICAgICAgICB0aGVuIDEgZWxzZSAwIGVuZCApIEFTIHRvdGFsX2Jpb19jb3VudCBcbkZST00gb3JkZXJzIG8gXG5KT0lOICggXG4gICAgU0VMRUNUICogXG4gICAgRlJPTSBvcmRlcnNfcHJvZHVjdF9wcmlvciBvcHAgXG4gICAgVU5JT04gQUxMIFxuICAgIFNFTEVDVCAqIFxuICAgIEZST00gb3JkZXJzX3Byb2R1Y3RfdHJhaW4gb3B0IFxuICAgICkgQVMgb3AgXG4gICAgT04gb3Aub3JkZXJzX2lkID0gby5vcmRlcnNfaWQgXG5KT0lOIHByb2R1Y3QgcCBPTiBwLnByb2R1Y3RfaWQgPSBvcC5wcm9kdWN0X2lkIFxuR1JPVVAgQlkgby51c2VyX2lkLCBvLm9yZGVyc19pZCBcbmBgYCJ9 -->
+<pre class="sql"><code>SELECT 
+    o.user_id, 
+    o.orders_id, 
+    COUNT(op.product_id) AS total_product_count, 
+    SUM(case when 
+           lower(p.product_name) LIKE &#39;%organic%&#39; 
+           OR lower(p.product_name) LIKE &#39;%bio %&#39; 
+        then 1 else 0 end ) AS total_bio_count 
 FROM orders o 
 JOIN ( 
     SELECT * 
@@ -1912,16 +1863,47 @@ JOIN (
     ) AS op 
     ON op.orders_id = o.orders_id 
 JOIN product p ON p.product_id = op.product_id 
-GROUP BY p.product_id, o.user_id 
-ORDER BY count DESC  </code></pre>
+GROUP BY o.user_id, o.orders_id </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJvZHVjdHNfY291bnRfYnlfdXNlciA8LSBwcm9kdWN0c19jb3VudF9ieV91c2VyICU+JSBcbiAgbXV0YXRlKGNvdW50ID0gYXMuaW50ZWdlcihjb3VudCkpIFxuYGBgIn0= -->
-<pre class="r"><code>products_count_by_user &lt;- products_count_by_user %&gt;% 
-  mutate(count = as.integer(count)) </code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJvZHVjdHNfYnlfb3JkZXIgPC0gcHJvZHVjdHNfYnlfb3JkZXIgJT4lIFxuICBtdXRhdGUodG90YWxfcHJvZHVjdF9jb3VudCA9IGFzLmludGVnZXIodG90YWxfcHJvZHVjdF9jb3VudCkpICU+JSBcbiAgbXV0YXRlKHRvdGFsX2Jpb19jb3VudCA9IGFzLmludGVnZXIodG90YWxfYmlvX2NvdW50KSkgJT4lIFxuICBhc190aWJibGUoKSBcbmBgYCJ9 -->
+<pre class="r"><code>products_by_order &lt;- products_by_order %&gt;% 
+  mutate(total_product_count = as.integer(total_product_count)) %&gt;% 
+  mutate(total_bio_count = as.integer(total_bio_count)) %&gt;% 
+  as_tibble() </code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="meistverkaufte-produkte" class="section level2">
+<h2>Meistverkaufte Produkte</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1Qgby51c2VyX2lkLCBwLnByb2R1Y3RfaWQsIGNvdW50KG9wLiopIGFzIGNvdW50ICBcbkZST00gb3JkZXJzIG8gIFxuSk9JTiAoICBcbiAgICBTRUxFQ1QgKiAgXG4gICAgRlJPTSBvcmRlcnNfcHJvZHVjdF9wcmlvciBvcHAgIFxuICAgIFVOSU9OIEFMTCAgXG4gICAgU0VMRUNUICogIFxuICAgIEZST00gb3JkZXJzX3Byb2R1Y3RfdHJhaW4gb3B0ICBcbiAgICApIEFTIG9wICBcbiAgICBPTiBvcC5vcmRlcnNfaWQgPSBvLm9yZGVyc19pZCAgXG5KT0lOIHByb2R1Y3QgcCBPTiBwLnByb2R1Y3RfaWQgPSBvcC5wcm9kdWN0X2lkICBcbkdST1VQIEJZIHAucHJvZHVjdF9pZCwgby51c2VyX2lkICBcbk9SREVSIEJZIGNvdW50IERFU0MgICBcbmBgYCJ9 -->
+<pre class="sql"><code>SELECT o.user_id, p.product_id, count(op.*) as count  
+FROM orders o  
+JOIN (  
+    SELECT *  
+    FROM orders_product_prior opp  
+    UNION ALL  
+    SELECT *  
+    FROM orders_product_train opt  
+    ) AS op  
+    ON op.orders_id = o.orders_id  
+JOIN product p ON p.product_id = op.product_id  
+GROUP BY p.product_id, o.user_id  
+ORDER BY count DESC   </code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJvZHVjdHNfY291bnRfYnlfdXNlciA8LSBwcm9kdWN0c19jb3VudF9ieV91c2VyICU+JSAgXG4gIG11dGF0ZShjb3VudCA9IGFzLmludGVnZXIoY291bnQpKSAgXG5gYGAifQ== -->
+<pre class="r"><code>products_count_by_user &lt;- products_count_by_user %&gt;%  
+  mutate(count = as.integer(count))  </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1930,25 +1912,25 @@ ORDER BY count DESC  </code></pre>
 <h2>Stammkunden</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1RcbiAgby51c2VyX2lkXG5GUk9NIG9yZGVycyBvXG5XSEVSRSBvLmV2YWxfc2V0ID0gJ3ByaW9yJ1xuR1JPVVAgQlkgby51c2VyX2lkXG5IQVZJTkdcbiAgc3VtKG8uZGF5c19zaW5jZV9wcmlvcl9vcmRlcikgPiA5MFxuICBBTkQgYXZnKG8uZGF5c19zaW5jZV9wcmlvcl9vcmRlcikgPD0gMTVcbmBgYCJ9 -->
-<pre class="sql"><code>SELECT
-  o.user_id
-FROM orders o
-WHERE o.eval_set = 'prior'
-GROUP BY o.user_id
-HAVING
-  sum(o.days_since_prior_order) &gt; 90
-  AND avg(o.days_since_prior_order) &lt;= 15</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1QgXG4gIG8udXNlcl9pZCBcbkZST00gb3JkZXJzIG8gXG5XSEVSRSBvLmV2YWxfc2V0ID0gJ3ByaW9yJyBcbkdST1VQIEJZIG8udXNlcl9pZCBcbkhBVklORyBcbiAgc3VtKG8uZGF5c19zaW5jZV9wcmlvcl9vcmRlcikgPiA5MCBcbiAgQU5EIGF2ZyhvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIpIDw9IDE1IFxuYGBgIn0= -->
+<pre class="sql"><code>SELECT 
+  o.user_id 
+FROM orders o 
+WHERE o.eval_set = &#39;prior&#39; 
+GROUP BY o.user_id 
+HAVING 
+  sum(o.days_since_prior_order) &gt; 90 
+  AND avg(o.days_since_prior_order) &lt;= 15 </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1Qgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXksIGNvdW50KG8uKikgYXMgdG90YWxfb3JkZXJfY291bnQgXG5GUk9NIG9yZGVycyBvIFxuR1JPVVAgQlkgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXlcblxuYGBgIn0= -->
-<pre class="sql"><code>SELECT o.order_dow, o.order_hour_of_day, count(o.*) as total_order_count 
-FROM orders o 
-GROUP BY o.order_dow, o.order_hour_of_day
-</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1Qgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXksIGNvdW50KG8uKikgYXMgdG90YWxfb3JkZXJfY291bnQgIFxuRlJPTSBvcmRlcnMgbyAgXG5HUk9VUCBCWSBvLm9yZGVyX2Rvdywgby5vcmRlcl9ob3VyX29mX2RheSBcbiBcbmBgYCJ9 -->
+<pre class="sql"><code>SELECT o.order_dow, o.order_hour_of_day, count(o.*) as total_order_count  
+FROM orders o  
+GROUP BY o.order_dow, o.order_hour_of_day 
+ </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1957,19 +1939,19 @@ GROUP BY o.order_dow, o.order_hour_of_day
 <h2>Stündlich verkaufte Anzahl Produkte</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1Qgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXksIGNvdW50KG9wLiopIGFzIHRvdGFsX3Byb2R1Y3RfY291bnQgXG5GUk9NIG9yZGVycyBvIFxuSk9JTiAoIFxuICAgIFNFTEVDVCAqIFxuICAgIEZST00gb3JkZXJzX3Byb2R1Y3RfcHJpb3Igb3BwIFxuICAgIFVOSU9OIEFMTCBcbiAgICBTRUxFQ1QgKiBcbiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3RyYWluIG9wdCBcbiAgICApIEFTIG9wIFxuICAgIE9OIG8ub3JkZXJzX2lkID0gb3Aub3JkZXJzX2lkIFxuR1JPVVAgQlkgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXlcblxuYGBgIn0= -->
-<pre class="sql"><code>SELECT o.order_dow, o.order_hour_of_day, count(op.*) as total_product_count 
-FROM orders o 
-JOIN ( 
-    SELECT * 
-    FROM orders_product_prior opp 
-    UNION ALL 
-    SELECT * 
-    FROM orders_product_train opt 
-    ) AS op 
-    ON o.orders_id = op.orders_id 
-GROUP BY o.order_dow, o.order_hour_of_day
-</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgc3FsXG5TRUxFQ1Qgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXksIGNvdW50KG9wLiopIGFzIHRvdGFsX3Byb2R1Y3RfY291bnQgIFxuRlJPTSBvcmRlcnMgbyAgXG5KT0lOICggIFxuICAgIFNFTEVDVCAqICBcbiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3ByaW9yIG9wcCAgXG4gICAgVU5JT04gQUxMICBcbiAgICBTRUxFQ1QgKiAgXG4gICAgRlJPTSBvcmRlcnNfcHJvZHVjdF90cmFpbiBvcHQgIFxuICAgICkgQVMgb3AgIFxuICAgIE9OIG8ub3JkZXJzX2lkID0gb3Aub3JkZXJzX2lkICBcbkdST1VQIEJZIG8ub3JkZXJfZG93LCBvLm9yZGVyX2hvdXJfb2ZfZGF5IFxuIFxuYGBgIn0= -->
+<pre class="sql"><code>SELECT o.order_dow, o.order_hour_of_day, count(op.*) as total_product_count  
+FROM orders o  
+JOIN (  
+    SELECT *  
+    FROM orders_product_prior opp  
+    UNION ALL  
+    SELECT *  
+    FROM orders_product_train opt  
+    ) AS op  
+    ON o.orders_id = op.orders_id  
+GROUP BY o.order_dow, o.order_hour_of_day 
+ </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1981,27 +1963,27 @@ GROUP BY o.order_dow, o.order_hour_of_day
 <h2>Statistiken gekaufte Produkte pro User</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJvZHVjdHNfYnlfdXNlcl9zdGF0cyA8LSBwcm9kdWN0c19ieV9vcmRlciAlPiVcbiAgZ3JvdXBfYnkodXNlcl9pZCkgJT4lXG4gIHN1bW1hcmlzZShcbiAgICBtZWFuX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1lYW4odG90YWxfcHJvZHVjdF9jb3VudCksIFxuICAgIG1lZGlhbl9wcm9kdWN0c19wZXJfb3JkZXIgPSBtZWRpYW4odG90YWxfcHJvZHVjdF9jb3VudCksXG4gICAgbWluX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1pbih0b3RhbF9wcm9kdWN0X2NvdW50KSxcbiAgICBtYXhfcHJvZHVjdHNfcGVyX29yZGVyID0gbWF4KHRvdGFsX3Byb2R1Y3RfY291bnQpLFxuICAgIHRvdGFsX3Byb2R1Y3RfY291bnQgPSBzdW0odG90YWxfcHJvZHVjdF9jb3VudCksXG4gICAgbWVhbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyID0gbWVhbih0b3RhbF9iaW9fY291bnQpLCBcbiAgICBtZWRpYW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1lZGlhbih0b3RhbF9iaW9fY291bnQpLFxuICAgIG1pbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyID0gbWluKHRvdGFsX2Jpb19jb3VudCksXG4gICAgbWF4X2Jpb19wcm9kdWN0c19wZXJfb3JkZXIgPSBtYXgodG90YWxfYmlvX2NvdW50KSxcbiAgICB0b3RhbF9iaW9fcHJvZHVjdF9jb3VudCA9IHN1bSh0b3RhbF9iaW9fY291bnQpKSAlPiVcbiAgbXV0YXRlKFxuICAgIGZyYWN0aW9uX21lYW5fYmlvID0gbWVhbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyL21lYW5fcHJvZHVjdHNfcGVyX29yZGVyLFxuICAgIGZyYWN0aW9uX21lZGlhbl9iaW8gPSBtZWRpYW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlci9tZWRpYW5fcHJvZHVjdHNfcGVyX29yZGVyKVxuXG5jdXN0b21lcl9iZWhhdmlvciA8LVxuICBjdXN0b21lcl9iZWhhdmlvciAlPiVcbiAgaW5uZXJfam9pbihwcm9kdWN0c19ieV91c2VyX3N0YXRzKVxuYGBgIn0= -->
-<pre class="r"><code>products_by_user_stats &lt;- products_by_order %&gt;%
-  group_by(user_id) %&gt;%
-  summarise(
-    mean_products_per_order = mean(total_product_count), 
-    median_products_per_order = median(total_product_count),
-    min_products_per_order = min(total_product_count),
-    max_products_per_order = max(total_product_count),
-    total_product_count = sum(total_product_count),
-    mean_bio_products_per_order = mean(total_bio_count), 
-    median_bio_products_per_order = median(total_bio_count),
-    min_bio_products_per_order = min(total_bio_count),
-    max_bio_products_per_order = max(total_bio_count),
-    total_bio_product_count = sum(total_bio_count)) %&gt;%
-  mutate(
-    fraction_mean_bio = mean_bio_products_per_order/mean_products_per_order,
-    fraction_median_bio = median_bio_products_per_order/median_products_per_order)
-
-customer_behavior &lt;-
-  customer_behavior %&gt;%
-  inner_join(products_by_user_stats)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJvZHVjdHNfYnlfdXNlcl9zdGF0cyA8LSBwcm9kdWN0c19ieV9vcmRlciAlPiUgXG4gIGdyb3VwX2J5KHVzZXJfaWQpICU+JSBcbiAgc3VtbWFyaXNlKCBcbiAgICBtZWFuX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1lYW4odG90YWxfcHJvZHVjdF9jb3VudCksICBcbiAgICBtZWRpYW5fcHJvZHVjdHNfcGVyX29yZGVyID0gbWVkaWFuKHRvdGFsX3Byb2R1Y3RfY291bnQpLCBcbiAgICBtaW5fcHJvZHVjdHNfcGVyX29yZGVyID0gbWluKHRvdGFsX3Byb2R1Y3RfY291bnQpLCBcbiAgICBtYXhfcHJvZHVjdHNfcGVyX29yZGVyID0gbWF4KHRvdGFsX3Byb2R1Y3RfY291bnQpLCBcbiAgICB0b3RhbF9wcm9kdWN0X2NvdW50ID0gc3VtKHRvdGFsX3Byb2R1Y3RfY291bnQpLCBcbiAgICBtZWFuX2Jpb19wcm9kdWN0c19wZXJfb3JkZXIgPSBtZWFuKHRvdGFsX2Jpb19jb3VudCksICBcbiAgICBtZWRpYW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1lZGlhbih0b3RhbF9iaW9fY291bnQpLCBcbiAgICBtaW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1pbih0b3RhbF9iaW9fY291bnQpLCBcbiAgICBtYXhfYmlvX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1heCh0b3RhbF9iaW9fY291bnQpLCBcbiAgICB0b3RhbF9iaW9fcHJvZHVjdF9jb3VudCA9IHN1bSh0b3RhbF9iaW9fY291bnQpKSAlPiUgXG4gIG11dGF0ZSggXG4gICAgZnJhY3Rpb25fbWVhbl9iaW8gPSBtZWFuX2Jpb19wcm9kdWN0c19wZXJfb3JkZXIvbWVhbl9wcm9kdWN0c19wZXJfb3JkZXIsIFxuICAgIGZyYWN0aW9uX21lZGlhbl9iaW8gPSBtZWRpYW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlci9tZWRpYW5fcHJvZHVjdHNfcGVyX29yZGVyKSBcbiBcbmN1c3RvbWVyX2JlaGF2aW9yIDwtIFxuICBjdXN0b21lcl9iZWhhdmlvciAlPiUgXG4gIGlubmVyX2pvaW4ocHJvZHVjdHNfYnlfdXNlcl9zdGF0cykgXG5gYGAifQ== -->
+<pre class="r"><code>products_by_user_stats &lt;- products_by_order %&gt;% 
+  group_by(user_id) %&gt;% 
+  summarise( 
+    mean_products_per_order = mean(total_product_count),  
+    median_products_per_order = median(total_product_count), 
+    min_products_per_order = min(total_product_count), 
+    max_products_per_order = max(total_product_count), 
+    total_product_count = sum(total_product_count), 
+    mean_bio_products_per_order = mean(total_bio_count),  
+    median_bio_products_per_order = median(total_bio_count), 
+    min_bio_products_per_order = min(total_bio_count), 
+    max_bio_products_per_order = max(total_bio_count), 
+    total_bio_product_count = sum(total_bio_count)) %&gt;% 
+  mutate( 
+    fraction_mean_bio = mean_bio_products_per_order/mean_products_per_order, 
+    fraction_median_bio = median_bio_products_per_order/median_products_per_order) 
+ 
+customer_behavior &lt;- 
+  customer_behavior %&gt;% 
+  inner_join(products_by_user_stats) </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -2014,24 +1996,25 @@ customer_behavior &lt;-
 <h1>Objekte speichern</h1>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGlyLmNyZWF0ZSgnLi9kYXRhJywgc2hvd1dhcm5pbmdzID0gRkFMU0UpXG5zYXZlUkRTKGFzX3RpYmJsZShwcm9kdWN0cyksICcuL2RhdGEvcHJvZHVjdHMucmRzJylcbnNhdmVSRFMoYXNfdGliYmxlKG9yZGVycyksICcuL2RhdGEvb3JkZXJzLnJkcycpXG5zYXZlUkRTKGFzX3RpYmJsZShkZXBhcnRtZW50cyksICcuL2RhdGEvZGVwYXJ0bWVudHMucmRzJylcbnNhdmVSRFMoY3VzdG9tZXJfYmVoYXZpb3IsICcuL2RhdGEvY3VzdG9tZXJfYmVoYXZpb3IucmRzJylcbnNhdmVSRFMocHJvZHVjdHNfYnlfb3JkZXIsICcuL2RhdGEvcHJvZHVjdHNfYnlfb3JkZXIucmRzJylcbnNhdmVSRFMocHJvZHVjdHNfY291bnRfYnlfdXNlciwgJy4vZGF0YS9wcm9kdWN0c19jb3VudF9ieV91c2VyLnJkcycpXG5zYXZlUkRTKHBhdHJvbnMsICcuL2RhdGEvcGF0cm9ucy5yZHMnKVxuc2F2ZVJEUyhwcm9kdWN0c19wZXJfaG91cl9wZXJfZGF5LCAnLi9kYXRhL3Byb2R1Y3RzX3Blcl9ob3VyX3Blcl9kYXkucmRzJylcbnNhdmVSRFMob3JkZXJzX3Blcl9ob3VyX3Blcl9kYXksICcuL2RhdGEvb3JkZXJzX3Blcl9ob3VyX3Blcl9kYXkucmRzJylcbmBgYCJ9 -->
-<pre class="r"><code>dir.create('./data', showWarnings = FALSE)
-saveRDS(as_tibble(products), './data/products.rds')
-saveRDS(as_tibble(orders), './data/orders.rds')
-saveRDS(as_tibble(departments), './data/departments.rds')
-saveRDS(customer_behavior, './data/customer_behavior.rds')
-saveRDS(products_by_order, './data/products_by_order.rds')
-saveRDS(products_count_by_user, './data/products_count_by_user.rds')
-saveRDS(patrons, './data/patrons.rds')
-saveRDS(products_per_hour_per_day, './data/products_per_hour_per_day.rds')
-saveRDS(orders_per_hour_per_day, './data/orders_per_hour_per_day.rds')</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGlyLmNyZWF0ZSgnLi9kYXRhJywgc2hvd1dhcm5pbmdzID0gRkFMU0UpIFxuc2F2ZVJEUyhhc190aWJibGUocHJvZHVjdHMpLCAnLi9kYXRhL3Byb2R1Y3RzLnJkcycpIFxuc2F2ZVJEUyhhc190aWJibGUob3JkZXJzKSwgJy4vZGF0YS9vcmRlcnMucmRzJykgXG5zYXZlUkRTKGFzX3RpYmJsZShkZXBhcnRtZW50cyksICcuL2RhdGEvZGVwYXJ0bWVudHMucmRzJykgXG5zYXZlUkRTKGN1c3RvbWVyX2JlaGF2aW9yLCAnLi9kYXRhL2N1c3RvbWVyX2JlaGF2aW9yLnJkcycpIFxuc2F2ZVJEUyhwcm9kdWN0c19ieV9vcmRlciwgJy4vZGF0YS9wcm9kdWN0c19ieV9vcmRlci5yZHMnKSBcbnNhdmVSRFMocHJvZHVjdHNfY291bnRfYnlfdXNlciwgJy4vZGF0YS9wcm9kdWN0c19jb3VudF9ieV91c2VyLnJkcycpIFxuc2F2ZVJEUyhwYXRyb25zLCAnLi9kYXRhL3BhdHJvbnMucmRzJykgXG5zYXZlUkRTKHByb2R1Y3RzX3Blcl9ob3VyX3Blcl9kYXksICcuL2RhdGEvcHJvZHVjdHNfcGVyX2hvdXJfcGVyX2RheS5yZHMnKSBcbnNhdmVSRFMob3JkZXJzX3Blcl9ob3VyX3Blcl9kYXksICcuL2RhdGEvb3JkZXJzX3Blcl9ob3VyX3Blcl9kYXkucmRzJykgXG4gXG5gYGAifQ== -->
+<pre class="r"><code>dir.create(&#39;./data&#39;, showWarnings = FALSE) 
+saveRDS(as_tibble(products), &#39;./data/products.rds&#39;) 
+saveRDS(as_tibble(orders), &#39;./data/orders.rds&#39;) 
+saveRDS(as_tibble(departments), &#39;./data/departments.rds&#39;) 
+saveRDS(customer_behavior, &#39;./data/customer_behavior.rds&#39;) 
+saveRDS(products_by_order, &#39;./data/products_by_order.rds&#39;) 
+saveRDS(products_count_by_user, &#39;./data/products_count_by_user.rds&#39;) 
+saveRDS(patrons, &#39;./data/patrons.rds&#39;) 
+saveRDS(products_per_hour_per_day, &#39;./data/products_per_hour_per_day.rds&#39;) 
+saveRDS(orders_per_hour_per_day, &#39;./data/orders_per_hour_per_day.rds&#39;) 
+ </code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 </div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQpgYGB7ciwgZWNobz1GQUxTRX0NCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShSQ29sb3JCcmV3ZXIpDQoNCkRCX0hPU1Q9J3NlcnZlcjIwNTMuY3MudGVjaG5pay5maG53LmNoJw0KREJfUE9SVCA9IDU0MzINCkRCX0RCTkFNRSA9ICd3YXJlbmtvcmJfZGInICMgb3IgJ3dhcmVua29yYl9kYicNCkRCX1VTRVJOQU1FID0gJ2RiX3VzZXInIA0KREJfUEFTU1dPUkQgPSAnZGJfdXNlcl9wdycNCg0KY29uIDwtIERCSTo6ZGJDb25uZWN0KG9kYmM6Om9kYmMoKSwNCiAgICAgICAgICAgICAgICAgICAgICBEcml2ZXIgICA9ICJQb3N0Z3JlU1FMIFVuaWNvZGUoeDY0KSIsDQogICAgICAgICAgICAgICAgICAgICAgU2VydmVyICAgPSBEQl9IT1NULA0KICAgICAgICAgICAgICAgICAgICAgIERhdGFiYXNlID0gREJfREJOQU1FLA0KICAgICAgICAgICAgICAgICAgICAgIFVJRCAgICAgID0gREJfVVNFUk5BTUUsDQogICAgICAgICAgICAgICAgICAgICAgUFdEICAgICAgPSBEQl9QQVNTV09SRCwNCiAgICAgICAgICAgICAgICAgICAgICBQb3J0ICAgICA9IERCX1BPUlQsDQogICAgICAgICAgICAgICAgICAgICAgRW5jb2RpbmcgPSAnbGF0aW4xJykNCg0Ka25pdHI6Om9wdHNfY2h1bmskc2V0KGNvbm5lY3Rpb24gPSAiY29uIikNCmBgYA0KIyBEYXRlbiBsYWRlbg0KDQojIyBBbGxlIFByb2R1a3RlDQoNCmBgYHtzcWwsIGNvbm5lY3Rpb249Y29uLCBvdXRwdXQudmFyPXByb2R1Y3RzfQ0KU0VMRUNUDQogICAgICAgcC5wcm9kdWN0X2lkLA0KICAgICAgIHAucHJvZHVjdF9uYW1lLA0KICAgICAgIChjYXNlIHdoZW4NCiAgICAgICAgICAgbG93ZXIocC5wcm9kdWN0X25hbWUpIExJS0UgJyVvcmdhbmljJScNCiAgICAgICAgICAgT1IgbG93ZXIocC5wcm9kdWN0X25hbWUpIExJS0UgJyViaW8gJScNCiAgICAgICAgdGhlbiAxIGVsc2UgMCBlbmQpIGFzIGlzX29yZ2FuaWMsDQogICAgICAgYS5haXNsZV9pZCwNCiAgICAgICBhLmFpc2xlLA0KICAgICAgIGQuZGVwYXJ0bWVudF9pZCwNCiAgICAgICBkLmRlcGFydG1lbnQNCkZST00gcHJvZHVjdCBwDQpKT0lOIGFpc2xlIGEgb24gcC5haXNsZV9pZCA9IGEuYWlzbGVfaWQNCkpPSU4gZGVwYXJ0bWVudCBkIG9uIHAuZGVwYXJ0bWVudF9pZCA9IGQuZGVwYXJ0bWVudF9pZA0KYGBgDQoNCiMjIEFsbGUgRGVwYXJ0bWVudHMNCmBgYHtzcWwgY29ubmVjdGlvbj1jb24sIG91dHB1dC52YXI9ZGVwYXJ0bWVudHN9DQpTRUxFQ1QgKiBGUk9NIGRlcGFydG1lbnQNCmBgYA0KDQoNCiMjIEFsbGUgV2FyZW5rw7ZyYmUNCg0KYGBge3NxbCBjb25uZWN0aW9uPWNvbiwgb3V0cHV0LnZhcj1vcmRlcnN9DQpTRUxFQ1QgDQogICAgICAgby5vcmRlcnNfaWQsIA0KICAgICAgIG8udXNlcl9pZCwgDQogICAgICAgby5vcmRlcl9udW1iZXIsIA0KICAgICAgIG8ub3JkZXJfZG93LCANCiAgICAgICBvLm9yZGVyX2hvdXJfb2ZfZGF5LCANCiAgICAgICBvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIsDQogICAgICAgb3AucHJvZHVjdF9pZCwNCiAgICAgICBvcC5hZGRfdG9fY2FydF9vcmRlciwNCiAgICAgICBvcC5yZW9yZGVyZWQNCkZST00gb3JkZXJzIG8NCkpPSU4NCiAgICAoU0VMRUNUICoNCiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3ByaW9yIG9wcA0KICAgIFVOSU9OIEFMTA0KICAgIFNFTEVDVCAqDQogICAgRlJPTSBvcmRlcnNfcHJvZHVjdF90cmFpbiBvcHQpIEFTIG9wDQogICAgICAgIE9OIG9wLm9yZGVyc19pZCA9IG8ub3JkZXJzX2lkDQpgYGANCg0KIyMgR2VuZXJlbGxlIFN0YXRpc3Rpa2VuIMO8YmVyIGRhcyBLYXVmdmVyaGFsdGVuIGRlciBLdW5kZW4NCg0KYGBge3NxbCBjb25uZWN0aW9uPWNvbiwgb3V0cHV0LnZhcj1jdXN0b21lcl9iZWhhdmlvcn0NClNFTEVDVA0KICBvLnVzZXJfaWQsDQogIENPVU5UKG8ub3JkZXJzX2lkKSBBUyB0b3RhbF9ucl9vZl9vcmRlcnMsDQogIEFWRyhvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIpIEFTIGF2Z19kYXlzX3NpbmNlX3ByaW9yX29yZGVyLA0KICBTVU0oby5kYXlzX3NpbmNlX3ByaW9yX29yZGVyKSBBUyB0aW1lc3Bhbl9mb3JfYWxsX29yZGVycw0KRlJPTSBvcmRlcnMgbw0KR1JPVVAgQlkgby51c2VyX2lkDQpgYGANCg0KYGBge3J9DQpjdXN0b21lcl9iZWhhdmlvciA8LSBjdXN0b21lcl9iZWhhdmlvciAlPiUNCiAgbXV0YXRlKHRvdGFsX25yX29mX29yZGVycyA9IGFzLmludGVnZXIodG90YWxfbnJfb2Zfb3JkZXJzKSkgJT4lDQogIGFzX3RpYmJsZSgpDQpgYGANCg0KIyMgQW56YWhsIGRlciBQcm9kdWt0ZSBpbiBkZW4gRWlua8OkdWZlbg0KDQpgYGB7c3FsIGNvbm5lY3Rpb249Y29uLCBvdXRwdXQudmFyPXByb2R1Y3RzX2J5X29yZGVyfQ0KU0VMRUNUDQogICAgby51c2VyX2lkLA0KICAgIG8ub3JkZXJzX2lkLA0KICAgIENPVU5UKG9wLnByb2R1Y3RfaWQpIEFTIHRvdGFsX3Byb2R1Y3RfY291bnQsDQogICAgU1VNKGNhc2Ugd2hlbg0KICAgICAgICAgICBsb3dlcihwLnByb2R1Y3RfbmFtZSkgTElLRSAnJW9yZ2FuaWMlJw0KICAgICAgICAgICBPUiBsb3dlcihwLnByb2R1Y3RfbmFtZSkgTElLRSAnJWJpbyAlJw0KICAgICAgICB0aGVuIDEgZWxzZSAwIGVuZCApIEFTIHRvdGFsX2Jpb19jb3VudA0KRlJPTSBvcmRlcnMgbw0KSk9JTiAoDQogICAgU0VMRUNUICoNCiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3ByaW9yIG9wcA0KICAgIFVOSU9OIEFMTA0KICAgIFNFTEVDVCAqDQogICAgRlJPTSBvcmRlcnNfcHJvZHVjdF90cmFpbiBvcHQNCiAgICApIEFTIG9wDQogICAgT04gb3Aub3JkZXJzX2lkID0gby5vcmRlcnNfaWQNCkpPSU4gcHJvZHVjdCBwIE9OIHAucHJvZHVjdF9pZCA9IG9wLnByb2R1Y3RfaWQNCkdST1VQIEJZIG8udXNlcl9pZCwgby5vcmRlcnNfaWQNCmBgYA0KDQpgYGB7cn0NCnByb2R1Y3RzX2J5X29yZGVyIDwtIHByb2R1Y3RzX2J5X29yZGVyICU+JQ0KICBtdXRhdGUodG90YWxfcHJvZHVjdF9jb3VudCA9IGFzLmludGVnZXIodG90YWxfcHJvZHVjdF9jb3VudCkpICU+JQ0KICBtdXRhdGUodG90YWxfYmlvX2NvdW50ID0gYXMuaW50ZWdlcih0b3RhbF9iaW9fY291bnQpKSAlPiUNCiAgYXNfdGliYmxlKCkNCmBgYA0KDQojIyBNZWlzdHZlcmthdWZ0ZSBQcm9kdWt0ZSANCmBgYHtzcWwgY29ubmVjdGlvbj1jb24sIG91dHB1dC52YXI9cHJvZHVjdHNfY291bnRfYnlfdXNlcn0gDQpTRUxFQ1Qgby51c2VyX2lkLCBwLnByb2R1Y3RfaWQsIGNvdW50KG9wLiopIGFzIGNvdW50IA0KRlJPTSBvcmRlcnMgbyANCkpPSU4gKCANCiAgICBTRUxFQ1QgKiANCiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3ByaW9yIG9wcCANCiAgICBVTklPTiBBTEwgDQogICAgU0VMRUNUICogDQogICAgRlJPTSBvcmRlcnNfcHJvZHVjdF90cmFpbiBvcHQgDQogICAgKSBBUyBvcCANCiAgICBPTiBvcC5vcmRlcnNfaWQgPSBvLm9yZGVyc19pZCANCkpPSU4gcHJvZHVjdCBwIE9OIHAucHJvZHVjdF9pZCA9IG9wLnByb2R1Y3RfaWQgDQpHUk9VUCBCWSBwLnByb2R1Y3RfaWQsIG8udXNlcl9pZCANCk9SREVSIEJZIGNvdW50IERFU0MgIA0KYGBgIA0KIA0KYGBge3J9IA0KcHJvZHVjdHNfY291bnRfYnlfdXNlciA8LSBwcm9kdWN0c19jb3VudF9ieV91c2VyICU+JSANCiAgbXV0YXRlKGNvdW50ID0gYXMuaW50ZWdlcihjb3VudCkpIA0KYGBgIA0KDQojIyBTdGFtbWt1bmRlbg0KDQpgYGB7c3FsLCBjb25uZWN0aW9uPWNvbiwgb3V0cHV0LnZhcj1wYXRyb25zfQ0KU0VMRUNUDQogIG8udXNlcl9pZA0KRlJPTSBvcmRlcnMgbw0KV0hFUkUgby5ldmFsX3NldCA9ICdwcmlvcicNCkdST1VQIEJZIG8udXNlcl9pZA0KSEFWSU5HDQogIHN1bShvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIpID4gOTANCiAgQU5EIGF2ZyhvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIpIDw9IDE1DQpgYGANCg0KYGBge3NxbCwgY29ubmVjdGlvbj1jb24sIG91dHB1dC52YXI9b3JkZXJzX3Blcl9ob3VyX3Blcl9kYXl9DQpTRUxFQ1Qgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXksIGNvdW50KG8uKikgYXMgdG90YWxfb3JkZXJfY291bnQgDQpGUk9NIG9yZGVycyBvIA0KR1JPVVAgQlkgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXkNCg0KYGBgIA0KDQojIyBTdMO8bmRsaWNoIHZlcmthdWZ0ZSBBbnphaGwgUHJvZHVrdGUNCmBgYHtzcWwsIGNvbm5lY3Rpb249Y29uLCBvdXRwdXQudmFyPXByb2R1Y3RzX3Blcl9ob3VyX3Blcl9kYXl9DQpTRUxFQ1Qgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXksIGNvdW50KG9wLiopIGFzIHRvdGFsX3Byb2R1Y3RfY291bnQgDQpGUk9NIG9yZGVycyBvIA0KSk9JTiAoIA0KICAgIFNFTEVDVCAqIA0KICAgIEZST00gb3JkZXJzX3Byb2R1Y3RfcHJpb3Igb3BwIA0KICAgIFVOSU9OIEFMTCANCiAgICBTRUxFQ1QgKiANCiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3RyYWluIG9wdCANCiAgICApIEFTIG9wIA0KICAgIE9OIG8ub3JkZXJzX2lkID0gb3Aub3JkZXJzX2lkIA0KR1JPVVAgQlkgby5vcmRlcl9kb3csIG8ub3JkZXJfaG91cl9vZl9kYXkNCg0KYGBgIA0KDQoNCiMgT2JqZWt0ZSBlcndlaXRlcm4vdHJhbnNmb3JtaWVyZW4NCg0KIyMgU3RhdGlzdGlrZW4gZ2VrYXVmdGUgUHJvZHVrdGUgcHJvIFVzZXINCmBgYHtyfQ0KcHJvZHVjdHNfYnlfdXNlcl9zdGF0cyA8LSBwcm9kdWN0c19ieV9vcmRlciAlPiUNCiAgZ3JvdXBfYnkodXNlcl9pZCkgJT4lDQogIHN1bW1hcmlzZSgNCiAgICBtZWFuX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1lYW4odG90YWxfcHJvZHVjdF9jb3VudCksIA0KICAgIG1lZGlhbl9wcm9kdWN0c19wZXJfb3JkZXIgPSBtZWRpYW4odG90YWxfcHJvZHVjdF9jb3VudCksDQogICAgbWluX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1pbih0b3RhbF9wcm9kdWN0X2NvdW50KSwNCiAgICBtYXhfcHJvZHVjdHNfcGVyX29yZGVyID0gbWF4KHRvdGFsX3Byb2R1Y3RfY291bnQpLA0KICAgIHRvdGFsX3Byb2R1Y3RfY291bnQgPSBzdW0odG90YWxfcHJvZHVjdF9jb3VudCksDQogICAgbWVhbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyID0gbWVhbih0b3RhbF9iaW9fY291bnQpLCANCiAgICBtZWRpYW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1lZGlhbih0b3RhbF9iaW9fY291bnQpLA0KICAgIG1pbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyID0gbWluKHRvdGFsX2Jpb19jb3VudCksDQogICAgbWF4X2Jpb19wcm9kdWN0c19wZXJfb3JkZXIgPSBtYXgodG90YWxfYmlvX2NvdW50KSwNCiAgICB0b3RhbF9iaW9fcHJvZHVjdF9jb3VudCA9IHN1bSh0b3RhbF9iaW9fY291bnQpKSAlPiUNCiAgbXV0YXRlKA0KICAgIGZyYWN0aW9uX21lYW5fYmlvID0gbWVhbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyL21lYW5fcHJvZHVjdHNfcGVyX29yZGVyLA0KICAgIGZyYWN0aW9uX21lZGlhbl9iaW8gPSBtZWRpYW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlci9tZWRpYW5fcHJvZHVjdHNfcGVyX29yZGVyKQ0KDQpjdXN0b21lcl9iZWhhdmlvciA8LQ0KICBjdXN0b21lcl9iZWhhdmlvciAlPiUNCiAgaW5uZXJfam9pbihwcm9kdWN0c19ieV91c2VyX3N0YXRzKQ0KYGBgDQoNCg0KDQoNCiMjIFN0YXRpc3Rpa2VuIGdla2F1ZnRlIEJpb3Byb2R1a3RlIHBybyBVc2VyDQoNCg0KIyBPYmpla3RlIHNwZWljaGVybg0KYGBge3J9DQpkaXIuY3JlYXRlKCcuL2RhdGEnLCBzaG93V2FybmluZ3MgPSBGQUxTRSkNCnNhdmVSRFMoYXNfdGliYmxlKHByb2R1Y3RzKSwgJy4vZGF0YS9wcm9kdWN0cy5yZHMnKQ0Kc2F2ZVJEUyhhc190aWJibGUob3JkZXJzKSwgJy4vZGF0YS9vcmRlcnMucmRzJykNCnNhdmVSRFMoYXNfdGliYmxlKGRlcGFydG1lbnRzKSwgJy4vZGF0YS9kZXBhcnRtZW50cy5yZHMnKQ0Kc2F2ZVJEUyhjdXN0b21lcl9iZWhhdmlvciwgJy4vZGF0YS9jdXN0b21lcl9iZWhhdmlvci5yZHMnKQ0Kc2F2ZVJEUyhwcm9kdWN0c19ieV9vcmRlciwgJy4vZGF0YS9wcm9kdWN0c19ieV9vcmRlci5yZHMnKQ0Kc2F2ZVJEUyhwcm9kdWN0c19jb3VudF9ieV91c2VyLCAnLi9kYXRhL3Byb2R1Y3RzX2NvdW50X2J5X3VzZXIucmRzJykNCnNhdmVSRFMocGF0cm9ucywgJy4vZGF0YS9wYXRyb25zLnJkcycpDQpzYXZlUkRTKHByb2R1Y3RzX3Blcl9ob3VyX3Blcl9kYXksICcuL2RhdGEvcHJvZHVjdHNfcGVyX2hvdXJfcGVyX2RheS5yZHMnKQ0Kc2F2ZVJEUyhvcmRlcnNfcGVyX2hvdXJfcGVyX2RheSwgJy4vZGF0YS9vcmRlcnNfcGVyX2hvdXJfcGVyX2RheS5yZHMnKQ0KDQpgYGANCg0K</div>
+<div id="rmd-source-code">LS0tIA0KdGl0bGU6ICJSIE5vdGVib29rIiANCm91dHB1dDogaHRtbF9ub3RlYm9vayANCi0tLSANCiANCmBgYHtyLCBlY2hvPUZBTFNFfSANCmxpYnJhcnkodGlkeXZlcnNlKSANCmxpYnJhcnkoUkNvbG9yQnJld2VyKSANCiANCkRCX0hPU1Q9J3NlcnZlcjIwNTMuY3MudGVjaG5pay5maG53LmNoJyANCkRCX1BPUlQgPSA1NDMyIA0KREJfREJOQU1FID0gJ3dhcmVua29yYl9kYicgIyBvciAnd2FyZW5rb3JiX2RiJyANCkRCX1VTRVJOQU1FID0gJ2RiX3VzZXInICANCkRCX1BBU1NXT1JEID0gJ2RiX3VzZXJfcHcnIA0KIA0KY29uIDwtIERCSTo6ZGJDb25uZWN0KG9kYmM6Om9kYmMoKSwgDQogICAgICAgICAgICAgICAgICAgICAgRHJpdmVyICAgPSAiUG9zdGdyZVNRTCBVbmljb2RlKHg2NCkiLCANCiAgICAgICAgICAgICAgICAgICAgICBTZXJ2ZXIgICA9IERCX0hPU1QsIA0KICAgICAgICAgICAgICAgICAgICAgIERhdGFiYXNlID0gREJfREJOQU1FLCANCiAgICAgICAgICAgICAgICAgICAgICBVSUQgICAgICA9IERCX1VTRVJOQU1FLCANCiAgICAgICAgICAgICAgICAgICAgICBQV0QgICAgICA9IERCX1BBU1NXT1JELCANCiAgICAgICAgICAgICAgICAgICAgICBQb3J0ICAgICA9IERCX1BPUlQsIA0KICAgICAgICAgICAgICAgICAgICAgIEVuY29kaW5nID0gJ2xhdGluMScpIA0KIA0Ka25pdHI6Om9wdHNfY2h1bmskc2V0KGNvbm5lY3Rpb24gPSAiY29uIikgDQpgYGAgDQojIERhdGVuIGxhZGVuIA0KIA0KIyMgQWxsZSBQcm9kdWt0ZSANCiANCmBgYHtzcWwsIGNvbm5lY3Rpb249Y29uLCBvdXRwdXQudmFyPXByb2R1Y3RzfSANClNFTEVDVCANCiAgICAgICBwLnByb2R1Y3RfaWQsIA0KICAgICAgIHAucHJvZHVjdF9uYW1lLCANCiAgICAgICAoY2FzZSB3aGVuIA0KICAgICAgICAgICBsb3dlcihwLnByb2R1Y3RfbmFtZSkgTElLRSAnJW9yZ2FuaWMlJyANCiAgICAgICAgICAgT1IgbG93ZXIocC5wcm9kdWN0X25hbWUpIExJS0UgJyViaW8gJScgDQogICAgICAgIHRoZW4gMSBlbHNlIDAgZW5kKSBhcyBpc19vcmdhbmljLCANCiAgICAgICBhLmFpc2xlX2lkLCANCiAgICAgICBhLmFpc2xlLCANCiAgICAgICBkLmRlcGFydG1lbnRfaWQsIA0KICAgICAgIGQuZGVwYXJ0bWVudCANCkZST00gcHJvZHVjdCBwIA0KSk9JTiBhaXNsZSBhIG9uIHAuYWlzbGVfaWQgPSBhLmFpc2xlX2lkIA0KSk9JTiBkZXBhcnRtZW50IGQgb24gcC5kZXBhcnRtZW50X2lkID0gZC5kZXBhcnRtZW50X2lkIA0KYGBgIA0KIA0KIyMgQWxsZSBEZXBhcnRtZW50cyANCmBgYHtzcWwgY29ubmVjdGlvbj1jb24sIG91dHB1dC52YXI9ZGVwYXJ0bWVudHN9IA0KU0VMRUNUICogRlJPTSBkZXBhcnRtZW50IA0KYGBgIA0KIA0KIA0KIyMgQWxsZSBXYXJlbmvDtnJiZSANCiANCmBgYHtzcWwgY29ubmVjdGlvbj1jb24sIG91dHB1dC52YXI9b3JkZXJzfSANClNFTEVDVCAgDQogICAgICAgby5vcmRlcnNfaWQsICANCiAgICAgICBvLnVzZXJfaWQsICANCiAgICAgICBvLm9yZGVyX251bWJlciwgIA0KICAgICAgIG8ub3JkZXJfZG93LCAgDQogICAgICAgby5vcmRlcl9ob3VyX29mX2RheSwgIA0KICAgICAgIG8uZGF5c19zaW5jZV9wcmlvcl9vcmRlciwgDQogICAgICAgb3AucHJvZHVjdF9pZCwgDQogICAgICAgb3AuYWRkX3RvX2NhcnRfb3JkZXIsIA0KICAgICAgIG9wLnJlb3JkZXJlZCANCkZST00gb3JkZXJzIG8gDQpKT0lOIA0KICAgIChTRUxFQ1QgKiANCiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3ByaW9yIG9wcCANCiAgICBVTklPTiBBTEwgDQogICAgU0VMRUNUICogDQogICAgRlJPTSBvcmRlcnNfcHJvZHVjdF90cmFpbiBvcHQpIEFTIG9wIA0KICAgICAgICBPTiBvcC5vcmRlcnNfaWQgPSBvLm9yZGVyc19pZCANCmBgYCANCiANCiMjIEdlbmVyZWxsZSBTdGF0aXN0aWtlbiDDvGJlciBkYXMgS2F1ZnZlcmhhbHRlbiBkZXIgS3VuZGVuIA0KIA0KYGBge3NxbCBjb25uZWN0aW9uPWNvbiwgb3V0cHV0LnZhcj1jdXN0b21lcl9iZWhhdmlvcn0gDQpTRUxFQ1QgDQogIG8udXNlcl9pZCwgDQogIENPVU5UKG8ub3JkZXJzX2lkKSBBUyB0b3RhbF9ucl9vZl9vcmRlcnMsIA0KICBBVkcoby5kYXlzX3NpbmNlX3ByaW9yX29yZGVyKSBBUyBhdmdfZGF5c19zaW5jZV9wcmlvcl9vcmRlciwgDQogIFNVTShvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIpIEFTIHRpbWVzcGFuX2Zvcl9hbGxfb3JkZXJzIA0KRlJPTSBvcmRlcnMgbyANCkdST1VQIEJZIG8udXNlcl9pZCANCmBgYCANCiANCmBgYHtyfSANCmN1c3RvbWVyX2JlaGF2aW9yIDwtIGN1c3RvbWVyX2JlaGF2aW9yICU+JSANCiAgbXV0YXRlKHRvdGFsX25yX29mX29yZGVycyA9IGFzLmludGVnZXIodG90YWxfbnJfb2Zfb3JkZXJzKSkgJT4lIA0KICBhc190aWJibGUoKSANCmBgYCANCiANCiMjIEFuemFobCBkZXIgUHJvZHVrdGUgaW4gZGVuIEVpbmvDpHVmZW4gDQogDQpgYGB7c3FsIGNvbm5lY3Rpb249Y29uLCBvdXRwdXQudmFyPXByb2R1Y3RzX2J5X29yZGVyfSANClNFTEVDVCANCiAgICBvLnVzZXJfaWQsIA0KICAgIG8ub3JkZXJzX2lkLCANCiAgICBDT1VOVChvcC5wcm9kdWN0X2lkKSBBUyB0b3RhbF9wcm9kdWN0X2NvdW50LCANCiAgICBTVU0oY2FzZSB3aGVuIA0KICAgICAgICAgICBsb3dlcihwLnByb2R1Y3RfbmFtZSkgTElLRSAnJW9yZ2FuaWMlJyANCiAgICAgICAgICAgT1IgbG93ZXIocC5wcm9kdWN0X25hbWUpIExJS0UgJyViaW8gJScgDQogICAgICAgIHRoZW4gMSBlbHNlIDAgZW5kICkgQVMgdG90YWxfYmlvX2NvdW50IA0KRlJPTSBvcmRlcnMgbyANCkpPSU4gKCANCiAgICBTRUxFQ1QgKiANCiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3ByaW9yIG9wcCANCiAgICBVTklPTiBBTEwgDQogICAgU0VMRUNUICogDQogICAgRlJPTSBvcmRlcnNfcHJvZHVjdF90cmFpbiBvcHQgDQogICAgKSBBUyBvcCANCiAgICBPTiBvcC5vcmRlcnNfaWQgPSBvLm9yZGVyc19pZCANCkpPSU4gcHJvZHVjdCBwIE9OIHAucHJvZHVjdF9pZCA9IG9wLnByb2R1Y3RfaWQgDQpHUk9VUCBCWSBvLnVzZXJfaWQsIG8ub3JkZXJzX2lkIA0KYGBgIA0KIA0KYGBge3J9IA0KcHJvZHVjdHNfYnlfb3JkZXIgPC0gcHJvZHVjdHNfYnlfb3JkZXIgJT4lIA0KICBtdXRhdGUodG90YWxfcHJvZHVjdF9jb3VudCA9IGFzLmludGVnZXIodG90YWxfcHJvZHVjdF9jb3VudCkpICU+JSANCiAgbXV0YXRlKHRvdGFsX2Jpb19jb3VudCA9IGFzLmludGVnZXIodG90YWxfYmlvX2NvdW50KSkgJT4lIA0KICBhc190aWJibGUoKSANCmBgYCANCiANCiMjIE1laXN0dmVya2F1ZnRlIFByb2R1a3RlICANCmBgYHtzcWwgY29ubmVjdGlvbj1jb24sIG91dHB1dC52YXI9cHJvZHVjdHNfY291bnRfYnlfdXNlcn0gIA0KU0VMRUNUIG8udXNlcl9pZCwgcC5wcm9kdWN0X2lkLCBjb3VudChvcC4qKSBhcyBjb3VudCAgDQpGUk9NIG9yZGVycyBvICANCkpPSU4gKCAgDQogICAgU0VMRUNUICogIA0KICAgIEZST00gb3JkZXJzX3Byb2R1Y3RfcHJpb3Igb3BwICANCiAgICBVTklPTiBBTEwgIA0KICAgIFNFTEVDVCAqICANCiAgICBGUk9NIG9yZGVyc19wcm9kdWN0X3RyYWluIG9wdCAgDQogICAgKSBBUyBvcCAgDQogICAgT04gb3Aub3JkZXJzX2lkID0gby5vcmRlcnNfaWQgIA0KSk9JTiBwcm9kdWN0IHAgT04gcC5wcm9kdWN0X2lkID0gb3AucHJvZHVjdF9pZCAgDQpHUk9VUCBCWSBwLnByb2R1Y3RfaWQsIG8udXNlcl9pZCAgDQpPUkRFUiBCWSBjb3VudCBERVNDICAgDQpgYGAgIA0KICANCmBgYHtyfSAgDQpwcm9kdWN0c19jb3VudF9ieV91c2VyIDwtIHByb2R1Y3RzX2NvdW50X2J5X3VzZXIgJT4lICANCiAgbXV0YXRlKGNvdW50ID0gYXMuaW50ZWdlcihjb3VudCkpICANCmBgYCAgDQogDQojIyBTdGFtbWt1bmRlbiANCiANCmBgYHtzcWwsIGNvbm5lY3Rpb249Y29uLCBvdXRwdXQudmFyPXBhdHJvbnN9IA0KU0VMRUNUIA0KICBvLnVzZXJfaWQgDQpGUk9NIG9yZGVycyBvIA0KV0hFUkUgby5ldmFsX3NldCA9ICdwcmlvcicgDQpHUk9VUCBCWSBvLnVzZXJfaWQgDQpIQVZJTkcgDQogIHN1bShvLmRheXNfc2luY2VfcHJpb3Jfb3JkZXIpID4gOTAgDQogIEFORCBhdmcoby5kYXlzX3NpbmNlX3ByaW9yX29yZGVyKSA8PSAxNSANCmBgYCANCiANCmBgYHtzcWwsIGNvbm5lY3Rpb249Y29uLCBvdXRwdXQudmFyPW9yZGVyc19wZXJfaG91cl9wZXJfZGF5fSANClNFTEVDVCBvLm9yZGVyX2Rvdywgby5vcmRlcl9ob3VyX29mX2RheSwgY291bnQoby4qKSBhcyB0b3RhbF9vcmRlcl9jb3VudCAgDQpGUk9NIG9yZGVycyBvICANCkdST1VQIEJZIG8ub3JkZXJfZG93LCBvLm9yZGVyX2hvdXJfb2ZfZGF5IA0KIA0KYGBgICANCiANCiMjIFN0w7xuZGxpY2ggdmVya2F1ZnRlIEFuemFobCBQcm9kdWt0ZSANCmBgYHtzcWwsIGNvbm5lY3Rpb249Y29uLCBvdXRwdXQudmFyPXByb2R1Y3RzX3Blcl9ob3VyX3Blcl9kYXl9IA0KU0VMRUNUIG8ub3JkZXJfZG93LCBvLm9yZGVyX2hvdXJfb2ZfZGF5LCBjb3VudChvcC4qKSBhcyB0b3RhbF9wcm9kdWN0X2NvdW50ICANCkZST00gb3JkZXJzIG8gIA0KSk9JTiAoICANCiAgICBTRUxFQ1QgKiAgDQogICAgRlJPTSBvcmRlcnNfcHJvZHVjdF9wcmlvciBvcHAgIA0KICAgIFVOSU9OIEFMTCAgDQogICAgU0VMRUNUICogIA0KICAgIEZST00gb3JkZXJzX3Byb2R1Y3RfdHJhaW4gb3B0ICANCiAgICApIEFTIG9wICANCiAgICBPTiBvLm9yZGVyc19pZCA9IG9wLm9yZGVyc19pZCAgDQpHUk9VUCBCWSBvLm9yZGVyX2Rvdywgby5vcmRlcl9ob3VyX29mX2RheSANCiANCmBgYCAgDQogDQogDQojIE9iamVrdGUgZXJ3ZWl0ZXJuL3RyYW5zZm9ybWllcmVuIA0KIA0KIyMgU3RhdGlzdGlrZW4gZ2VrYXVmdGUgUHJvZHVrdGUgcHJvIFVzZXIgDQpgYGB7cn0gDQpwcm9kdWN0c19ieV91c2VyX3N0YXRzIDwtIHByb2R1Y3RzX2J5X29yZGVyICU+JSANCiAgZ3JvdXBfYnkodXNlcl9pZCkgJT4lIA0KICBzdW1tYXJpc2UoIA0KICAgIG1lYW5fcHJvZHVjdHNfcGVyX29yZGVyID0gbWVhbih0b3RhbF9wcm9kdWN0X2NvdW50KSwgIA0KICAgIG1lZGlhbl9wcm9kdWN0c19wZXJfb3JkZXIgPSBtZWRpYW4odG90YWxfcHJvZHVjdF9jb3VudCksIA0KICAgIG1pbl9wcm9kdWN0c19wZXJfb3JkZXIgPSBtaW4odG90YWxfcHJvZHVjdF9jb3VudCksIA0KICAgIG1heF9wcm9kdWN0c19wZXJfb3JkZXIgPSBtYXgodG90YWxfcHJvZHVjdF9jb3VudCksIA0KICAgIHRvdGFsX3Byb2R1Y3RfY291bnQgPSBzdW0odG90YWxfcHJvZHVjdF9jb3VudCksIA0KICAgIG1lYW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlciA9IG1lYW4odG90YWxfYmlvX2NvdW50KSwgIA0KICAgIG1lZGlhbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyID0gbWVkaWFuKHRvdGFsX2Jpb19jb3VudCksIA0KICAgIG1pbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyID0gbWluKHRvdGFsX2Jpb19jb3VudCksIA0KICAgIG1heF9iaW9fcHJvZHVjdHNfcGVyX29yZGVyID0gbWF4KHRvdGFsX2Jpb19jb3VudCksIA0KICAgIHRvdGFsX2Jpb19wcm9kdWN0X2NvdW50ID0gc3VtKHRvdGFsX2Jpb19jb3VudCkpICU+JSANCiAgbXV0YXRlKCANCiAgICBmcmFjdGlvbl9tZWFuX2JpbyA9IG1lYW5fYmlvX3Byb2R1Y3RzX3Blcl9vcmRlci9tZWFuX3Byb2R1Y3RzX3Blcl9vcmRlciwgDQogICAgZnJhY3Rpb25fbWVkaWFuX2JpbyA9IG1lZGlhbl9iaW9fcHJvZHVjdHNfcGVyX29yZGVyL21lZGlhbl9wcm9kdWN0c19wZXJfb3JkZXIpIA0KIA0KY3VzdG9tZXJfYmVoYXZpb3IgPC0gDQogIGN1c3RvbWVyX2JlaGF2aW9yICU+JSANCiAgaW5uZXJfam9pbihwcm9kdWN0c19ieV91c2VyX3N0YXRzKSANCmBgYCANCiANCiANCiANCiANCiMjIFN0YXRpc3Rpa2VuIGdla2F1ZnRlIEJpb3Byb2R1a3RlIHBybyBVc2VyIA0KIA0KIA0KIyBPYmpla3RlIHNwZWljaGVybiANCmBgYHtyfSANCmRpci5jcmVhdGUoJy4vZGF0YScsIHNob3dXYXJuaW5ncyA9IEZBTFNFKSANCnNhdmVSRFMoYXNfdGliYmxlKHByb2R1Y3RzKSwgJy4vZGF0YS9wcm9kdWN0cy5yZHMnKSANCnNhdmVSRFMoYXNfdGliYmxlKG9yZGVycyksICcuL2RhdGEvb3JkZXJzLnJkcycpIA0Kc2F2ZVJEUyhhc190aWJibGUoZGVwYXJ0bWVudHMpLCAnLi9kYXRhL2RlcGFydG1lbnRzLnJkcycpIA0Kc2F2ZVJEUyhjdXN0b21lcl9iZWhhdmlvciwgJy4vZGF0YS9jdXN0b21lcl9iZWhhdmlvci5yZHMnKSANCnNhdmVSRFMocHJvZHVjdHNfYnlfb3JkZXIsICcuL2RhdGEvcHJvZHVjdHNfYnlfb3JkZXIucmRzJykgDQpzYXZlUkRTKHByb2R1Y3RzX2NvdW50X2J5X3VzZXIsICcuL2RhdGEvcHJvZHVjdHNfY291bnRfYnlfdXNlci5yZHMnKSANCnNhdmVSRFMocGF0cm9ucywgJy4vZGF0YS9wYXRyb25zLnJkcycpIA0Kc2F2ZVJEUyhwcm9kdWN0c19wZXJfaG91cl9wZXJfZGF5LCAnLi9kYXRhL3Byb2R1Y3RzX3Blcl9ob3VyX3Blcl9kYXkucmRzJykgDQpzYXZlUkRTKG9yZGVyc19wZXJfaG91cl9wZXJfZGF5LCAnLi9kYXRhL29yZGVyc19wZXJfaG91cl9wZXJfZGF5LnJkcycpIA0KIA0KYGBgIA0KIA0K</div>
 
 
 
@@ -2060,6 +2043,29 @@ $(document).ready(function () {
 });
 
 </script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeSourceEmbed("ExtractCommonUsedData.Rmd");
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>

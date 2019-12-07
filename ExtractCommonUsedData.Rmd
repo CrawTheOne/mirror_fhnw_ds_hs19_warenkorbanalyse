@@ -1,135 +1,108 @@
----
-title: "R Notebook"
-output: html_notebook
----
-
-```{r, echo=FALSE}
-library(tidyverse)
-library(RColorBrewer)
-
-DB_HOST='server2053.cs.technik.fhnw.ch'
-DB_PORT = 5432
-DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db'
-DB_USERNAME = 'db_user' 
-DB_PASSWORD = 'db_user_pw'
-
-con <- DBI::dbConnect(odbc::odbc(),
-                      Driver   = "PostgreSQL Unicode(x64)",
-                      Server   = DB_HOST,
-                      Database = DB_DBNAME,
-                      UID      = DB_USERNAME,
-                      PWD      = DB_PASSWORD,
-                      Port     = DB_PORT,
-                      Encoding = 'latin1')
-
-knitr::opts_chunk$set(connection = "con")
-```
-# Daten laden
-
-## Alle Produkte
-
-```{sql, connection=con, output.var=products}
-SELECT
-       p.product_id,
-       p.product_name,
-       (case when
-           lower(p.product_name) LIKE '%organic%'
-           OR lower(p.product_name) LIKE '%bio %'
-        then 1 else 0 end) as is_organic,
-       a.aisle_id,
-       a.aisle,
-       d.department_id,
-       d.department
-FROM product p
-JOIN aisle a on p.aisle_id = a.aisle_id
-JOIN department d on p.department_id = d.department_id
-```
-
-Direkt speichern und wieder aus dem RAM löschen
-
-```{r}
-saveRDS(as_tibble(products), './data/products.rds')
-products <- NULL
-gc()
-```
-
-
-## Alle Warenkörbe
-
-```{sql connection=con, output.var=orders}
+--- 
+title: "R Notebook" 
+output: html_notebook 
+--- 
+ 
+```{r, echo=FALSE} 
+library(tidyverse) 
+library(RColorBrewer) 
+ 
+DB_HOST='server2053.cs.technik.fhnw.ch' 
+DB_PORT = 5432 
+DB_DBNAME = 'warenkorb_db' # or 'warenkorb_db' 
+DB_USERNAME = 'db_user'  
+DB_PASSWORD = 'db_user_pw' 
+ 
+con <- DBI::dbConnect(odbc::odbc(), 
+                      Driver   = "PostgreSQL Unicode(x64)", 
+                      Server   = DB_HOST, 
+                      Database = DB_DBNAME, 
+                      UID      = DB_USERNAME, 
+                      PWD      = DB_PASSWORD, 
+                      Port     = DB_PORT, 
+                      Encoding = 'latin1') 
+ 
+knitr::opts_chunk$set(connection = "con") 
+``` 
+# Daten laden 
+ 
+## Alle Produkte 
+ 
+```{sql, connection=con, output.var=products} 
 SELECT 
-       o.orders_id, 
-       o.user_id, 
-       o.order_number, 
-       o.order_dow, 
-       o.order_hour_of_day, 
-       o.days_since_prior_order,
-       op.product_id,
-       op.add_to_cart_order,
-       op.reordered
-FROM orders o
-JOIN
-    (SELECT *
-    FROM orders_product_prior opp
-    UNION ALL
-    SELECT *
-    FROM orders_product_train opt) AS op
-        ON op.orders_id = o.orders_id
-```
-
-```{r}
-saveRDS(as_tibble(orders), './data/orders.rds')
-orders <- NULL
-gc()
-```
-
-## Generelle Statistiken über das Kaufverhalten der Kunden
-
-```{sql connection=con, output.var=customer_behavior}
-SELECT
-  o.user_id,
-  COUNT(o.orders_id) AS total_nr_of_orders,
-  AVG(o.days_since_prior_order) AS avg_days_since_prior_order,
-  SUM(o.days_since_prior_order) AS timespan_for_all_orders
-FROM orders o
-GROUP BY o.user_id
-```
-
-```{r}
-customer_behavior <- customer_behavior %>%
-  mutate(total_nr_of_orders = as.integer(total_nr_of_orders)) %>%
-  as_tibble()
-```
-
-## Anzahl der Produkte in den Einkäufen
-
-```{sql connection=con, output.var=products_by_order}
-SELECT
-    o.user_id,
-    o.orders_id,
-    COUNT(op.product_id) AS total_product_count
-FROM orders o
-JOIN (
-    SELECT *
-    FROM orders_product_prior opp
-    UNION ALL
-    SELECT *
-    FROM orders_product_train opt
-    ) AS op
-    ON op.orders_id = o.orders_id
-JOIN product p ON p.product_id = op.product_id
-GROUP BY o.user_id, o.orders_id
-```
-
-```{r}
-products_by_order <- products_by_order %>%
-  mutate(total_product_count = as.integer(total_product_count)) %>%
-  as_tibble()
-```
-
-## Meistverkaufte Produkte 
-```{sql connection=con, output.var=products_count_by_user} 
-SELECT o.user_id, p.product_id, count(op.*) as count 
+       p.product_id, 
+       p.product_name, 
+       (case when 
+           lower(p.product_name) LIKE '%organic%' 
+           OR lower(p.product_name) LIKE '%bio %' 
+        then 1 else 0 end) as is_organic, 
+       a.aisle_id, 
+       a.aisle, 
+       d.department_id, 
+       d.department 
+FROM product p 
+JOIN aisle a on p.aisle_id = a.aisle_id 
+JOIN department d on p.department_id = d.department_id 
+``` 
+ 
+## Alle Departments 
+```{sql connection=con, output.var=departments} 
+SELECT * FROM department 
+``` 
+ 
+ 
+## Alle Warenkörbe 
+ 
+```{sql connection=con, output.var=orders} 
+SELECT  
+       o.orders_id,  
+       o.user_id,  
+       o.order_number,  
+       o.order_dow,  
+       o.order_hour_of_day,  
+       o.days_since_prior_order, 
+       op.product_id, 
+       op.add_to_cart_order, 
+       op.reordered 
+FROM orders o 
+JOIN 
+    (SELECT * 
+    FROM orders_product_prior opp 
+    UNION ALL 
+    SELECT * 
+    FROM orders_product_train opt) AS op 
+        ON op.orders_id = o.orders_id 
+``` 
+ 
+## Generelle Statistiken über das Kaufverhalten der Kunden 
+ 
+```{sql connection=con, output.var=customer_behavior} 
+SELECT 
+  o.user_id, 
+  COUNT(o.orders_id) AS total_nr_of_orders, 
+  AVG(o.days_since_prior_order) AS avg_days_since_prior_order, 
+  SUM(o.days_since_prior_order) AS timespan_for_all_orders 
+FROM orders o 
+GROUP BY o.user_id 
+``` 
+ 
+```{r} 
+customer_behavior <- customer_behavior %>% 
+  mutate(total_nr_of_orders = as.integer(total_nr_of_orders)) %>% 
+  as_tibble() 
+``` 
+ 
+## Anzahl der Produkte in den Einkäufen 
+ 
+```{sql connection=con, output.var=products_by_order} 
+SELECT 
+    o.user_id, 
+    o.orders_id, 
+    COUNT(op.product_id) AS total_product_count, 
+    SUM(case when 
+           lower(p.product_name) LIKE '%organic%' 
+           OR lower(p.product_name) LIKE '%bio %' 
+        then 1 else 0 end ) AS total_bio_count 
 FROM orders o 
 JOIN ( 
     SELECT * 
@@ -140,74 +113,119 @@ JOIN (
     ) AS op 
     ON op.orders_id = o.orders_id 
 JOIN product p ON p.product_id = op.product_id 
-GROUP BY p.product_id, o.user_id 
-ORDER BY count DESC  
+GROUP BY o.user_id, o.orders_id 
 ``` 
  
 ```{r} 
-products_count_by_user <- products_count_by_user %>% 
-  mutate(count = as.integer(count)) 
+products_by_order <- products_by_order %>% 
+  mutate(total_product_count = as.integer(total_product_count)) %>% 
+  mutate(total_bio_count = as.integer(total_bio_count)) %>% 
+  as_tibble() 
 ``` 
-
-## Stammkunden
-
-```{sql, connection=con, output.var=patrons}
-SELECT
-  o.user_id
-FROM orders o
-WHERE o.eval_set = 'prior'
-GROUP BY o.user_id
-HAVING
-  sum(o.days_since_prior_order) > 90
-  AND avg(o.days_since_prior_order) <= 15
-```
-
-```{sql, connection=con, output.var=orders_per_hour_per_day}
-SELECT o.order_dow, o.order_hour_of_day, count(o.*) as total_order_count 
+ 
+## Meistverkaufte Produkte  
+```{sql connection=con, output.var=products_count_by_user}  
+SELECT o.user_id, p.product_id, count(op.*) as count  
+FROM orders o  
+JOIN (  
+    SELECT *  
+    FROM orders_product_prior opp  
+    UNION ALL  
+    SELECT *  
+    FROM orders_product_train opt  
+    ) AS op  
+    ON op.orders_id = o.orders_id  
+JOIN product p ON p.product_id = op.product_id  
+GROUP BY p.product_id, o.user_id  
+ORDER BY count DESC   
+```  
+  
+```{r}  
+products_count_by_user <- products_count_by_user %>%  
+  mutate(count = as.integer(count))  
+```  
+ 
+## Stammkunden 
+ 
+```{sql, connection=con, output.var=patrons} 
+SELECT 
+  o.user_id 
 FROM orders o 
-GROUP BY o.order_dow, o.order_hour_of_day
-
+WHERE o.eval_set = 'prior' 
+GROUP BY o.user_id 
+HAVING 
+  sum(o.days_since_prior_order) > 90 
+  AND avg(o.days_since_prior_order) <= 15 
 ``` 
-
-## Stündlich verkaufte Anzahl Produkte
-```{sql, connection=con, output.var=products_per_hour_per_day}
-SELECT o.order_dow, o.order_hour_of_day, count(op.*) as total_product_count 
-FROM orders o 
-JOIN ( 
-    SELECT * 
-    FROM orders_product_prior opp 
-    UNION ALL 
-    SELECT * 
-    FROM orders_product_train opt 
-    ) AS op 
-    ON o.orders_id = op.orders_id 
-GROUP BY o.order_dow, o.order_hour_of_day
-
+ 
+```{sql, connection=con, output.var=orders_per_hour_per_day} 
+SELECT o.order_dow, o.order_hour_of_day, count(o.*) as total_order_count  
+FROM orders o  
+GROUP BY o.order_dow, o.order_hour_of_day 
+ 
+```  
+ 
+## Stündlich verkaufte Anzahl Produkte 
+```{sql, connection=con, output.var=products_per_hour_per_day} 
+SELECT o.order_dow, o.order_hour_of_day, count(op.*) as total_product_count  
+FROM orders o  
+JOIN (  
+    SELECT *  
+    FROM orders_product_prior opp  
+    UNION ALL  
+    SELECT *  
+    FROM orders_product_train opt  
+    ) AS op  
+    ON o.orders_id = op.orders_id  
+GROUP BY o.order_dow, o.order_hour_of_day 
+ 
+```  
+ 
+ 
+# Objekte erweitern/transformieren 
+ 
+## Statistiken gekaufte Produkte pro User 
+```{r} 
+products_by_user_stats <- products_by_order %>% 
+  group_by(user_id) %>% 
+  summarise( 
+    mean_products_per_order = mean(total_product_count),  
+    median_products_per_order = median(total_product_count), 
+    min_products_per_order = min(total_product_count), 
+    max_products_per_order = max(total_product_count), 
+    total_product_count = sum(total_product_count), 
+    mean_bio_products_per_order = mean(total_bio_count),  
+    median_bio_products_per_order = median(total_bio_count), 
+    min_bio_products_per_order = min(total_bio_count), 
+    max_bio_products_per_order = max(total_bio_count), 
+    total_bio_product_count = sum(total_bio_count)) %>% 
+  mutate( 
+    fraction_mean_bio = mean_bio_products_per_order/mean_products_per_order, 
+    fraction_median_bio = median_bio_products_per_order/median_products_per_order) 
+ 
+customer_behavior <- 
+  customer_behavior %>% 
+  inner_join(products_by_user_stats) 
 ``` 
-
-
-# Objekte erweitern/transformieren
-```{r}
-products_by_user_stats <- products_by_order %>%
-  group_by(user_id) %>%
-  summarise(
-    mean_products_per_order = mean(total_product_count), 
-    median_products_per_order = median(total_product_count),
-    min_products_per_order = min(total_product_count),
-    max_products_per_order = max(total_product_count))
-
-customer_behavior <-
-  customer_behavior %>%
-  inner_join(products_by_user_stats)
-```
-
-# Objekte speichern
-```{r}
-saveRDS(products_by_order, './data/products_by_order.rds')
-saveRDS(products_count_by_user, './data/products_count_by_user.rds')
-saveRDS(patrons, './data/patrons.rds')
-saveRDS(products_per_hour_per_day, './data/products_per_hour_per_day.rds')
-saveRDS(orders_per_hour_per_day, './data/orders_per_hour_per_day.rds')
-
-```
-
+ 
+ 
+ 
+ 
+## Statistiken gekaufte Bioprodukte pro User 
+ 
+ 
+# Objekte speichern 
+```{r} 
+dir.create('./data', showWarnings = FALSE) 
+saveRDS(as_tibble(products), './data/products.rds') 
+saveRDS(as_tibble(orders), './data/orders.rds') 
+saveRDS(as_tibble(departments), './data/departments.rds') 
+saveRDS(customer_behavior, './data/customer_behavior.rds') 
+saveRDS(products_by_order, './data/products_by_order.rds') 
+saveRDS(products_count_by_user, './data/products_count_by_user.rds') 
+saveRDS(patrons, './data/patrons.rds') 
+saveRDS(products_per_hour_per_day, './data/products_per_hour_per_day.rds') 
+saveRDS(orders_per_hour_per_day, './data/orders_per_hour_per_day.rds') 
+ 
+``` 
+ 
