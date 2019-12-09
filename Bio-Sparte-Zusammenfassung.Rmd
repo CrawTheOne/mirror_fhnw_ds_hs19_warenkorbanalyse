@@ -2,90 +2,63 @@
 title: "Bio-Sparte Zusammenfassung"
 output: html_notebook
 ---
+# Bio-Sparte
+## Connection
 ### DbConnection
 ```{r setup, echo=FALSE, results="hide"}
 require("RPostgreSQL")
 source('DbConnection.R')
 ```
-# Bio-Sparte
+
+#Einbettung der R-Objekte
+```{r}
+items_per_order <- readRDS('./data/products_by_order.rds')
+orders <- readRDS('./data/orders.rds')
+orders_per_hour_per_day <- readRDS('./data/orders_per_hour_per_day.rds')
+products_per_hour_per_day <- readRDS('./data/products_per_hour_per_day.rds')
+```
 
 ## Annahme 1 : Um heruaszufinden was für ein Laden, im Bezug auf Bio, der untersuchte Supermarkt ist haben wir zuerst mal untersucht wie es mit den Bio-Produkten aussieht
 
 ### Frage 1: Was ist die aktuelle Situation des Ladens zu Bio-Produkten im Laden?
 ```{r, echo=FALSE}
 
-#Um herauszufinden wie viele Bio-Produkte es im Sortiment gibt haben wir eine zusätzliche Spalte erstellt, die true oder false ausgibt was organic im Namen hat und was nicht.
-ratio_products_org_notorg<- t_products %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic) %>%
-  count() %>%
-  mutate(n_produkte = as.integer(n))
+products
+
+ratio_products_org_notorg<- products %>%
+  count(is_organic) %>%
+  spread(key = is_organic, value = n) %>%
+  rename(notorganic = `0`, organic = `1`) %>%
+  mutate(all_products = notorganic + organic, freqProd = organic/all_products *100)
 
 ratio_products_org_notorg
 
 # Barplot
-ggplot(ratio_products_org_notorg, aes(x = "", y = n_produkte, fill = organic)) + geom_bar(stat = "identity", width = 1) +
-  coord_polar("y", start = 0) + 
-  geom_text(aes(label = paste0(round(n_produkte))), position = position_stack(vjust = 0.5)) + 
-  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
-  labs(x = NULL, y = NULL,  title = "Anzahl Bio-/Nicht-Produkte") +
-  theme_classic() + theme(axis.line = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank(),
-          plot.title = element_text(hjust = 0.5, color = "#666666"))
-
-
-#Um die Prozente heruszulesen wurde die Tabelle mit spread() umgekehrt, so kann mann direkt den Wert herauslesen
-ratio_products_org_notorg_Z<- t_products %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic) %>%
-  summarise(count = n()) %>%
-  collect()%>%
-  spread(key = organic, value = count)%>%
-  rename(notorganic = `0`, organic = `1`) %>%
-  mutate(all_Prod = organic + notorganic)%>%
-  mutate(freq_orgProd = organic/all_Prod *100)
-
-OrgProd <- ratio_products_org_notorg_Z$freq_orgProd
-
-OrgProd
-
+products %>%
+  count(is_organic)%>%
+  ggplot(aes(x="", y=n, fill=is_organic))+
+  geom_bar(width = 1, stat = "identity")+ 
+  coord_polar("y", start=0)
 ```
 ### Antwort 1 : Der Anteil an Bio-Produkten im Sortiment ist `r OrgProd`%
 
 ### Frage 1.1 : Wie viele Bio-Produkte werden im Vergleich zu nicht- Bio Produkten eingekauft?
 ```{r,echo=FALSE}
-ratio_orders_org_notorg <- full_join(t_products, t_orders_product, "product_id") %>%
-	select(c(product_id, product_name, orders_id)) %>%
-	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic) %>%
-	count(organic) %>%
-  mutate(n = as.integer(n))
+
+ratio_orders_org_notorg <- products_by_order %>%
+  summarise(ratio_bio_byOrderProducts= sum(total_bio_count)/sum(total_product_count)*100)
+
+#median(ratio_products_org_notorg$freq_bio)
+OrgSold <- mean(ratio_products_org_notorg$freq_bio)
 
 ratio_orders_org_notorg
 
-ggplot(ratio_orders_org_notorg, aes(x = "", y = n, fill = organic)) + geom_bar(stat = "identity", width = 1) +
-  coord_polar("y", start = 0) + 
-  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
-  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
-  labs(x = NULL, y = NULL,  title = "Anzahl Eingekaufte Bio-/Nicht-Produkte") +
-  theme_classic() + theme(axis.line = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank(),
-          plot.title = element_text(hjust = 0.5, color = "#666666"))  
-
-#Um die Prozente heruszulesen wurde die Tabelle mit spread() umgekehrt, so kann mann direkt den Wert herauslesen
-ratio_orders_org_notorg_Z<- ratio_orders_org_notorg %>%
-  collect() %>%
-  spread(key = organic, value = n) %>%
-  rename(notorganic = `0`, organic = `1`) %>%
-  mutate(all_Prod = organic + notorganic) %>%
-  mutate(freq_orgProd = organic/all_Prod *100)
-
-ratio_orders_org_notorg_Z  
-  
-OrgSold <- ratio_orders_org_notorg_Z$freq_orgProd
-OrgSold
+# Barplot
+products_by_order %>%
+  mutate(total_not_bio_count = total_product_count-total_bio_count)%>%
+  ggplot(aes(x="", y=total_not_bio_count, fill=total_bio_count))+
+  geom_bar(width = 1, stat = "identity")+ 
+  coord_polar("y", start=0)
 ```
 ### Antwort 1.1 : Der Anteil an eingekauften Bio-Produkten beträgt `r OrgSold` %
 
@@ -169,9 +142,8 @@ improvement_departments_top5
 ### Frage 1.5 : Was sind die meist gekauften Bio-Produkte in diesen departments?
 ```{r}
 #1 : canned goods- departement :15
+
 most_bought_canned_goods <- t_orders %>%
-  inner_join(t_orders_product) %>%
-  inner_join(t_products) %>%
   filter(department_id == 15) %>%
   mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
   group_by(organic)%>%
