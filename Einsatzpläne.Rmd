@@ -17,7 +17,7 @@ editor_options:
 #install.packages("RColorBrewer")
 ```
 
-#install libraries
+## Libraries installieren
 
 ```{r include=FALSE}
 require("RPostgreSQL")
@@ -26,7 +26,7 @@ library(dplyr)
 library(RColorBrewer)
 ```
 
-
+## R Objekte
 
 ```{r}
 items_per_order <- readRDS('./data/products_by_order.rds')
@@ -35,7 +35,7 @@ orders_per_hour_per_day <- readRDS('./data/orders_per_hour_per_day.rds')
 products_per_hour_per_day <- readRDS('./data/products_per_hour_per_day.rds')
 ```
 
-
+## Bestellungen nach Uhrzeit
 
 Als erstes wäre es interessant zu sehen, wie die Verteilung aller Bestellungen über den Zeitraum von 24 Stunden aussieht, da davon auszugehen ist, dass die Anzahl der Bestellungen pro Uhrzeit variieren. Das folgende Diagramm zeigt die Verteilung aller Bestellungen aus dem Datensatz über 24 Stunden verteilt.
 
@@ -45,10 +45,13 @@ ggplot(data = orders_per_hour_per_day) +
   ggtitle("Total Nr of orders per hour") +
   xlab("Order hour") + ylab("Nr of orders")
 ```  
+
 Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag eingehen. Ab Stunde 5 ist ein Starker Anstieg der eingehenden Produkte bemerkbar bis ca. Stunde 10. Von Stunde 17 bis 24 reduzieren sich die Bestellungen wieder 
 
+<br>
+<br>
 
-## Orders over 7 days
+## Bestellungen nach Wochentag
 
 Es lässt sich ausserdem die Behauptung aufstellen, dass nicht alle Tage gleich viele Personen einkaufen. Tendenziell sollten am Wochenende mehr Personen einkaufen, als unter der Woche. Das folgende Diagramm zeigt alle Bestellungen aus dem Datensatz auf alle Wochendage verteilt.
 
@@ -63,21 +66,14 @@ ggplot(data = orders_per_hour_per_day) +
   
 ```
 
-In den Daten gibt es das Attribut order_dow mit den Werten 0 bis 6. Aus dem Diagramm ist zu erkennen, dass an Tag 0 und 1 sichtbar mehr Bestellungen getätigt wurden, als bei den Tagen 2 bis 6. Es lässt sich deshalb vermuten, dass Tag 0 und 1 am Wochenende ist. Leider können wir aus dem Datensatz jedoch nicht eindeutig herauslesen, welche Nummer welchem Wochentag zuzuordnen ist.
+In den Daten gibt es das Attribut order_dow mit den Werten 0 bis 6. Aus dem Diagramm ist zu erkennen, dass an Tag 0 und 1 sichtbar mehr Bestellungen getätigt wurden, als bei den Tagen 2 bis 6. Es lässt sich deshalb vermuten, dass Tag 0 und 1 am Wochenende ist. Leider können wir aus dem Datensatz jedoch nicht eindeutig herauslesen, welche Nummer welchem Wochentag zuzuordnen ist, weshalb wir
 
+<br>
+<br>
 
-```{r eval=FALSE, include=FALSE}
-##Orders over 24 hours and 7 days
-ggplot(data = orders_per_hour_per_day) + 
-  geom_col(mapping = aes(x = order_hour_of_day, y = total_order_count, fill = as.factor(order_dow))) + 
-  facet_wrap(~ order_dow,  nrow = 3) +
-  labs(fill='Weekday') +
-  scale_fill_brewer(palette="Spectral") +
-  xlab("Order hour") + ylab("Nr of orders")
-```
+## Untersuchung der Bestellgrössen.
 
-
-##Untersuchung der Bestellgrössen.
+Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
 
 ```{r}
 mean_order_size <- mean(items_per_order$total_product_count)
@@ -92,8 +88,6 @@ ggplot(data = items_per_order) +
 
 ```
 
-Falls sehr viele grössere Bestellungen vorhanden sind, können diese den Arbeitsaufwand stark verändern. 
-
 Das arithmetische Mittel über alle Bestellungen liegt bei `r round((mean_order_size), digits = 2)` verschiedenen Produkten pro Bestellung.
 
 Das Median über alle Bestellungen liegt bei `r median_order_size` verschiedenen Produkten pro Bestellung. Die hälfte aller Bestellungen enthällt entsprechend `r median_order_size` oder Weniger Produkte.
@@ -101,12 +95,16 @@ Das Median über alle Bestellungen liegt bei `r median_order_size` verschiedenen
 75% aller Bestellungen enthalten `r quantile_order_size[4]` oder weniger unterschiedliche Produkte. 
 25% aller Bestellungen enthalten `r quantile_order_size[2]` oder weniger unterschiedliche Produkte. 
 
-Fazit: Aus der oberen Grafik ist zu sehen, dass es sich eher um kleinere Bestellungen bis XYZ verschiedenen Artikeln pro Bestellung Handelt. Nehmen wir nun an, dass Persohnen mit bis `r quantile_order_size[2]` verschiedenen Artikeln auch selbständig über einem Self-Check Automat bezahlen würden, könnte so bist 25% der Auslastung an den Kassen "automatisiert werden" 
+Aus der oberen Grafik ist zu sehen, dass es sich eher um kleinere Bestellungen  Handelt. Nehmen wir nun an, dass Persohnen mit bis `r quantile_order_size[2]` verschiedenen Artikeln auch selbständig über einem Self-Check Automat bezahlen würden, könnte so bist 25% der Auslastung an den Kassen "automatisiert werden" 
 
+<br>
+<br>
 
+### Maximalwerte 
 
+Errechnen der Stunde mit den meisten Bestellungen und mit den meisten Produkte. Diese werden als Referenzwerte für die jeweiligen Auslastungen verwendet.
 
-```{r include=FALSE}
+```{r}
 max_products <- products_per_hour_per_day %>%
   summarise(max_day = max(total_product_count)) %>%
   summarise(max_week = max(max_day)) 
@@ -117,24 +115,20 @@ max_orders <- orders_per_hour_per_day %>%
   summarise(max_week = max(max_day)) 
 max_o <- (max_orders$max_week)
 
-mean_products <- products_per_hour_per_day %>%
-  summarise(mean_day = mean(total_product_count)) %>%
-  summarise(mean_week = mean(mean_day)) 
-mean_p <- (mean_products$mean_week)
-
-mean_orders <- orders_per_hour_per_day %>%
-  summarise(mean_day = mean(total_order_count)) %>%
-  summarise(mean_week = mean(mean_day)) 
-mean_o <- (mean_orders$mean_week)
-
 ```
 
+<br>
+<br>
 
-```{r include=FALSE}
+### Bestell und Produkteverhältnis
+
+Kreiert eine neue Tabelle. Diese entällt die durchschnittlichen Bestellgrössen, die verhältnismässige Auslastung auf Bestell- und Produkteebene zur Maximalauslastung.
+
+```{r}
 
 order_product_ratio <- orders_per_hour_per_day %>%
   left_join(products_per_hour_per_day, by = c("order_dow" = "order_dow", "order_hour_of_day" = "order_hour_of_day")) %>%
-  mutate(order_product_ratio  = total_product_count/total_order_count, workload_orders = total_order_count/max_o, workload_products = total_product_count/max_p, mean_workload_orders = total_order_count/mean_o, mean_workload_products = total_product_count/mean_p)
+  mutate(order_product_ratio  = total_product_count/total_order_count, workload_orders = total_order_count/max_o, workload_products = total_product_count/max_p)
 
 ```
 
@@ -142,7 +136,7 @@ order_product_ratio <- orders_per_hour_per_day %>%
 Aussage: Die grösse der einzelnen Bestellungen beeinflusst direkt den Arbeitsaufwand pro Bestellung
 Ziel: Durchschnittliche Bestellgrössen pro Stunde pro Tag. 
 
-```{r echo=FALSE}
+```{r}
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = order_product_ratio, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio of products per order")  +
@@ -156,13 +150,16 @@ Aus dem folgenden Diagramm ist ersichtlich, dass die Bestellgrösse am Wochentag
 
 Interessant ist, dass die Bestellgrössen über alle Wochentage von 20:00 bis 23:00 im Schnitt um 2 bis 2.5 items pro Bestellung ansteigen. Eine mögliche Erklärung wäre: Da bei instacart online Bestellungen mit home deliveries möglich sind, ein Teil abends nach der Arbeit so den einkauf erledigt.
 
-
+<br>
+<br>
 
 ## Auslastung
 
+### Auslastung auf Bestellebene
+
 Im folgenden Diagramm sehen wir die stündliche auslastung auf Bestellebene. Der Wert 1.00 steht für die Stunde mit den meisten Bestellungen. 
 
-```{r echo=FALSE}
+```{r}
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_orders, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio orders")  +
@@ -171,9 +168,16 @@ ggplot(data = order_product_ratio) +
   scale_color_brewer(palette="Spectral")
 ```
 
+<br>
+<br>
+
+### Auslastung auf Produktebene
+
 Im folgenden Diagramm sehen wir die stündliche auslastung auf Produkteebene. Der Wert 1.00 steht für die Stunde mit den meisten Produkte, welche über die Ladentheke gehen und wird aus der Anzahl Bestellungen/Stunde mal durchschnittliche Bestellgrösse/Stunde errechnet. 
 
-```{r echo=FALSE}
+Das Diagramm (Average ratio orders) also kausal zu den Diagrammen (Average ratio orders) und (Average ratio of products per order) 
+
+```{r}
 ggplot(data = order_product_ratio) + 
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_products, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio products")  +
@@ -184,18 +188,27 @@ ggplot(data = order_product_ratio) +
 
 Da wir keine Angaben zu Produktpreisen oder der Anzahl gleicher Produkte pro wahrenkorb zur Verfügung haben, kömmt die Auslastung auf Produktebene der reellen Auslastung am nächsten.
 
-```{r echo=TRUE}
+<br>
+<br>
+
+## Verschiedene Schwellenwerte untersuchen
+
+Das folgende Diagramm zeigt nochmals die Auslastung auf Produktebene, dargestellt als Heatmap
+
+```{r}
 ggplot(data = order_product_ratio) + 
-  geom_raster(mapping = aes(x = order_hour_of_day, y = order_dow, fill = workload_products)) +
-  ggtitle("Average nr of products per hour as heatmap")+
-  xlab("Order hour") + ylab("Order day") +
+  geom_raster(mapping = aes(x = order_dow, y = order_hour_of_day, fill = workload_products)) +
+  ggtitle("Average ratio of products as heatmap")+
+  xlab("Order day") + ylab("Order hour") +
   scale_fill_gradientn(colours=c("#000000","#0000FF","#00FF00","#FFFF00","#FF0000","#990000")) +
   labs(fill='Workload')
 ```
 
 Wenn wir jetzt annehmen, es lohnt sich erst ab einer gewissen Auslastung zu öffnen, dann können wir nun verschiedene Schwellenwerte untersuchen.
 
-# Conclusion
+<br>
+<br>
+
 ```{r include=FALSE}
 Total_products <- sum(order_product_ratio$total_product_count)
 Total_orders <- sum(order_product_ratio$total_order_count)
@@ -299,9 +312,8 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_15, 
 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_15, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
-
-
-
+<br>
+<br>
 
 ### Offen ab mindestens 25% Auslastung:
 
@@ -364,9 +376,8 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_25, 
 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_25, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
-
-
-
+<br>
+<br>
 
 ### Offen ab mindestens 35% Auslastung:
 
@@ -429,9 +440,8 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_35, 
 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_35, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
-
-
-
+<br>
+<br>
 
 ### Offen ab mindestens 50% Auslastung:
 
@@ -492,9 +502,8 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_50, 
 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_50, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
-
-
-
+<br>
+<br>
 
 ### Offen ab mindestens 60% Auslastung:
 
@@ -554,6 +563,9 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_60, 
 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_60, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
+<br>
+<br>
+
 ```{r include=FALSE}
 open_from_75 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
@@ -597,6 +609,9 @@ O_Percent_contains_99 <- (O_contains_from_99/Total_orders)*100
 
 ```
 
+
+## Direkter Vergleich
+
 ```{r}
 ggplot() + 
   geom_line(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(P_Percent_contains_0, P_Percent_contains_15, P_Percent_contains_25, P_Percent_contains_35, P_Percent_contains_50, P_Percent_contains_60, P_Percent_contains_75, P_Percent_contains_99)),color="#FF000099", size = 1) +
@@ -614,6 +629,7 @@ ggplot() +
 Dieser Graf zeigt das verhältniss zwischen den einzelnen Öffnungsschwellenwerte und dem Delta aus Öffnungsdauer und Produktverkäufen zum dauergeöffneten Betrieb. Aus dem Diagramm ist erkennbar, dass eine Öffnungsschwelle von 15% die grösste Zeitersparrnis im Verhältnis zu den verkauften Produkten mit sich führt.
 
 ```{r eval=FALSE, include=FALSE}
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ggplot() + 
     geom_col(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(O_Percent_contains_0-timesave_0, O_Percent_contains_15-timesave_15, O_Percent_contains_25-timesave_25, O_Percent_contains_35-timesave_35, O_Percent_contains_50-timesave_50, O_Percent_contains_60-timesave_60, O_Percent_contains_75-timesave_75, O_Percent_contains_99-timesave_99)),color="#000000FF", fill="#33AA3399", width=2) +
   ggtitle("Delta between Orders and Open times")  +
@@ -629,10 +645,17 @@ ggplot() +
 
 Wir sehen, dass durch eine Anhebung der Grenze als Öffnungskriterium auf nur 15% Auslastung, bereits eine massive Ersparnis an Öffnungszeit und endsprechend auch Betriebskosten haben. 
 
+<br>
+<br>
 
 ## Unsere Empfehlung
 
-Damit die Ladenöffnungszeiten einigermassen konstannt sind, empfehlen wir an Tag 4 und 6 je noch eine Stunde früher zu schliessen. Daturch ergeben sich folgende Öffnungszeiten:
+### Öffnungszeiten
+
+Damit die Ladenöffnungszeiten einigermassen konstannt sind, empfehlen wir an Tag 4 und 6 je noch eine Stunde früher zu schliessen. Daturch ergeben sich anhand der folgenden Tabelle entsprechende Öffnungszeiten:
+
+**Tag 0 bis 1:    Von 7:00 Uhr bis 23:00 Uhr**   
+**Tag 2 bis 6:    vON 7:00 Uhr bis 22:00 Uhr**
 
 
 ```{r}
@@ -666,28 +689,27 @@ final_open_hours <- final_open_hours %>%
 ```
 
 
-
-
 `r final_open_hours`
+
+Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in **`r round(timesave_final, digits = 1)` Prozent** der ursprünglichen Öffnungszeit insgesammt **`r round(P_Percent_contains_final, digits = 1)` Prozent** aller Produkte über die Ladentheke.
+
+Wärend diesen Öffnungszeiten werden **`r round(P_Percent_loss_final, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. Hier besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist. Bei diesen Zahlen erachten wir dieses Risiko jedoch als überschaubar.
+
+<br>
+<br>
+
+### Einsatzplan
+
+Die nachfolgende Tabelle zeigt die ursprüngliche Auslastung wärend den neuen Öffnungszeiten auf 10% gerundet.
+Der neue Einsatzatzplan für die Mitarbeiter dieser Tabelle, wobei diese jeweils noch 30 min vor und nach den Öffnungszeiten anwesend sind.
+
+Da es im Detailhandel neben Regulären Mitarbeitern auch viele andere temporäre Arbeitskräfte gibt, verzichten wir hier auf eine konkretere Einteilung und empfehlen die Anzahl Mitarbeiter der Tabelle entsprechend anzupassen.
+
+Da sich viele kleinere Bestellungen im Datensatz finden, erachten wir es auch eine gute Möglichkeit den Bezahlvorgang an den Kassen durch self-pay möglichkeiten zu ergänzen. Dadurch sollte sich einerseits ein möglicher Anstieg der Auslastung, durch die Verschiebung der Bestellungen aus den nicht abgedeckten Zeiten, kompensieren lassen und je nach dem sogar Kassenpersonal für andere Arbeiten freigeben, ohne, dass mehr Mitarbeiter als uhrsprünglich in den neuen Öffnungszeiten vorhanden sind.
 
 ```{r echo=FALSE}
 shiftplan
 ```
-
-
-
-
-Passen wir die Verkaufszeiten der Tabelle entsprechend an, gehen in **`r round(timesave_final, digits = 1)` Prozent** der ursprünglichen Öffnungszeit insgesammt **`r round(P_Percent_contains_final, digits = 1)` Prozent** aller Produkte über die Ladentheke.
-
-Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload, digits = 1)` Prozent** (Gemessen an der Stunde mit der grössten Auslastung = 100%.), was einer Erhöhung von durchschnittlich **`r round((avg_workload/avg_workload_0), digits = 1)*100-100` Prozent** pro Stunde entspricht.
-
-Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_final, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
-
-
-Bei den Bestellungen welche ausserhalb der neuen Öffnungszeiten stattfanden, besteht einserseits die Möglichkeit, dass diese sich in die Öffnungszeiten verschieben. Andererseits besteht die Gefahr, dass diese  zu konkurierenden Betrieben abwandern. Dieses Risiko wird tendenziell grösser, je kürzer insgesammt geöffnet ist.
-
-Da sich viele kleinere Bestellungen im Datensatz finden, erachten wir es als eine gute Möglichkeit den Bezahlvorgang an den Kassen durch self-pay möglichkeiten zu ergänzen. Dadurch sollte sich einerseits ein möglicher Anstieg der Auslastung, durch die Verschiebung der Bestellungen aus den nicht abgedeckten Zeiten, kompensieren lassen und je nach dem sogar Kassenpersonal für andere Arbeiten freigeben.
-
 
 
 ```{r eval=FALSE, include=FALSE}
