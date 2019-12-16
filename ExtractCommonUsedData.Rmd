@@ -158,6 +158,8 @@ HAVING
   AND avg(o.days_since_prior_order) <= 15 
 ``` 
  
+## Bestellungen pro Stunde
+
 ```{sql, connection=con, output.var=orders_per_hour_per_day} 
 SELECT o.order_dow, o.order_hour_of_day, count(o.*) as total_order_count  
 FROM orders o  
@@ -166,6 +168,7 @@ GROUP BY o.order_dow, o.order_hour_of_day
 ```  
  
 ## Stündlich verkaufte Anzahl Produkte 
+
 ```{sql, connection=con, output.var=products_per_hour_per_day} 
 SELECT o.order_dow, o.order_hour_of_day, count(op.*) as total_product_count  
 FROM orders o  
