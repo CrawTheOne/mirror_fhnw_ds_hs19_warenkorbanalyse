@@ -8,7 +8,6 @@ output:
 editor_options: 
   chunk_output_type: inline
 ---
-
 ```{r include=FALSE}
 # activate install if needed
 #install.packages("RPostgreSQL")
@@ -39,14 +38,22 @@ products_per_hour_per_day <- readRDS('./data/products_per_hour_per_day.rds')
 
 Als erstes wäre es interessant zu sehen, wie die Verteilung aller Bestellungen über den Zeitraum von 24 Stunden aussieht, da davon auszugehen ist, dass die Anzahl der Bestellungen pro Uhrzeit variieren. Das folgende Diagramm zeigt die Verteilung aller Bestellungen aus dem Datensatz über 24 Stunden verteilt.
 
-```{r echo=FALSE}
-ggplot(data = orders_per_hour_per_day) + 
+```{r}
+orders_per_hour <- orders %>%
+  group_by(order_hour_of_day) %>%
+  summarise(total_order_count = n())
+
+max_hour <- (orders_per_hour$total_order_count)
+
+ggplot(data = orders_per_hour) + 
   geom_col(mapping = aes(x = order_hour_of_day, y = as.numeric(total_order_count))) + 
   ggtitle("Total Nr of orders per hour") +
-  xlab("Order hour") + ylab("Nr of orders")
+  xlab("Order hour") + ylab("Nr of orders") +
+  coord_cartesian(ylim=c(0,3650000)) +
+  geom_text(aes(x = order_hour_of_day,y = as.numeric(total_order_count), label=as.numeric(total_order_count)), vjust = 0.3, hjust = -0.3, angle = 90)
 ```  
 
-Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag eingehen. Ab Stunde 5 ist ein Starker Anstieg der eingehenden Produkte bemerkbar bis ca. Stunde 10. Von Stunde 17 bis 24 reduzieren sich die Bestellungen wieder 
+Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag eingehen. Ab Stunde 6 ist ein Starker Anstieg der eingehenden Produkte bemerkbar bis ca. Stunde 10. Von Stunde 16 bis 0 reduzieren sich die Bestellungen wieder.
 
 <br>
 <br>
@@ -55,15 +62,19 @@ Aus dem Diagramm ist zu entnehmen, dass Bestellungen 24 Stunden lang pro Tag ein
 
 Es lässt sich ausserdem die Behauptung aufstellen, dass nicht alle Tage gleich viele Personen einkaufen. Tendenziell sollten am Wochenende mehr Personen einkaufen, als unter der Woche. Das folgende Diagramm zeigt alle Bestellungen aus dem Datensatz auf alle Wochendage verteilt.
 
-```{r echo=FALSE}
+```{r}
+orders_per_day <- orders %>%
+  group_by(order_dow) %>%
+  summarise(total_order_count = n())
 
-ggplot(data = orders_per_hour_per_day) + 
+ggplot(data = orders_per_day) + 
   geom_col(mapping = aes(x = order_dow, y = as.numeric(total_order_count), fill = as.factor(order_dow))) +
   ggtitle("Total Nr of orders per Day ") +
   xlab("Order day") + ylab("Nr of orders") +
   labs(fill='Weekday') +
-  scale_fill_brewer(palette="Spectral")
-  
+  scale_fill_brewer(palette="Spectral") +
+  coord_cartesian(ylim=c(0,8500000)) +
+  geom_text(aes(x = order_dow, y = as.numeric(total_order_count), label=as.numeric(total_order_count)), vjust = 0.3, hjust = -0.3, angle = 90)
 ```
 
 In den Daten gibt es das Attribut order_dow mit den Werten 0 bis 6. Aus dem Diagramm ist zu erkennen, dass an Tag 0 und 1 sichtbar mehr Bestellungen getätigt wurden, als bei den Tagen 2 bis 6. Es lässt sich deshalb vermuten, dass Tag 0 und 1 am Wochenende ist. Leider können wir aus dem Datensatz jedoch nicht eindeutig herauslesen, welche Nummer welchem Wochentag zuzuordnen ist, weshalb wir
@@ -100,7 +111,7 @@ Aus der oberen Grafik ist zu sehen, dass es sich eher um kleinere Bestellungen  
 <br>
 <br>
 
-### Maximalwerte 
+### Maximalwerte einer Stunde
 
 Errechnen der Stunde mit den meisten Bestellungen und mit den meisten Produkte. Diese werden als Referenzwerte für die jeweiligen Auslastungen verwendet.
 
@@ -207,13 +218,18 @@ ggplot(data = order_product_ratio) +
 Wenn wir jetzt annehmen, es lohnt sich erst ab einer gewissen Auslastung zu öffnen, dann können wir nun verschiedene Schwellenwerte untersuchen.
 
 <br>
-<br>
 
-```{r include=FALSE}
+
+### Total aller Bestellungen und Produkte
+
+```{r}
 Total_products <- sum(order_product_ratio$total_product_count)
 Total_orders <- sum(order_product_ratio$total_order_count)
 ```
 
+<br>
+
+### Referenzwerte für den Dauerbetrieb
 
 ```{r include=FALSE}
 # Durchgehend Offen:
@@ -248,7 +264,7 @@ open_from_0 <- open_from_0 %>%
 
 ### Offen ab mindestens 15% Auslastung:
 
-```{r include=FALSE}
+```{r}
 open_from_15 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.15) 
@@ -313,11 +329,10 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_15, 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_15, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
 <br>
-<br>
 
 ### Offen ab mindestens 25% Auslastung:
 
-```{r include=FALSE}
+```{r}
 open_from_25 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.25)
@@ -377,11 +392,10 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_25, 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_25, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
 <br>
-<br>
 
 ### Offen ab mindestens 35% Auslastung:
 
-```{r include=FALSE}
+```{r}
 open_from_35 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.35) 
@@ -441,11 +455,10 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_35, 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_35, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
 <br>
-<br>
 
 ### Offen ab mindestens 50% Auslastung:
 
-```{r include=FALSE}
+```{r}
 open_from_50 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.5)
@@ -503,11 +516,10 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_50, 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_50, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
 <br>
-<br>
 
 ### Offen ab mindestens 60% Auslastung:
 
-```{r include=FALSE}
+```{r}
 open_from_60 <- order_product_ratio %>%
   select(-c(order_product_ratio, workload_orders)) %>%
   filter(workload_products >= 0.6)
@@ -564,7 +576,6 @@ Die Auslastung beträgt pro Stunde durchschnittlich **`r round(avg_workload_60, 
 Bei diesen Öffnungszeiten werden **`r round(P_Percent_loss_60, digits = 1)` Prozent** der Verkauften Produkte im Datensatz nicht abgedeckt. 
 
 <br>
-<br>
 
 ```{r include=FALSE}
 open_from_75 <- order_product_ratio %>%
@@ -618,7 +629,7 @@ ggplot() +
   geom_line(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(O_Percent_contains_0, O_Percent_contains_15, O_Percent_contains_25, O_Percent_contains_35, O_Percent_contains_50, O_Percent_contains_60, O_Percent_contains_75, O_Percent_contains_99)), color="#33AA3399", size = 1) +
   geom_line(mapping = aes(x = c(0, 15, 25, 35, 50, 60, 75, 99), y = c(timesave_0, timesave_15, timesave_25, timesave_35, timesave_50, timesave_60, timesave_75, timesave_99)), color="#00000099", size = 1) +
   ggtitle("Relations")  +
-  xlab("Open From XY %") + ylab("Relative Percentage") +
+  xlab("Opening treshhold") + ylab("Relative Percentage") +
   labs(color='Weekday') +
   geom_text(aes(40, 85, label="Orders"), color="#33AA3399") +
   geom_text(aes(30, 95, label="Products"), color="#FF000099") +
@@ -626,7 +637,7 @@ ggplot() +
 
 ```
 
-Dieser Graf zeigt das verhältniss zwischen den einzelnen Öffnungsschwellenwerte und dem Delta aus Öffnungsdauer und Produktverkäufen zum dauergeöffneten Betrieb. Aus dem Diagramm ist erkennbar, dass eine Öffnungsschwelle von 15% die grösste Zeitersparrnis im Verhältnis zu den verkauften Produkten mit sich führt.
+Dieser Graf zeigt wie sich die die Öffnungszeiten, die abgedeckten Bestellungen und die Abgedeckten Produktverkäufe verändern, wenn der Schwellwert ab dem geöffnet ist, angehoben wird. Aus dem Diagramm ist erkennbar, dass eine Öffnungsschwelle von 15% die grösste Zeitersparrnis im Verhältnis zu den verkauften Produkten mit sich führt, weshalb wir diese Variante emfehlen.
 
 ```{r eval=FALSE, include=FALSE}
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -643,7 +654,6 @@ ggplot() +
   geom_segment(aes(x = 0, y = 0, xend = c(0, 15, 25, 35, 50, 60, 75, 99), yend = c(P_Percent_contains_0-timesave_0, P_Percent_contains_15-timesave_15, P_Percent_contains_25-timesave_25, P_Percent_contains_35-timesave_35, P_Percent_contains_50-timesave_50, P_Percent_contains_60-timesave_60, P_Percent_contains_75-timesave_75, P_Percent_contains_99-timesave_99)))
 ```
 
-Wir sehen, dass durch eine Anhebung der Grenze als Öffnungskriterium auf nur 15% Auslastung, bereits eine massive Ersparnis an Öffnungszeit und endsprechend auch Betriebskosten haben. 
 
 <br>
 <br>
@@ -703,14 +713,13 @@ Wärend diesen Öffnungszeiten werden **`r round(P_Percent_loss_final, digits = 
 Die nachfolgende Tabelle zeigt die ursprüngliche Auslastung wärend den neuen Öffnungszeiten auf 10% gerundet.
 Der neue Einsatzatzplan für die Mitarbeiter dieser Tabelle, wobei diese jeweils noch 30 min vor und nach den Öffnungszeiten anwesend sind.
 
-Da es im Detailhandel neben Regulären Mitarbeitern auch viele andere temporäre Arbeitskräfte gibt, verzichten wir hier auf eine konkretere Einteilung und empfehlen die Anzahl Mitarbeiter der Tabelle entsprechend anzupassen.
-
-Da sich viele kleinere Bestellungen im Datensatz finden, erachten wir es auch eine gute Möglichkeit den Bezahlvorgang an den Kassen durch self-pay möglichkeiten zu ergänzen. Dadurch sollte sich einerseits ein möglicher Anstieg der Auslastung, durch die Verschiebung der Bestellungen aus den nicht abgedeckten Zeiten, kompensieren lassen und je nach dem sogar Kassenpersonal für andere Arbeiten freigeben, ohne, dass mehr Mitarbeiter als uhrsprünglich in den neuen Öffnungszeiten vorhanden sind.
-
 ```{r echo=FALSE}
 shiftplan
 ```
 
+Da es im Detailhandel neben Regulären Mitarbeitern auch viele andere, temporäre Arbeitskräfte gibt, verzichten wir hier auf eine konkretere Einteilung in 8 Stunden-Schichten und empfehlen die Anzahl Mitarbeiter der Tabelle entsprechend anzupassen.
+
+Da sich wie schon zuvor erwähnt viele kleinere Bestellungen im Datensatz finden, erachten wir es auch als eine gute Möglichkeit den Bezahlvorgang an den Kassen durch self-pay Möglichkeiten zu ergänzen. Dadurch sollte sich einerseits ein möglicher Anstieg der Auslastung, durch die Verschiebung der Bestellungen aus den nicht abgedeckten Zeiten kompensieren lassen und anderseits je nach dem sogar Kassenpersonal für andere Arbeiten freigeben, ohne dass mehr Mitarbeiter als uhrsprünglich wärend den neuen Öffnungszeiten vorhanden sind.
 
 ```{r eval=FALSE, include=FALSE}
 #Disconnect from the DB
