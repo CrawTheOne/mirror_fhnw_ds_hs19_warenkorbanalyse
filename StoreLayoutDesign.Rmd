@@ -1,15 +1,18 @@
 ---
 title: "Warenkorbanalyse: Datenanalyse zum Store Layout Design"
 date: 2016-08-25
-output: html_document
+output: html_notebook
 ---
 
 ### Setup script
 
 ```{r}
 library(tidyverse)
+library(arules)
+library(arulesViz)
+library("RColorBrewer")
 
-products <- readRDS('./data/products.rds')
+orders <- readRDS('./data/orders.rds')
 products <- readRDS('./data/products.rds')
 departments <- readRDS('./data/departments.rds')
 
@@ -17,14 +20,17 @@ orders_to_products <- orders %>%
   inner_join(products)
 ```
 
+# Allgemeine Analysen zum Aufbau des Markets
 
-Namen der Gänge und Departments sind in eigenen Tabellen gespeichert und nur über die Produkte verknüpft. Zur Auswertung kann man diese Tabellen zusammenführen und die entsprechenden Ids entfernen.
+Namen der Gänge und Abteilungen sind in eigenen Tabellen gespeichert und nur über die Produkte verknüpft. Zur Auswertung kann man diese Tabellen zusammenführen.
 
 Das neue Product Tibble sieht nun so aus:
 
 ```{r}
 products
 ```
+
+## Verteilung/Hierarchie der Produkte
 
 *Sind alle Produkte einem validen Gang zugeordnet?*
 
@@ -33,7 +39,7 @@ products %>%
   filter(is.na(aisle))
 ```
 
-_Alle Produkte sind einem Gang zugeordnet._
+_Alle Produkte sind einem einzigen Gang zugeordnet._
 
 *Sind alle Produkte einer validen Abteilung zugeordnet?*
 
@@ -42,9 +48,9 @@ products %>%
   filter(is.na(department))
 ```
 
-_Alle Produkte sind einer Abteilung zugeordnet._
+_Alle Produkte sind einer einzigen Abteilung zugeordnet._
 
-Aisles per Department
+*Wie viele Gänge haben die Departments*
 
 ```{r}
 products %>%
@@ -53,38 +59,39 @@ products %>%
   arrange(department) %>%
   ggplot() +
     geom_bar(aes(x = department)) +
-    coord_flip()
+    coord_flip() +
+    labs(x="Department", y="Number of Aisles", title="Aisle count per Department")
 ```
 
-Products per Department
+*Wieviele Produkte haben die Abteilungen?*
 
 ```{r}
 products %>%
   arrange(department) %>%
   ggplot() +
     geom_bar(aes(x = department)) +
-    coord_flip()
-```
-
-Products per Aisle
-
-```{r fig.height=25}
-aisle_in_departments <- products %>%
-  select(department, aisle) %>%
-  distinct()
+    coord_flip() +
+    labs(x="Department", y="Number of Products", title="Product count per Department")
 ```
 
 *Können Gänge mehreren Abteilungen zugewiesen sein?*
 
 ```{r}
-aisle_in_departments %>%
+products %>%
+  select(department, aisle) %>%
+  distinct() %>%
   count(aisle, department) %>%
   filter(n > 1)
 ```
 
 _Gänge sind immer nur einer Abteilung zugewiesen?_
 
-# Aktuelles Story Layout Design
+Daraus das jedes Produkt einem spezifischem Gang und jeder Gang einer spezifischen Abteilung zugeordnet ist, lässt sich eine Hierarchie im Store Layout ableiten. Indem man "von oben nach unten" optimiert, kann man von der Allgemeinheit bis ins Detail optimieren. Es bietet sich daher an zuerst auf Ebene Department, dann in den einzelnen Departments auf Ebene Gänge und innerhalb der Gänge auf Ebene Produkte zu optimieren. Allerdings würde das bedeuten, dass die Zuordnung der Produkte in Gänge und der Gänge in Departments schon in Ordnung ist und nicht mehr verändert wird.
+
+
+# Story Layout Design
+
+## Aktuelles Story Layout Design
 
 Anhand der Reihenfolge, wann etwas in den Warenkorb gelegt wurde, kann man eine wahrscheinliche Version des aktuellen Store Layout Designs herausfinden.
 
@@ -105,7 +112,7 @@ department_oder <- max_add_to_cart_order %>%
   arrange(mean) %>%
   inner_join(departments) %>%
   select(department_id, department) %>%
-  mutate(order = row_number())
+  mutate(sort = row_number())
 
 # add some statistics - number of products
 department_oder <- department_oder %>%
@@ -122,6 +129,145 @@ department_oder <- department_oder %>%
       summarise(aisle_count = n())
   ) %>%
   mutate(avg_product_per_aisle = product_count /aisle_count)
-
-
 ```
+```{r}
+department_oder
+```
+
+Dies ist die Liste, in welcher Reihenfolge im Durchschnitt gekauft wird. Dies ist natürlich eine Annäherung und die Realität kann davon abweichen. Es gibt aber zumindest einen ersten Einblick, wie das aktuelle Store Layout Design sein könnte. Aus der Reihenfolge lässt sich allerdings nur ein "Pfad" ableiten. Die meisten Supermärkte sind allerdings nicht ähnlich wie ein IKEA aufgebaut, bei der es einen Hauptweg durch den ganzen Markt gibt.
+
+## Analyse von häufig zusammen gekaufter Elemente
+
+Mithilfe einer Assoziationsanalyse lässt sich herausfinden welche Produkte häufig zusammen gekauft werden. Aufgrund der herausgefundenen Hierarchie und der grossen Anzahl Produkte scheint es unwahrscheinlich, dass auf Ebene der Produkte viel brauchbares herauskommt.
+
+### Häufig zusammen gekaufte Produkte
+
+Wir benutzen dafür den Apriori Alghorithmus. Dieser sieht vor, dass man zuerst alle Warenkörbe als Set zusammenfasst.
+
+```{r}
+baskets <- orders_to_products %>% 
+  group_by(orders_id) %>%
+  summarise(items = as.vector(list(product_name)))
+
+transactions <- as(baskets$items, "transactions")
+```
+
+Mit dem Arules Package für R kann man sich nun den Support ausrechnen und auch plotten lassen. Dieser gibt an, mit welcher Wahrscheinlichkeit ein Produkt in einem Warenkorb landet. Die 30 Produkte mit dem höchsten Support sehen folgendermassen aus:
+
+```{r}
+arules::itemFrequencyPlot(transactions,
+   topN=30,
+   main='Relative Item Frequency Plot',
+   type="relative",
+   ylab="Item Frequency (Relative)") 
+```
+
+```{r}
+item_frequency <- tibble::enframe(itemFrequency(transactions, type="relative")) %>%
+  rename(support = value, product_name = name)
+```
+
+In Form einer Tabelle sieht das so aus:
+
+```{r}
+item_frequency %>% 
+  arrange(desc(support)) %>%
+  top_n(30)
+```
+
+Die 6 am häufigsten auftretenden Produkte haben eine relative Häufigket von über 5%. Auf Platz 30 sind es schon nur noch knapp über 2%.
+
+Die Ausreisser sind hier "Banana" mit ~14,7% und "Bag of organic Bananas" mit ~11,8%.
+
+Die allgemeine Verteilung des Supports ist folgendermassen:
+```{r}
+summary(item_frequency)
+```
+
+Im Median tritt in ein Produkt nur in 0.0019% der Fälle im Warenkorb auf. Im Durchschnitt sind es 0.02%. Bei 49685 Produkten kann man also sagen, dass die Warenkörbe bis auf einige wenige Ausnahmen ziemlich divers sind. Eine Assoziationsanalyse lohnt sich hier als wahrscheinlich nur bedingt. 
+
+```{r}
+quantile(item_frequency$support, c(.9, .95, .98))
+```
+
+Selbst die 2% der Produkte mit der höchsten Verteilung haben eine minimale relative Häufigkeit von 0.17%. Es muss daher für die Assoziationsanalysie ein niedriger Wert für den Support angenommen werden.
+
+```{r}
+apriori_formatted <- function(transactions, support, confidence, minlen = 2) {
+  rules <- apriori(transactions, parameter = list(supp = support, conf = confidence, target="rules", minlen=minlen))
+  rules <- rules[!is.redundant(rules)]
+  rules_tib <- tibble( lhs = labels( lhs(rules) ), 
+          rhs = labels( rhs(rules) ),
+          support = (quality(rules) %>% pull(support)),
+          confidence = (quality(rules) %>% pull(confidence)),
+          lift = (quality(rules) %>% pull(lift)),
+          count = (quality(rules) %>% pull(count)))
+  rules_tib
+}
+```
+
+```{r}
+products_assoc <- apriori_formatted(transactions, 0.0003, 0.05)
+```
+
+```{r}
+products_assoc %>%
+  arrange(-count)
+```
+
+Anhand der Liste sieht man wie oft die häufigsten Kombinationen auftreten. Es ist recht schwierig anhand dessen ein Storlayout vorzuschlagen. Mit den Informationen ist es erstmal nicht zielführend.
+
+### Häufig aus bestimmten Abteilungen gekauft
+
+Man kann die gleiche Assoziationsanalyse auch auf Ebene der Abteilungen machen.
+
+```{r}
+baskets_department <- orders_to_products %>% 
+  select(orders_id, department) %>%
+  distinct() %>%
+  group_by(orders_id) %>%
+  summarise(items = as.vector(list(department)))
+
+transactions_department <- as(baskets_department$items, "transactions")
+```
+
+Der Item Frequency Plot sieht in dem Fall so aus:
+
+```{r}
+arules::itemFrequencyPlot(transactions_department,
+   topN=30,
+   main='Relative Department Frequency Plot',
+   type="relative",
+   ylab="Department Frequency (Relative)") 
+```
+
+Und die zugehörige Tabelle:
+
+```{r}
+department_frequency <- tibble::enframe(itemFrequency(transactions_department, type="relative")) %>%
+  rename(support = value, department = name)
+```
+
+```{r}
+department_frequency %>% 
+  arrange(desc(support))
+```
+
+Hier sieht man, dass ca. 75% aller Einkäufe Waren aus "produce" und 67,7% aller Einkäufe Waren aus "dairy eggs" beinhalten. Diese sind mit einem Abstand von mehr als 20% vor der nächsten Abteilung "beverages".
+
+Man kann also schon sagen, dass sich das Storelayout auf "produce" und "dairy eggs" als zentrale Elemente konzentrieren sollte.
+
+```{r}
+departments_assoc <- apriori_formatted(transactions_department, 0.01, 0.01, minlen=1)
+```
+
+```{r}
+departments_assoc %>%
+  arrange(-count) %>%
+  top_n(200) %>%
+  arrange(-lift)
+```
+
+# Zusammenfassung
+- Die wichtigsten Abteilungen sind "produce" und "dairy eggs"
+- 
