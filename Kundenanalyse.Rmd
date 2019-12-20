@@ -270,7 +270,6 @@ transactions <- as(bio_baskets$items, "transactions")
 
 arules::itemFrequencyPlot(transactions,
    topN=30,
-   col=brewer.pal(8,'Pastel1'),
    main='Relative Item Frequency Plot',
    type="relative",
    ylab="Item Frequency (Relative)") 
