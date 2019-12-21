@@ -196,6 +196,7 @@ Selbst die 2% der Produkte mit der höchsten Verteilung haben eine minimale rela
 apriori_formatted <- function(transactions, support, confidence, minlen = 2) {
   rules <- apriori(transactions, parameter = list(supp = support, conf = confidence, target="rules", minlen=minlen))
   rules <- rules[!is.redundant(rules)]
+  #rules <- rules[!is.significant(rules, transactions, method = "fisher", adjust = 'bonferroni')]
   rules_tib <- tibble( lhs = labels( lhs(rules) ), 
           rhs = labels( rhs(rules) ),
           support = (quality(rules) %>% pull(support)),
@@ -264,8 +265,8 @@ departments_assoc <- apriori_formatted(transactions_department, 0.01, 0.01, minl
 ```{r}
 departments_assoc %>%
   arrange(-count) %>%
-  top_n(200) %>%
-  arrange(-lift)
+  filter(str_count(lhs, ',') == 0) %>%
+  top_n(200)
 ```
 
 # Zusammenfassung
