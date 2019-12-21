@@ -74,6 +74,12 @@ products %>%
     labs(x="Department", y="Number of Products", title="Product count per Department")
 ```
 
+```{r}
+products %>%
+  group_by(department) %>%
+  mutate(size = 1) %>%
+  treemap(index=c("department"),vSize="size",title="",palette="Set3",border.col="#FFFFFF")
+```
 *Können Gänge mehreren Abteilungen zugewiesen sein?*
 
 ```{r}

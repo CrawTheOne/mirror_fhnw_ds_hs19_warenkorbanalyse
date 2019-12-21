@@ -22,3 +22,6 @@ library(dplyr)
 #install and load RSQLite
 #install.packages("RSQLite")
 library(RSQLite)
+#install and load treemap
+#install.packages("treemap")
+library(treemap)
