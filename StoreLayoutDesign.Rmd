@@ -222,6 +222,13 @@ products_assoc %>%
   arrange(-count)
 ```
 
+
+```{r} 
+#tried adding conviction, not possible to add into function because of dataframe strucuture, not found alternatives. Mario your call to keep or discard. 
+rules_outed <- apriori(transactions, parameter = list(supp = 0.0003, conf = 0.05, target="rules", minlen=2))
+rules_outed_wconv <- cbind(as(rules, "data.frame"), conviction = interestMeasure(rules, "conviction", transactions))
+```
+
 Anhand der Liste sieht man wie oft die häufigsten Kombinationen auftreten. Es ist recht schwierig anhand dessen ein Storlayout vorzuschlagen. Mit den Informationen ist es erstmal nicht zielführend.
 
 ### Häufig aus bestimmten Abteilungen gekauft
