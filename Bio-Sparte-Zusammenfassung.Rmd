@@ -3,28 +3,28 @@ title: "Bio-Sparte Zusammenfassung"
 output: html_notebook
 ---
 # Bio-Sparte
-## Connection
-### DbConnection
+## 0 Connection
+### 0.1 DbConnection
 ```{r setup, echo=FALSE, results="hide"}
 require("RPostgreSQL")
 source('DbConnection.R')
 ```
 
-#Einbettung der R-Objekte
+## 0.2 Einbettung der R-Objekte
 ```{r}
 items_per_order <- readRDS('./data/products_by_order.rds')
 orders <- readRDS('./data/orders.rds')
 orders_per_hour_per_day <- readRDS('./data/orders_per_hour_per_day.rds')
 products_per_hour_per_day <- readRDS('./data/products_per_hour_per_day.rds')
+products_by_order <- readRDS('./data/products_by_order.rds')
+departments <- readRDS('./data/departments.rds')
+products <- readRDS('./data/products.rds')
 ```
 
 ## Annahme 1 : Um heruaszufinden was für ein Laden, im Bezug auf Bio, der untersuchte Supermarkt ist haben wir zuerst mal untersucht wie es mit den Bio-Produkten aussieht
 
-### Frage 1: Was ist die aktuelle Situation des Ladens zu Bio-Produkten im Laden?
+### Frage 1.1: Was ist die aktuelle Situation des Ladens zu Bio-Produkten im Laden?
 ```{r, echo=FALSE}
-
-products
-
 ratio_products_org_notorg<- products %>%
   count(is_organic) %>%
   spread(key = is_organic, value = n) %>%
@@ -40,10 +40,12 @@ products %>%
   geom_bar(width = 1, stat = "identity")+ 
   coord_polar("y", start=0)
 ```
-### Antwort 1 : Der Anteil an Bio-Produkten im Sortiment ist `r OrgProd`%
+### Antwort 1.1 : Der Anteil an Bio-Produkten im Sortiment ist `r OrgProd`%
 
-### Frage 1.1 : Wie viele Bio-Produkte werden im Vergleich zu nicht- Bio Produkten eingekauft?
+### Frage 1.2 : Wie viele Bio-Produkte werden im Vergleich zu nicht- Bio Produkten eingekauft?
 ```{r,echo=FALSE}
+
+products_by_order
 
 ratio_orders_org_notorg <- products_by_order %>%
   summarise(ratio_bio_byOrderProducts= sum(total_bio_count)/sum(total_product_count)*100)
@@ -60,14 +62,13 @@ products_by_order %>%
   geom_bar(width = 1, stat = "identity")+ 
   coord_polar("y", start=0)
 ```
-### Antwort 1.1 : Der Anteil an eingekauften Bio-Produkten beträgt `r OrgSold` %
+### Antwort 1.2 : Der Anteil an eingekauften Bio-Produkten beträgt `r OrgSold` %
 
 ## Auswertung 1 : Der untersuchte Supermarkt hat einen Bio-Anteil an eingekauften Produkten von 31% was ein grosser Unterschied zu den c.a 10% Bio-Produkten im Angebot ist. Wir stellen fest, dass es hier ein Verbesserung gemacht werden kann. Wir wollen die Nachfrage erhöhen indem wir das Angebot erhöhen. Doch wo genau sollen mehr Bio-Produkte eingesetzt werden ?
 
-Frage 1.3 : Wie ist die Beliebtheit der Bio-Produkte in den einzelnen Departments ?
-
-## Beliebheit der Bio-Produkte in den Departments 
+## Frage 1.3 : Wie ist die Beliebtheit der Bio-Produkte in den einzelnen Departments ?
 ```{r}
+
 product_sold_org_byDepartment<- full_join(t_products, t_orders_product, "product_id") %>%
   right_join(t_departments, "department_id") %>%
 	select(c(product_id, product_name, orders_id, department)) %>%
@@ -94,9 +95,9 @@ ggplot(product_sold_org_byDepartment, aes(x = reorder(department, sold_org_byPer
   geom_text(aes(label = paste0(sold_org_byPercent, "%")), position = position_stack(vjust = 0.5)) + 
   coord_flip()
 ```
-### Antwort 1.3 : Die Beliebtheit der Bio-Produkte in den einzelnen depatments unterscheidet sich sehr stark. Der Anteil an gekauften Bio-Produkten zu Nicht-Bio-Produkten ist demensprechend sehr divers.
+## Antwort 1.3 : Die Beliebtheit der Bio-Produkte in den einzelnen depatments unterscheidet sich sehr stark. Der Anteil an gekauften Bio-Produkten zu Nicht-Bio-Produkten ist demensprechend sehr divers.
 
-### Frage 1.4 : Welches sind die top 5 departments, in welchen das Verhältniss an gekaufen Bio Produkten zu vohandenen Bio-Produkten am grössten ist.
+## Frage 1.4 : Welches sind die top 5 departments, in welchen das Verhältniss an gekaufen Bio Produkten zu vohandenen Bio-Produkten am grössten ist.
 ```{r}
 ratio_products_org_notorg_per_departments <- t_departments%>%
   inner_join(t_products) %>%
@@ -223,6 +224,7 @@ top10orgProdInDairyEggs
 ### Antwort 1.5 : Es sind `r top10orgProdInCannedGoods` `r top10orgProdInMissing` `r top10orgProdInProduce` `r top10orgProdInBabies` `r top10orgProdInDairyEggs`
 
 ## Auswertung 1.2: Es gibt eine eindeutige Diskrepanz der gekauften Bio-Produkte und der Bio-Produkten im Sortiment. Diese Diskrepanz unterscheidet sich von Department zu Department. Um eine klare Aussage zu treffen, wo man diese Diskrepanz am besten angeht haben wir uns für die top 5 Departments entschieden, wo sie am grössten ist.
+
 ---------------------------------------------------------------------------------------------------
 ###################################################################################################
 ---------------------------------------------------------------------------------------------------
@@ -231,6 +233,10 @@ top10orgProdInDairyEggs
 
 ### Frage 2.1 : Was sind die meist verkauften Produkte? Und wie viele davon sind Bio? 
 ```{r, echo=FALSE}
+
+products
+
+
 most_bought_all <- full_join(t_products, t_orders_product, "product_id") %>%
 	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
 	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
@@ -271,7 +277,7 @@ ggplot(most_bought_org) +
 ```
 ### Antwort 2.2: Es sind : `r head(most_bought_org$product_name)`
 
-### Frage ### Frage 2.3 : Was sind die meist verkauften Nicht-Bio-Produkte? 
+### Frage 2.3 : Was sind die meist verkauften Nicht-Bio-Produkte? 
 ````{r, include=FALSE}
 #Most bought non-organic products
 
@@ -295,40 +301,35 @@ ggplot(most_bought_nonorg) +
 ### Antwort 2.3: Es sind : `r head(most_bought_nonorg$product_name)`
 
 ### Frage 2.4 : Für welche der meistgekauften Nicht-Bio-Produkte gibt es ein Bio-Äquivalent.
-```{r}
+Dafür haben wir ein Exelliste aus den top 100 der meist verkauften Produkte erstellt und nach äquivalenten Nicht-Bio-Produkten gesucht.
 
-```
-### Antwort 2.4
+### Antwort 2.4: Wir haben herausgefunden, dass es sehr häuffig ähnliche Produkte. Unserer Resultate sind in userem Word-Dokument ersichtlich. Die wichtigsten Produktarte sind : Ungesüste Mandelmilch, Griechisches Yoghurt, Soda-Getränke und Peperoni. 
 
 ---------------------------------------------------------------------------------------------------
 ###################################################################################################
 ---------------------------------------------------------------------------------------------------
 
-## Annahme 3 : Rezepte für department : other;
-Wir gehen davon aus, dass das department: other ein flexibles depatment ist. In jedem Supermarkt gibt es neben fest gelegten departments auch departments die flexibel sind. Diese werden häuffig zu Promotionszwecke verwendet. wir stellen uns vor in diesem department Werbung für Bio zu machen.
+## Annahme 3 : Wir gehen davon aus, dass das department: other ein flexibles depatment ist. In jedem Supermarkt gibt es neben fest gelegten departments auch departments die flexibel sind. Diese werden häuffig zu Promotionszwecke verwendet. wir stellen uns vor in diesem department Werbung für Bio zu machen.
 
 ### Frage 3.1 : Wie viele Produkte im department : other sind bio?
 ```{r}
-ratio_org_byOther <- t_products %>%
-  inner_join(t_departments_Other) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic) %>%
-  summarise(count = n()) %>%
+ratio_org_byOther <- products %>%
+  select(is_organic,department_id)%>%
+  filter(department_id == 2)%>%
+  group_by(is_organic) %>%
+  summarise(count = n())%>%
   collect()%>%
-  spread(key = organic, value = count) %>%
+  spread(key = is_organic, value = count) %>%
   rename(notorganic = `0`, organic = `1`) %>%
   mutate(all_products = notorganic + organic, freqProd = organic/all_products *100)
 
 ratio_org_byOther 
-```
-## Antwort 3.1 : Es gibt nur  6.8 % Bio-Produkte im Department: Other. 
-```{r}
-most_bought_org
-```
 
-## Auswertung 3
-Wir haben aus den meist gekauften Bio-Prdukten 2 Rezepte zusammengestellt. Es gibt sehr viel Gemüse und Früchte in dieser Rangliste,darum haben wir uns für die Power-Müsli und den Salat entschieden. Diese können individuell zusammengestellt werden und decken einen grossen Anteil der meist gekauften Bio-Produkte ab.
+OrgProdOther <- round(ratio_org_byOther$freqProd,3)
+```
+### Antwort 3.1 : Es gibt nur  `r OrgProdOther` % Bio-Produkte im Department: Other. 
 
+## Auswertung 3 : Wir haben aus den meist gekauften Bio-Prdukten 2 Rezepte zusammengestellt. Es gibt sehr viel Gemüse und Früchte in dieser Rangliste,darum haben wir uns für die Power-Müsli und den Salat entschieden. Diese können individuell zusammengestellt werden und decken einen grossen Anteil der meist gekauften Bio-Produkte ab.
 
 ### Power-Müsli
 - Bag of Organic Bananas		
@@ -367,9 +368,6 @@ Wir haben aus den meist gekauften Bio-Prdukten 2 Rezepte zusammengestellt. Es gi
 ---------------------------------------------------------------------------------------------------
 
 
----------------------------------------------------------------------------------------------------
-###################################################################################################
----------------------------------------------------------------------------------------------------
 
 ## Annhame 4 : Wir gehen davon aus, das der sogenannte Last-Buy eine guter Einstigspunkt für potenziellen Bio-Kunden sein kann. Denn der Lasst-Buy ist in der Regel kein rationaler Einkauf sonder ein sehr impulsiver Einkauf.
 
@@ -377,32 +375,24 @@ Wir haben aus den meist gekauften Bio-Prdukten 2 Rezepte zusammengestellt. Es gi
 ```{r}
 #Wie verhält sich der letzte Eikauf? t_orders_lastBuy filtert alle Produkte herraus, die sich als letztes in den Warenkrob gelegt wurden.
 
-t_orders_lastBuy<- t_orders %>%
-  inner_join(t_orders_product) %>%
-  group_by(orders_id) %>% 
+orders_lastBuy_organic <-orders %>%
+  group_by(orders_id)%>%
   arrange(desc(add_to_cart_order)) %>%
-  inner_join(t_products) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  collect()%>% 
-  slice(1) %>% 
-  ungroup()
+  slice(1) %>%
+  select(product_id) %>%
+  inner_join(products) %>%
+  filter(is_organic==1) %>%
+  ungroup()%>%
+  summarise(n = n())
 
-t_orders_lastBuy
+LBorganic <- orders_lastBuy_organic$n
+LBnotorganic <- tally(orders)-orders_lastBuy_organic$n
 
-t_orders
+ratioLBorganic <- (LBnotorganic/LBorganic)$n
 
-#ist der letzte Einkauf Bio oder nicht
-ggplot(data = t_orders_lastBuy) + 
-  geom_bar(mapping = aes(x = organic), width = 0.5, fill = "#FF9999") +
-  xlab("Bio oder nicht Bio") + ylab("Anzahl eingekaufte Produkte")
-
-  
-most_bought_org
-t_orders_FirstBuy_most_bought_org
-
-#Die Rangliste der Meistgekauften Bio-Produkte unterscheiden sich nur sehr gering von der Rangliste der insgesammt Gekauften Bio-Produkte und daher Vernachlässigbar
-
-
+ratioLBorganic
 ```
-### Antwort 4.1 : Das Verhältniss ist unterscheidet sich nicht signifikant von dem Duchschnitt
+### Antwort 4.1 : Das Verhältniss ist unterscheidet sich nicht signifikant von dem Duchschnitt, es beträgt `r ratioLBorganic`%.
+
+## Auswertung 4 : Vom Last-Buy Effekt lässt sich kein grosser Unterschied ableiten.
 
