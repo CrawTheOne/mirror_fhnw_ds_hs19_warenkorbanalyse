@@ -38,7 +38,7 @@ customer_behavior %>%
   summary()
 ```
 
-_Die Hälfte aller Kunden haben zwischen 39 und 188 Bestellungen aufegeben._
+Die Hälfte aller Kunden haben zwischen 39 und 188 Bestellungen aufegeben.
 
 ## Grösse der Warenkörbe
 
@@ -51,7 +51,7 @@ customer_behavior %>%
 ```{r}
 customer_behavior %>%
   ggplot(aes(x=total_nr_of_orders)) +
-    xlab("Products bought") + 
+    xlab("Average products bought per order") + 
     ylab("Customer count") + 
     ggtitle("How many orders are done by 'normal' users?") +
     geom_histogram(binwidth = 2, color="darkgray")
@@ -66,7 +66,7 @@ customer_behavior %>%
 ```{r}
 customer_behavior %>%
   ggplot(aes(x=total_product_count)) +
-    xlab("Products bought") + 
+    xlab("Total products bought") + 
     ylab("Customer count") + 
     ggtitle("How many products are bought by 'normal' users?") +
     geom_histogram(binwidth = 2, color="darkgray")
@@ -114,8 +114,10 @@ customer_behavior %>%
   ggplot(aes(x=total_nr_of_orders, y=mean_products_per_order, fill=weight)) +
     geom_tile() +
     scale_fill_gradientn(colors = c("blue", "lightblue", "green", "red"), values = c(0,0.1, 0.3, 1)) +
-    labs(x = "Total number of orders", y = "Ø products per orderf", fill = "frequency", title = NULL)
+    labs(x = "Total number of orders per customer", y = "Ø products per order", fill = "frequency", title = NULL)
 ```
+
+Man sieht eine hohe Konzentration zwischen 5 und 15 Produkten und bis 8 Aufträge pro Kunde.
 
 # Stammkunden herausfiltern
 
@@ -188,9 +190,11 @@ products_patron_ratio %>%
   arrange(desc(overall_bought)) %>%
   top_n(30) %>%
   gather(`patrons_bought`, `no_patrons_bought`, key="class", value="count") %>%
+  mutate(class = ifelse(grepl('no_patrons_bought', class), 'casual customer', 'patrons')) %>%
   ggplot(aes(x=reorder(product_name,count), y=count, fill=class)) +
     geom_col(position="fill") + 
-    coord_flip()
+    coord_flip() +
+    labs(x = "product", y = "ratio", fill = "bought by")
 ```
 
 Es gibt leichte Unterschiede im Kaufverhalten von Stammkunden und Nicht-Stammkunden. Diese sind aber tendenziell vernachlässigbar.
@@ -233,7 +237,7 @@ customer_behavior %>%
   ggplot(aes(x=total_nr_of_orders, y=fraction_mean_bio)) +
     geom_point(alpha = 0.01) +
     geom_smooth() +
-    labs(x = "Total number of orders", y = "Ratio of bio products", title = NULL)
+    labs(x = "Total number of orders per customer", y = "Ratio of bio products", title = NULL)
 ```
 
 
@@ -244,7 +248,7 @@ customer_behavior %>%
   ggplot(aes(x=total_product_count, y=fraction_mean_bio)) +
     geom_point(alpha = 0.01) +
     geom_smooth() +
-    labs(x = "total products bought", y = "Ratio of bio products", title = NULL)
+    labs(x = "Total products bought overall", y = "Ratio of bio products", title = NULL)
 ```
 
 ```{r}
@@ -255,40 +259,7 @@ customer_behavior %>%
     labs(x = "Customer since .. in days", y = "Ratio of bio products", title = NULL)
 ```
 
-In allen drei Graphen kann man sehen, dass der Bioanteil bei grösserer "Nutzung" des Stores ansteigt.
-
-## Welche Bioprodukte werden gern zusammen gekauft
-
-```{r}
-bio_baskets <- orders %>% 
-  inner_join(products) %>%
-  filter(is_organic == TRUE) %>%
-  group_by(orders_id) %>%
-  summarise(items = as.vector(list(product_name)))
-
-transactions <- as(bio_baskets$items, "transactions")
-
-arules::itemFrequencyPlot(transactions,
-   topN=30,
-   main='Relative Item Frequency Plot',
-   type="relative",
-   ylab="Item Frequency (Relative)") 
-```
-
-```{r}
-rules <- apriori(transactions, parameter = list(supp = 0.0025, conf = 0.2, target="rules"))
-rules <- rules[!is.redundant(rules)]
-rules_tib <- 
-  tibble( lhs = labels( lhs(rules) ), 
-          rhs = labels( rhs(rules) ),
-          support = (quality(rules) %>% pull(support)),
-          confidence = (quality(rules) %>% pull(confidence)),
-          lift = (quality(rules) %>% pull(lift)),
-          count = (quality(rules) %>% pull(count))) %>%
-  arrange(-support)
-rules_tib
-```
-
+In allen drei Graphen kann man sehen, dass der Bioanteil bei grösserer Nutzung (häufigere Einkäufe, mehr gekaufte Produkte, etc.) des Stores ansteigt.
 
 # Zusammenfassung
 

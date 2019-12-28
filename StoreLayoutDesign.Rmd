@@ -74,6 +74,12 @@ products %>%
     labs(x="Department", y="Number of Products", title="Product count per Department")
 ```
 
+```{r}
+products %>%
+  group_by(department) %>%
+  mutate(size = 1) %>%
+  treemap(index=c("department"),vSize="size",title="",palette="Set3",border.col="#FFFFFF")
+```
 *Können Gänge mehreren Abteilungen zugewiesen sein?*
 
 ```{r}
@@ -196,6 +202,7 @@ Selbst die 2% der Produkte mit der höchsten Verteilung haben eine minimale rela
 apriori_formatted <- function(transactions, support, confidence, minlen = 2) {
   rules <- apriori(transactions, parameter = list(supp = support, conf = confidence, target="rules", minlen=minlen))
   rules <- rules[!is.redundant(rules)]
+  #rules <- rules[!is.significant(rules, transactions, method = "fisher", adjust = 'bonferroni')]
   rules_tib <- tibble( lhs = labels( lhs(rules) ), 
           rhs = labels( rhs(rules) ),
           support = (quality(rules) %>% pull(support)),
@@ -213,6 +220,13 @@ products_assoc <- apriori_formatted(transactions, 0.0003, 0.05)
 ```{r}
 products_assoc %>%
   arrange(-count)
+```
+
+
+```{r} 
+#tried adding conviction, not possible to add into function because of dataframe strucuture, not found alternatives. Mario your call to keep or discard. 
+rules_outed <- apriori(transactions, parameter = list(supp = 0.0003, conf = 0.05, target="rules", minlen=2))
+rules_outed_wconv <- cbind(as(rules, "data.frame"), conviction = interestMeasure(rules, "conviction", transactions))
 ```
 
 Anhand der Liste sieht man wie oft die häufigsten Kombinationen auftreten. Es ist recht schwierig anhand dessen ein Storlayout vorzuschlagen. Mit den Informationen ist es erstmal nicht zielführend.
@@ -264,8 +278,8 @@ departments_assoc <- apriori_formatted(transactions_department, 0.01, 0.01, minl
 ```{r}
 departments_assoc %>%
   arrange(-count) %>%
-  top_n(200) %>%
-  arrange(-lift)
+  filter(str_count(lhs, ',') == 0) %>%
+  top_n(200)
 ```
 
 # Zusammenfassung
