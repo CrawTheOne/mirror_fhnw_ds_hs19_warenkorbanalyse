@@ -222,7 +222,7 @@ products_assoc %>%
   arrange(-count)
 ```
 
-
+#Conviction
 ```{r} 
 #tried adding conviction, not possible to add into function because of dataframe strucuture, not found alternatives. Mario your call to keep or discard. 
 rules_outed <- apriori(transactions, parameter = list(supp = 0.0003, conf = 0.05, target="rules", minlen=2))

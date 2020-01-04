@@ -44,7 +44,6 @@ products %>%
 
 ### Frage 1.2 : Wie viele Bio-Produkte werden im Vergleich zu nicht- Bio Produkten eingekauft?
 ```{r,echo=FALSE}
-
 products_by_order
 
 ratio_orders_org_notorg <- products_by_order %>%
@@ -68,24 +67,19 @@ products_by_order %>%
 
 ## Frage 1.3 : Wie ist die Beliebtheit der Bio-Produkte in den einzelnen Departments ?
 ```{r}
-
-product_sold_org_byDepartment<- full_join(t_products, t_orders_product, "product_id") %>%
-  right_join(t_departments, "department_id") %>%
-	select(c(product_id, product_name, orders_id, department)) %>%
-	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
+product_sold_org_byDepartment<- inner_join(products, departments, "department") %>%
   group_by(department) %>%
-	count(organic) %>%
+	count(is_organic) %>%
   group_by(department) %>%
-  arrange(organic)  %>%
+  arrange(is_organic)  %>%
   mutate(n = as.integer(n)) %>%
   mutate(nn = lag(n)) %>%
   mutate(sold_org = n, sold_notorg = nn) %>%
   mutate(total_sold_byDepartment = sum(sold_org)) %>%
-  select(-c(n,nn, organic)) %>%
+  select(-c(n,nn, is_organic)) %>%
   filter(!is.na(sold_notorg)) %>%
   mutate(sold_org_byPercent = round(100*sold_org/total_sold_byDepartment, digits = 2)) %>%
   arrange(desc(sold_org_byPercent))
-
 
 product_sold_org_byDepartment
 
@@ -99,33 +93,28 @@ ggplot(product_sold_org_byDepartment, aes(x = reorder(department, sold_org_byPer
 
 ## Frage 1.4 : Welches sind die top 5 departments, in welchen das Verhältniss an gekaufen Bio Produkten zu vohandenen Bio-Produkten am grössten ist.
 ```{r}
-ratio_products_org_notorg_per_departments <- t_departments%>%
-  inner_join(t_products) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(department,organic) %>%
+ratio_products_org_notorg_per_departments <- inner_join(departments, products) %>%
+  group_by(department, is_organic) %>%
   summarise(count = n()) %>%
   arrange(department) %>%
   collect()%>%
-  spread(key = organic, value = count) %>%
-  rename(notorganic = `0`, organic = `1`) %>%
-  mutate(all_products = notorganic + organic, freqProd = organic/all_products *100) %>%
+  spread(key = is_organic, value = count) %>%
+  rename(notorganic = `0`, is_organic = `1`) %>%
+  mutate(all_products = notorganic + is_organic, freqProd = is_organic/all_products *100) %>%
   arrange(desc(freqProd))
 
-ratio_orders_org_notorg_per_departments <-  t_orders_product %>%
-  inner_join(t_orders) %>%
-  inner_join(t_products) %>%
-  inner_join(t_departments) %>%
-	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(department,organic) %>%
+ratio_orders_org_notorg_per_departments <-  inner_join(orders, products) %>%
+  inner_join(departments) %>%
+  group_by(department, is_organic) %>%
   summarise(count = n()) %>%
   arrange(department) %>%
   collect()%>%
-  spread(key = organic, value = count) %>%
-  rename(notorganic = `0`, organic = `1`) %>%
-  mutate(all_products = notorganic + organic, freqBought = organic/all_products *100) %>%
+  spread(key = is_organic, value = count) %>%
+  rename(notorganic = `0`, is_organic = `1`) %>%
+  mutate(all_products = notorganic + is_organic, freqBought = is_organic/all_products *100) %>%
   arrange(desc(freqBought))
 
-  improvement_departments_top5 <- ratio_orders_org_notorg_per_departments %>%
+improvement_departments_top5 <- ratio_orders_org_notorg_per_departments %>%
   select(department,freqBought) %>%
   left_join(ratio_products_org_notorg_per_departments) %>%
   select(department,freqBought,freqProd) %>%
@@ -144,74 +133,61 @@ improvement_departments_top5
 ```{r}
 #1 : canned goods- departement :15
 
-most_bought_canned_goods <- t_orders %>%
+most_bought_canned_goods <- inner_join(orders, products, "product_id") %>%
   filter(department_id == 15) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic)%>%
-  select(c("organic", "product_name"))%>%
+  group_by(is_organic)%>%
+  select(c("is_organic", "product_name"))%>%
   count(n = product_name)%>%
   arrange(desc(nn))
 
-top10orgProdInCannedGoods <-filter(most_bought_canned_goods, organic == TRUE) %>%
+top10orgProdInCannedGoods <-filter(most_bought_canned_goods, is_organic == TRUE) %>%
   head(10)
 
 #2 : missing- departement :21
-most_bought_missing <- t_orders %>%
-  inner_join(t_orders_product) %>%
-  inner_join(t_products) %>%
+most_bought_missing <- inner_join(orders, products, "product_id") %>%
   filter(department_id == 21) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic)%>%
-  select(c("organic", "product_name"))%>%
+  group_by(is_organic)%>%
+  select(c("is_organic", "product_name"))%>%
   count(n = product_name)%>%
   arrange(desc(nn))
   
-top10orgProdInMissing <- filter(most_bought_missing, organic == TRUE) %>%
+top10orgProdInMissing <- filter(most_bought_missing, is_organic == TRUE) %>%
   head(10)
 
 #3 : produce- departement :4
-most_bought_produce <- t_orders %>%
-  inner_join(t_orders_product) %>%
-  inner_join(t_products) %>%
+most_bought_produce <- inner_join(orders, products, "product_id") %>%
   filter(department_id == 4) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic)%>%
-  select(c("organic", "product_name"))%>%
+  group_by(is_organic)%>%
+  select(c("is_organic", "product_name"))%>%
   count(n = product_name)%>%
   arrange(desc(nn))
   
-top10orgProdInProduce <- filter(most_bought_produce, organic == TRUE) %>%
+top10orgProdInProduce <- filter(most_bought_produce, is_organic == TRUE) %>%
   head(10)
 
 #4 : babies- departement :18
-most_bought_babies <- t_orders %>%
-  inner_join(t_orders_product) %>%
-  inner_join(t_products) %>%
+most_bought_babies <- inner_join(orders, products, "product_id") %>%
   filter(department_id == 18) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic)%>%
-  select(c("organic", "product_name"))%>%
+  group_by(is_organic)%>%
+  select(c("is_organic", "product_name"))%>%
   count(n = product_name)%>%
   arrange(desc(nn))
   
-top10orgProdInBabies <- filter(most_bought_babies, organic == TRUE) %>%
+top10orgProdInBabies <- filter(most_bought_babies, is_organic == TRUE) %>%
   head(10)
 
 
 #5 : dairy eggs- departement :16
-most_bought_dairy_eggs <- t_orders %>%
-  inner_join(t_orders_product) %>%
-  inner_join(t_products) %>%
+most_bought_dairy_eggs <- inner_join(orders, products, "product_id") %>%
   filter(department_id == 16) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic)%>%
-  select(c("organic", "product_name"))%>%
+  group_by(is_organic)%>%
+  select(c("is_organic", "product_name"))%>%
   count(n = product_name)%>%
   arrange(desc(nn))
   
 most_bought_dairy_eggs
 
-top10orgProdInDairyEggs <- filter(most_bought_dairy_eggs, organic == TRUE) %>%
+top10orgProdInDairyEggs <- filter(most_bought_dairy_eggs, is_organic == TRUE) %>%
   head(10)
 
 top10orgProdInCannedGoods
@@ -219,7 +195,6 @@ top10orgProdInMissing
 top10orgProdInProduce 
 top10orgProdInBabies
 top10orgProdInDairyEggs
-
 ```
 ### Antwort 1.5 : Es sind `r top10orgProdInCannedGoods` `r top10orgProdInMissing` `r top10orgProdInProduce` `r top10orgProdInBabies` `r top10orgProdInDairyEggs`
 
@@ -233,14 +208,11 @@ top10orgProdInDairyEggs
 
 ### Frage 2.1 : Was sind die meist verkauften Produkte? Und wie viele davon sind Bio? 
 ```{r, echo=FALSE}
-
 products
 
-
-most_bought_all <- full_join(t_products, t_orders_product, "product_id") %>%
-	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
-	mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  group_by(organic) %>%
+most_bought_all <- full_join(products, orders) %>%
+	select(c(product_id, product_name, orders_id, is_organic)) %>%
+  group_by(is_organic) %>%
 	count(product_name) %>%
   mutate(n = as.integer(n)) %>%
 	arrange(-n) %>%
@@ -249,7 +221,7 @@ most_bought_all <- full_join(t_products, t_orders_product, "product_id") %>%
 most_bought_all
 
 ggplot(most_bought_all) +
-  geom_col(aes(x = reorder(product_name, n), y = n, fill = organic)) +
+  geom_col(aes(x = reorder(product_name, n), y = n, fill = is_organic)) +
   coord_flip()
 ```
 ### Antwort 2.1: Es sind : `r head(most_bought_all$product_name)`
@@ -258,15 +230,14 @@ ggplot(most_bought_all) +
 ```{r}
 # Determine most bought organic products
 
-most_bought_org <- full_join(t_products, t_orders_product, "product_id") %>%
-	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  mutate(organic = as.integer(organic)) %>%
-  filter(organic == 1) %>%
+most_bought_org <- full_join(products, orders, "product_id") %>%
+	select(c(product_id, product_name, orders_id, is_organic)) %>%
+  mutate(is_organic = as.integer(is_organic)) %>%
+  filter(is_organic == 1) %>%
 	count(product_name) %>%
   mutate(n = as.integer(n))  %>%
 	arrange(-n) %>%
-	head(100)
+	head(30)
 
 most_bought_org
 
@@ -281,16 +252,14 @@ ggplot(most_bought_org) +
 ````{r, include=FALSE}
 #Most bought non-organic products
 
-most_bought_nonorg <- full_join(t_products, t_orders_product, "product_id") %>%
-	select(-c(aisle_id, department_id, index, add_to_cart_order, reordered)) %>%
-  mutate(organic = str_detect(tolower(product_name), pattern = "organic")) %>%
-  mutate(organic = as.integer(organic)) %>%
-  filter(organic == 0) %>%
+most_bought_nonorg <- full_join(products, orders, "product_id") %>%
+	select(c(product_id, product_name, orders_id, is_organic)) %>%
+  mutate(is_organic = as.integer(is_organic)) %>%
+  filter(is_organic == 0) %>%
 	count(product_name) %>%
   mutate(n = as.integer(n))  %>%
 	arrange(-n) %>%
-	head(100) %>%
-  as_tibble()
+	head(30)
 
 most_bought_nonorg
 
