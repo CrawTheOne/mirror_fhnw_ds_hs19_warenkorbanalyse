@@ -1,16 +1,18 @@
 ---
 title: "Bio-Sparte Zusammenfassung"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 # Bio-Sparte
 ## 0 Connection
 ### 0.1 DbConnection
 ```{r setup, echo=FALSE, results="hide"}
 require("RPostgreSQL")
-source('DbConnection.R')
+library(tidyverse)
+#source('DbConnection.R')
 ```
-
-## 0.2 Einbettung der R-Objekte
+### 0.2 Einbettung der R-Objekte
 ```{r}
 items_per_order <- readRDS('./data/products_by_order.rds')
 orders <- readRDS('./data/orders.rds')
@@ -21,51 +23,92 @@ departments <- readRDS('./data/departments.rds')
 products <- readRDS('./data/products.rds')
 ```
 
+---------------------------------------------------------------------------------------------------
+###################################################################################################
+---------------------------------------------------------------------------------------------------
+
 ## Annahme 1 : Um heruaszufinden was für ein Laden, im Bezug auf Bio, der untersuchte Supermarkt ist haben wir zuerst mal untersucht wie es mit den Bio-Produkten aussieht
 
 ### Frage 1.1: Was ist die aktuelle Situation des Ladens zu Bio-Produkten im Laden?
+
 ```{r, echo=FALSE}
+org_notorg <- products %>%
+  group_by(is_organic) %>%
+  count() %>%
+  mutate(n_produkte = as.integer(n)) %>%
+  ungroup(is_organic) %>%
+  mutate(is_organic = as.character(is_organic)) %>%
+  select(c(is_organic, n_produkte)) %>%
+  as.tibble()
+
+# Create a basic bar
+ggplot(org_notorg, aes(x = "", y = n_produkte, fill = is_organic)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n_produkte))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  scale_fill_manual(values = c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
+
 ratio_products_org_notorg<- products %>%
   count(is_organic) %>%
   spread(key = is_organic, value = n) %>%
   rename(notorganic = `0`, organic = `1`) %>%
   mutate(all_products = notorganic + organic, freqProd = organic/all_products *100)
 
-ratio_products_org_notorg
-
-# Barplot
-products %>%
-  count(is_organic)%>%
-  ggplot(aes(x="", y=n, fill=is_organic))+
-  geom_bar(width = 1, stat = "identity")+ 
-  coord_polar("y", start=0)
+OrgProd <- round(ratio_products_org_notorg$freqProd,2)
 ```
+
 ### Antwort 1.1 : Der Anteil an Bio-Produkten im Sortiment ist `r OrgProd`%
 
 ### Frage 1.2 : Wie viele Bio-Produkte werden im Vergleich zu nicht- Bio Produkten eingekauft?
 ```{r,echo=FALSE}
-products_by_order
+proportion_bio_sold <- full_join(products, orders, "product_id") %>%
+	select(c(product_id, product_name, orders_id, is_organic)) %>%
+  group_by(is_organic) %>%
+	count(is_organic) %>%
+  ungroup(is_organic) %>%
+  mutate(is_organic = as.character(is_organic)) %>%
+  mutate(n = as.integer(n)) %>%
+  as.tibble()
 
-ratio_orders_org_notorg <- products_by_order %>%
-  summarise(ratio_bio_byOrderProducts= sum(total_bio_count)/sum(total_product_count)*100)
+proportion_bio_sold
 
-#median(ratio_products_org_notorg$freq_bio)
-OrgSold <- mean(ratio_products_org_notorg$freq_bio)
+# Create a basic bar
+ggplot(proportion_bio_sold, aes(x = "", y = n, fill = is_organic)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
+  # Add color scale (hex colors)
+  scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Anzahl Verkaufte Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))  
 
-ratio_orders_org_notorg
+ratio_sold_org <- proportion_bio_sold %>%
+  spread(key = is_organic, value = n) %>%
+  rename(notorganic = `0`, organic = `1`) %>%
+  mutate(sold = notorganic + organic, freqSold = organic/sold *100)
 
-# Barplot
-products_by_order %>%
-  mutate(total_not_bio_count = total_product_count-total_bio_count)%>%
-  ggplot(aes(x="", y=total_not_bio_count, fill=total_bio_count))+
-  geom_bar(width = 1, stat = "identity")+ 
-  coord_polar("y", start=0)
+OrgSold <- round(ratio_sold_org$freqSold,2)
 ```
+
 ### Antwort 1.2 : Der Anteil an eingekauften Bio-Produkten beträgt `r OrgSold` %
 
 ## Auswertung 1 : Der untersuchte Supermarkt hat einen Bio-Anteil an eingekauften Produkten von 31% was ein grosser Unterschied zu den c.a 10% Bio-Produkten im Angebot ist. Wir stellen fest, dass es hier ein Verbesserung gemacht werden kann. Wir wollen die Nachfrage erhöhen indem wir das Angebot erhöhen. Doch wo genau sollen mehr Bio-Produkte eingesetzt werden ?
 
 ## Frage 1.3 : Wie ist die Beliebtheit der Bio-Produkte in den einzelnen Departments ?
+
 ```{r}
 product_sold_org_byDepartment<- inner_join(products, departments, "department") %>%
   group_by(department) %>%
@@ -336,8 +379,6 @@ OrgProdOther <- round(ratio_org_byOther$freqProd,3)
 ###################################################################################################
 ---------------------------------------------------------------------------------------------------
 
-
-
 ## Annhame 4 : Wir gehen davon aus, das der sogenannte Last-Buy eine guter Einstigspunkt für potenziellen Bio-Kunden sein kann. Denn der Lasst-Buy ist in der Regel kein rationaler Einkauf sonder ein sehr impulsiver Einkauf.
 
 ### Frage 4.1 : Wie verhält sich der Bio-Anteil der Einkäufe für den jeweiligen letzten getätigten Einkauf?
@@ -364,4 +405,3 @@ ratioLBorganic
 ### Antwort 4.1 : Das Verhältniss ist unterscheidet sich nicht signifikant von dem Duchschnitt, es beträgt `r ratioLBorganic`%.
 
 ## Auswertung 4 : Vom Last-Buy Effekt lässt sich kein grosser Unterschied ableiten.
-
