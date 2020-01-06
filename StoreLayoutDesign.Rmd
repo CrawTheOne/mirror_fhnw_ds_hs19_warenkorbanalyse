@@ -10,6 +10,7 @@ output: html_notebook
 library(tidyverse)
 library(arules)
 library(arulesViz)
+library("treemap")
 library("RColorBrewer")
 
 orders <- readRDS('./data/orders.rds')
