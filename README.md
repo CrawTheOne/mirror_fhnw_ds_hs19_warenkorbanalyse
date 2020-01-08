@@ -5,10 +5,10 @@ Allgemein:
 	ExtractCommonUsedData.Rmd / ExtractCommonUsedData.nb.html -> SQL Abfragen und Speichern als R-Objekte.
 	Kundenanalyse.Rmd / Kundenanalyse.nb.html -> Kaufverhalten von Kundengruppen untersuchen.
 	
-Bio Sparte: Analysen und Vorschläge zur Stärkung und Promotion der Bio-Sparte 
-
-
-
+Bio Sparte: Analysen und Vorschläge zur Stärkung und Promotion der Bio-Sparte
+	Bio-Sparte-Zusammenfassung.Rmd/Bio-Sparte-Zusammenfassung.html
+	most_bought_nonorg.xlsx => Liste mit den top verkauften Nicht-BioProdukten und ob es eine äquivalente Bio-Alternative gibt.
+	Alternative Bio-Produkte.docx => Zusammenfassung der Liste(most_bought_noorg.xlsx)
 
 Store Layout: Befasst sich mit einer kunden-freundliche Anordnung der Produkte, so dass Kunden Artikel leichter finden und
 beim Einkauf schneller zum Ziel kommen.
