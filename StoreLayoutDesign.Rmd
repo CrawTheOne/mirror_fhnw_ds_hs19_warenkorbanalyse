@@ -79,7 +79,7 @@ products %>%
 products %>%
   group_by(department) %>%
   mutate(size = 1) %>%
-  treemap(index=c("department"),vSize="size",title="",palette="Set3",border.col="#FFFFFF")
+  treemap(index=c("department"),vSize="size",title="Product count per department as treemap",palette="Set3",border.col="#FFFFFF")
 ```
 *Können Gänge mehreren Abteilungen zugewiesen sein?*
 
