@@ -18,7 +18,7 @@ editor_options:
 
 ## Libraries installieren
 
-```{r}
+```{r include=FALSE}
 require("RPostgreSQL")
 library(tidyverse)
 library(dplyr)
