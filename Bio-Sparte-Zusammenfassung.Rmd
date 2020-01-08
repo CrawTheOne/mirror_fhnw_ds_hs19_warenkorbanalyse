@@ -10,7 +10,6 @@ output:
 ```{r setup, echo=FALSE, results="hide"}
 require("RPostgreSQL")
 library(tidyverse)
-#source('DbConnection.R')
 ```
 ### 0.2 Einbettung der R-Objekte
 ```{r}

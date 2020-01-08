@@ -32,6 +32,8 @@ Die Fragen, die wir uns stellten lauten:
 
 ## Häufigkeit der Einkäufe
 
+########################Was ist cosumer_behavior, bitte kurz beschreiben#########################
+
 ```{r}
 customer_behavior %>%
   select(total_nr_of_orders) %>%
@@ -184,6 +186,7 @@ Die Stammkunden sind für `r products_pct[1]`% aller gekauften Produkte verantwo
 __`r order_pct[1]`% aller Kunden sind für `r products_pct[1]`% aller gekauften Produkte verantwortlich.__
 
 ## Wie ist die Verteilung der Topprodukte zu Stammkunden und nicht Stammkunden
+####################Titel fehlt vom Plot###################################
 
 ```{r}
 products_patron_ratio %>%
@@ -231,6 +234,7 @@ customer_behavior %>%
 
 ## Verhältnis von Bioprodukten
 
+#############################Titel fehlt###################################
 ```{r}
 customer_behavior %>%
   filter(total_nr_of_orders < 100) %>%
@@ -240,7 +244,7 @@ customer_behavior %>%
     labs(x = "Total number of orders per customer", y = "Ratio of bio products", title = NULL)
 ```
 
-
+#############################Titel fehlt###################################
 
 ```{r}
 customer_behavior %>%
@@ -250,7 +254,7 @@ customer_behavior %>%
     geom_smooth() +
     labs(x = "Total products bought overall", y = "Ratio of bio products", title = NULL)
 ```
-
+ #############################Titel fehlt###################################
 ```{r}
 customer_behavior %>%
   ggplot(aes(x=timespan_for_all_orders, y=fraction_mean_bio)) +
@@ -267,3 +271,10 @@ In allen drei Graphen kann man sehen, dass der Bioanteil bei grösserer Nutzung 
 - Stammkunden kaufen i.d.R. nicht andere Produkte als andere Kunden
 - Je länger ein Kunde im Store einkauft bzw. desto mehr oder häufiger er kauft, desto mehr Bioprodukte werden gekauft
 - allgemein kann man sagen, dass es einen Trend für Bioprodukte gibt
+
+
+# Ricci Kritik
+
+- costumer_behavior kurz erklären
+- Behäschtägung mit Nummern und eventuell in Frage und Antwort aufteilen.
+- Titel in den unteten Graphen fehlt
