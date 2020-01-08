@@ -3,7 +3,6 @@ title: "Warenkorbanalyse: Datenanalyse zum Store Layout Design"
 date: 2016-08-25
 output: html_notebook
 ---
-
 ### Setup script
 
 ```{r}
@@ -54,6 +53,7 @@ _Alle Produkte sind einer einzigen Abteilung zugeordnet._
 *Wie viele Gänge haben die Departments*
 
 ```{r}
+
 products %>%
   select(aisle, department) %>%
   distinct() %>%
@@ -136,6 +136,9 @@ department_oder <- department_oder %>%
       summarise(aisle_count = n())
   ) %>%
   mutate(avg_product_per_aisle = product_count /aisle_count)
+
+
+max_add_to_cart_order
 ```
 ```{r}
 department_oder
@@ -203,7 +206,6 @@ Selbst die 2% der Produkte mit der höchsten Verteilung haben eine minimale rela
 apriori_formatted <- function(transactions, support, confidence, minlen = 2) {
   rules <- apriori(transactions, parameter = list(supp = support, conf = confidence, target="rules", minlen=minlen))
   rules <- rules[!is.redundant(rules)]
-  #rules <- rules[!is.significant(rules, transactions, method = "fisher", adjust = 'bonferroni')]
   rules_tib <- tibble( lhs = labels( lhs(rules) ), 
           rhs = labels( rhs(rules) ),
           support = (quality(rules) %>% pull(support)),
@@ -221,7 +223,6 @@ products_assoc <- apriori_formatted(transactions, 0.0003, 0.05)
 ```{r}
 products_assoc %>%
   arrange(-count)
-```
 
 #Conviction
 ```{r} 
@@ -279,8 +280,7 @@ departments_assoc <- apriori_formatted(transactions_department, 0.01, 0.01, minl
 ```{r}
 departments_assoc %>%
   arrange(-count) %>%
-  filter(str_count(lhs, ',') == 0) %>%
-  top_n(200)
+  filter(str_count(lhs,',')==0)
 ```
 
 # Zusammenfassung
