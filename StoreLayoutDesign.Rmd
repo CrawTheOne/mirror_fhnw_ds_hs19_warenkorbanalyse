@@ -1,7 +1,9 @@
 ---
-title: "Warenkorbanalyse: Datenanalyse zum Store Layout Design"
-date: 2016-08-25
-output: html_notebook
+title: 'Warenkorbanalyse: Datenanalyse zum Store Layout Design'
+output:
+  html_document:
+    df_print: paged
+date: '2016-08-25'
 ---
 ### Setup script
 
@@ -9,6 +11,7 @@ output: html_notebook
 library(tidyverse)
 library(arules)
 library(arulesViz)
+library(circlize)
 library("treemap")
 library("RColorBrewer")
 
@@ -75,12 +78,15 @@ products %>%
     labs(x="Department", y="Number of Products", title="Product count per Department")
 ```
 
+*Wie kann man die Anzahl Produkte besser Visualisieren in den Abteilungen?*
+
 ```{r}
 products %>%
   group_by(department) %>%
   mutate(size = 1) %>%
   treemap(index=c("department"),vSize="size",title="Product count per department as treemap",palette="Set3",border.col="#FFFFFF")
 ```
+
 *Können Gänge mehreren Abteilungen zugewiesen sein?*
 
 ```{r}
@@ -225,10 +231,9 @@ products_assoc %>%
   arrange(-count)
 
 #Conviction
-```{r} 
 #tried adding conviction, not possible to add into function because of dataframe strucuture, not found alternatives. Mario your call to keep or discard. 
 rules_outed <- apriori(transactions, parameter = list(supp = 0.0003, conf = 0.05, target="rules", minlen=2))
-rules_outed_wconv <- cbind(as(rules, "data.frame"), conviction = interestMeasure(rules, "conviction", transactions))
+rules_outed_wconv <- cbind(as(rules_outed, "data.frame"), conviction = interestMeasure(rules_outed, "conviction", transactions))
 ```
 
 Anhand der Liste sieht man wie oft die häufigsten Kombinationen auftreten. Es ist recht schwierig anhand dessen ein Storlayout vorzuschlagen. Mit den Informationen ist es erstmal nicht zielführend.
@@ -266,6 +271,7 @@ department_frequency <- tibble::enframe(itemFrequency(transactions_department, t
 
 ```{r}
 department_frequency %>% 
+  mutate(support = round(support, 2)) %>%
   arrange(desc(support))
 ```
 
@@ -274,15 +280,25 @@ Hier sieht man, dass ca. 75% aller Einkäufe Waren aus "produce" und 67,7% aller
 Man kann also schon sagen, dass sich das Storelayout auf "produce" und "dairy eggs" als zentrale Elemente konzentrieren sollte.
 
 ```{r}
-departments_assoc <- apriori_formatted(transactions_department, 0.01, 0.01, minlen=1)
+departments_assoc <- apriori_formatted(transactions_department, 0.01, 0.01, minlen=1) %>% as.tibble()
 ```
 
 ```{r}
 departments_assoc %>%
   arrange(-count) %>%
-  filter(str_count(lhs,',')==0)
+  filter(str_count(lhs,',')==0) %>%
+  mutate(support = round(support, 2)) %>%
+  mutate(confidence = round(confidence, 2)) %>%
+  mutate(lift = round(lift, 2)) -> tidied_dep_assoc
+
+tidied_dep_assoc
+
+#Tried chord diagramm, not clear nor tidy
+#tidied_dep_assoc %>%
+#  filter(count > 1115000) %>% 
+#  chordDiagram(transparency = 0.3)
 ```
 
 # Zusammenfassung
-- Die wichtigsten Abteilungen sind "produce" und "dairy eggs"
-- 
+- Die wichtigsten Abteilungen sind "produce" und "dairy eggs" was die Anzahl verkäufe angeht. 
+- Die Departments die einen hohen support miteinander haben sollen wenn möglich nebeneinander liegen
