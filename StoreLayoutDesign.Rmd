@@ -302,3 +302,6 @@ tidied_dep_assoc
 # Zusammenfassung
 - Die wichtigsten Abteilungen sind "produce" und "dairy eggs" was die Anzahl verkäufe angeht. 
 - Die Departments die einen hohen support miteinander haben sollen wenn möglich nebeneinander liegen
+- Der zusammenhange zwischen Departments muss beachtet sein, dies bedeutet wenn der Kunde im department “A” (LHS) etwas einkauft, ist es so und so wahrscheinlich (confidence) das er im department “B” (RHS) auch etwas kauft.
+
+![StoreLayoutFinal](data/StoreLayoutDesignFinal.PNG)
