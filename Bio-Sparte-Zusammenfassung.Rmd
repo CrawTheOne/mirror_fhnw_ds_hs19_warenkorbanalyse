@@ -40,21 +40,6 @@ org_notorg <- products %>%
   select(c(is_organic, n_produkte)) %>%
   as.tibble()
 
-# Create a basic bar
-ggplot(org_notorg, aes(x = "", y = n_produkte, fill = is_organic)) + geom_bar(stat = "identity", width = 1) +
-  # Convert to pie (polar coordinates) and add labels
-  coord_polar("y", start = 0) + 
-  geom_text(aes(label = paste0(round(n_produkte))), position = position_stack(vjust = 0.5)) + 
-  # Add color scale (hex colors)
-  scale_fill_manual(values = c("#AAAAAA", "#AAFFAA")) +
-  # Remove labels and add title
-  labs(x = NULL, y = NULL,  title = "Anzahl Bio-/Nicht-Produkte") +
-  # Tidy up the theme
-  theme_classic() + theme(axis.line = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank(),
-          plot.title = element_text(hjust = 0.5, color = "#666666"))
-
 ratio_products_org_notorg<- products %>%
   count(is_organic) %>%
   spread(key = is_organic, value = n) %>%
@@ -62,6 +47,23 @@ ratio_products_org_notorg<- products %>%
   mutate(all_products = notorganic + organic, freqProd = organic/all_products *100)
 
 OrgProd <- round(ratio_products_org_notorg$freqProd,2)
+
+# Create a basic bar
+ggplot(org_notorg, aes(x = "", y = n_produkte, fill = is_organic)) + geom_bar(stat = "identity", width = 1) +
+  # Convert to pie (polar coordinates) and add labels
+  coord_polar("y", start = 0) + 
+  geom_text(aes(label = paste0(round(n_produkte), "\n", round(n_produkte/sum(n_produkte)*100, 1), "%")), position = position_stack(vjust = 0.45)) + 
+  # Add color scale (hex colors)
+  scale_fill_manual(values = c("#AAAAAA", "#AAFFAA")) +
+  # Remove labels and add title
+  labs(x = NULL, y = NULL,  title = "Sortiment Anzahl Bio-/Nicht-Produkte") +
+  # Tidy up the theme
+  theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, color = "#666666"))
+
+
 ```
 
 ### Antwort 1.1 : Der Anteil an Bio-Produkten im Sortiment ist `r OrgProd`%
@@ -79,11 +81,18 @@ proportion_bio_sold <- full_join(products, orders, "product_id") %>%
 
 proportion_bio_sold
 
+ratio_sold_org <- proportion_bio_sold %>%
+  spread(key = is_organic, value = n) %>%
+  rename(notorganic = `0`, organic = `1`) %>%
+  mutate(sold = notorganic + organic, freqSold = organic/sold *100)
+
+OrgSold <- round(ratio_sold_org$freqSold,2)
+
 # Create a basic bar
 ggplot(proportion_bio_sold, aes(x = "", y = n, fill = is_organic)) + geom_bar(stat = "identity", width = 1) +
   # Convert to pie (polar coordinates) and add labels
   coord_polar("y", start = 0) + 
-  geom_text(aes(label = paste0(round(n))), position = position_stack(vjust = 0.5)) + 
+  geom_text(aes(label = paste0(round(n), "\n", round(n/sum(n)*100, 1), "%")), position = position_stack(vjust = 0.5)) + 
   # Add color scale (hex colors)
   scale_fill_manual(values=c("#AAAAAA", "#AAFFAA")) +
   # Remove labels and add title
@@ -94,12 +103,7 @@ ggplot(proportion_bio_sold, aes(x = "", y = n, fill = is_organic)) + geom_bar(st
           axis.ticks = element_blank(),
           plot.title = element_text(hjust = 0.5, color = "#666666"))  
 
-ratio_sold_org <- proportion_bio_sold %>%
-  spread(key = is_organic, value = n) %>%
-  rename(notorganic = `0`, organic = `1`) %>%
-  mutate(sold = notorganic + organic, freqSold = organic/sold *100)
 
-OrgSold <- round(ratio_sold_org$freqSold,2)
 ```
 
 ### Antwort 1.2 : Der Anteil an eingekauften Bio-Produkten beträgt `r OrgSold` %

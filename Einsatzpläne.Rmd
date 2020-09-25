@@ -151,7 +151,7 @@ ggplot(data = order_product_ratio) +
   geom_line(mapping = aes(x = order_hour_of_day, y = order_product_ratio, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio of products per order")  +
   xlab("Order hour") + ylab("Average order size") +
-  labs(color='Weekday') +
+  labs(color='Order Day') +
   scale_color_brewer(palette="Spectral") 
   
 ```
@@ -174,7 +174,7 @@ ggplot(data = order_product_ratio) +
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_orders, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio orders")  +
   xlab("Order hour") + ylab("Relative nr of orders in %") +
-  labs(color='Weekday') +
+  labs(color='Order day') +
   scale_color_brewer(palette="Spectral")
 ```
 
@@ -192,7 +192,7 @@ ggplot(data = order_product_ratio) +
   geom_line(mapping = aes(x = order_hour_of_day, y = workload_products, color=as.factor(order_dow), group = order_dow), size = 1) +
   ggtitle("Average ratio products")  +
   xlab("Order hour") + ylab("Relative nr of Products in %") +
-  labs(color='Weekday') +
+  labs(color='Order day') +
   scale_color_brewer(palette="Spectral")
 ```
 
